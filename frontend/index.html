@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurant Bestellung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: #22c55e;
+      border: none;
+      padding: 15px 25px;
+      font-size: 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+
+    .status {
+      margin-top: 30px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🍽️ Restaurant Bestellung</h1>
+
+<button onclick="createOrder()">
+  🍕 Bestellung abschicken
+</button>
+
+<div class="status" id="statusText">
+  Status: Noch keine Bestellung
+</div>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const supabase = supabase.createClient(
+  "https://qkzftuweimyouklzlfes.supabase.co",
+  "sb_publishable_OZ-ENgPtw1sj5Yal-K1mpw_VrYGQOXi"
+);
+
+let lastOrderId = null;
+
+// Bestellung erstellen
+async function createOrder() {
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([
+      {
+        restaurant_id: "1",
+        table_num: 5,
+        items: [
+          { name: "Pizza Margherita", price: 10 },
+          { name: "Cola", price: 3 }
+        ],
+        status: "new"
+      }
+    ])
+    .select();
+
+  if (error) {
+    alert("Fehler: " + error.message);
+    console.log(error);
+  } else {
+    lastOrderId = data[0].id;
+    document.getElementById("statusText").innerText = "🆕 Bestellung gesendet!";
+    listenForUpdates();
+  }
+}
+
+// Realtime Updates hören
+function listenForUpdates() {
+  supabase
+    .channel('orders-channel')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'orders',
+        filter: `id=eq.${lastOrderId}`
+      },
+      (payload) => {
+        const status = payload.new.status;
+
+        if (status === "cooking") {
+          document.getElementById("statusText").innerText = "🍳 In der Küche";
+        }
+
+        if (status === "served") {
+          document.getElementById("statusText").innerText = "✅ Serviert";
+        }
+      }
+    )
+    .subscribe();
+}
+</script>
+
+</body>
+</html>
