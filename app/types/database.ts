@@ -47,6 +47,7 @@ export interface MenuCategory {
   name: string
   sort_order: number
   active: boolean
+  created_at: string
 }
 
 export interface MenuItem {
@@ -61,6 +62,7 @@ export interface MenuItem {
   tags: string[]
   available: boolean
   sort_order: number
+  created_at: string
 }
 
 export interface OrderItem {
