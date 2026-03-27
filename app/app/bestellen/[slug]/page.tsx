@@ -1,7 +1,12 @@
-export default function HomeOrderPage({ params }: { params: { slug: string } }) {
+export default async function HomeOrderPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <p>Home Ordering — Restaurant: {params.slug}</p>
+      <p>Home Ordering — Restaurant: {slug}</p>
     </main>
   )
 }
