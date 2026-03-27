@@ -1,0 +1,131 @@
+<h2>System-Architektur</h2>
+<p class="subtitle">Eine Next.js App — vier klar getrennte Bereiche</p>
+
+<div style="font-family:sans-serif;margin-top:20px;">
+
+  <!-- Top Level Flow -->
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:32px;">
+    <div style="text-align:center;opacity:0.7;font-size:12px;color:#aaa;">
+      <div style="background:#1a1a1a;border:2px solid #333;border-radius:10px;padding:10px 16px;margin-bottom:6px;color:#fff;font-weight:600;">📱 QR-Code</div>
+      <div>Gast scannt</div>
+    </div>
+    <div style="display:flex;align-items:center;color:#555;font-size:20px;">→</div>
+    <div style="text-align:center;opacity:0.7;font-size:12px;color:#aaa;">
+      <div style="background:#1a1a1a;border:2px solid #6c63ff;border-radius:10px;padding:10px 16px;margin-bottom:6px;color:#fff;font-weight:600;">🌐 Next.js App</div>
+      <div>Vercel Hosting</div>
+    </div>
+    <div style="display:flex;align-items:center;color:#555;font-size:20px;">→</div>
+    <div style="text-align:center;opacity:0.7;font-size:12px;color:#aaa;">
+      <div style="background:#1a1a1a;border:2px solid #3ecf8e;border-radius:10px;padding:10px 16px;margin-bottom:6px;color:#fff;font-weight:600;">🗄️ Supabase</div>
+      <div>Postgres + Realtime</div>
+    </div>
+    <div style="display:flex;align-items:center;color:#555;font-size:20px;">→</div>
+    <div style="text-align:center;opacity:0.7;font-size:12px;color:#aaa;">
+      <div style="background:#1a1a1a;border:2px solid #ff6b35;border-radius:10px;padding:10px 16px;margin-bottom:6px;color:#fff;font-weight:600;">⚡ n8n</div>
+      <div>Automationen</div>
+    </div>
+  </div>
+
+  <!-- 4 App Areas -->
+  <h3 style="margin-bottom:16px;color:#fff;">Die 4 Bereiche der App</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- Area 1: Marketing -->
+    <div style="background:#111;border:1px solid #222;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:#6c63ff22;border-radius:6px;padding:6px;font-size:16px;">🏠</div>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:13px;">1. Landing Page</div>
+          <div style="color:#666;font-size:11px;">Route: /</div>
+        </div>
+      </div>
+      <div style="color:#aaa;font-size:11px;line-height:1.6;">
+        Marketing, Pricing, Features<br>
+        Stripe Checkout Integration<br>
+        Restaurant Registrierung<br>
+        <span style="color:#6c63ff;">→ Next.js + Tailwind</span>
+      </div>
+    </div>
+
+    <!-- Area 2: Customer Ordering -->
+    <div style="background:#111;border:1px solid #ff6b3533;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:#ff6b3522;border-radius:6px;padding:6px;font-size:16px;">🍽️</div>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:13px;">2. Gast-Bestellung</div>
+          <div style="color:#666;font-size:11px;">Route: /order/[token]</div>
+        </div>
+      </div>
+      <div style="color:#aaa;font-size:11px;line-height:1.6;">
+        Menü anzeigen (gefiltert nach Rest.)<br>
+        Warenkorb & Bestellung absenden<br>
+        KI-Chatbot für Menü-Fragen<br>
+        Kellner rufen<br>
+        <span style="color:#ff6b35;">→ Mobile-first, kein Login nötig</span>
+      </div>
+    </div>
+
+    <!-- Area 3: Staff Dashboard -->
+    <div style="background:#111;border:1px solid #f7c59f33;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:#f7c59f22;border-radius:6px;padding:6px;font-size:16px;">👨‍🍳</div>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:13px;">3. Staff Dashboard</div>
+          <div style="color:#666;font-size:11px;">Route: /dashboard</div>
+        </div>
+      </div>
+      <div style="color:#aaa;font-size:11px;line-height:1.6;">
+        PIN-Login für Köche & Kellner<br>
+        Live Bestellungen (Realtime)<br>
+        Status: neu → küche → serviert<br>
+        Service-Calls von Gästen<br>
+        <span style="color:#f7c59f;">→ Dark Mode default, Tablet-optimiert</span>
+      </div>
+    </div>
+
+    <!-- Area 4: Owner Admin -->
+    <div style="background:#111;border:1px solid #3ecf8e33;border-radius:12px;padding:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:#3ecf8e22;border-radius:6px;padding:6px;font-size:16px;">⚙️</div>
+        <div>
+          <div style="color:#fff;font-weight:700;font-size:13px;">4. Owner Admin Panel</div>
+          <div style="color:#666;font-size:11px;">Route: /admin</div>
+        </div>
+      </div>
+      <div style="color:#aaa;font-size:11px;line-height:1.6;">
+        Supabase Auth Login (Email)<br>
+        Menü verwalten (CRUD)<br>
+        Tische & QR-Codes generieren<br>
+        Staff verwalten<br>
+        Analytics & KI-Insights<br>
+        Billing / Stripe Portal<br>
+        <span style="color:#3ecf8e;">→ Light Mode default, Desktop-fokus</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- External Services -->
+  <h3 style="margin:24px 0 16px;color:#fff;">Externe Services</h3>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div style="background:#111;border:1px solid #222;border-radius:8px;padding:12px 16px;flex:1;min-width:140px;">
+      <div style="color:#635bff;font-weight:700;font-size:12px;margin-bottom:4px;">💳 Stripe</div>
+      <div style="color:#666;font-size:11px;">Billing, Subscriptions, Portal</div>
+    </div>
+    <div style="background:#111;border:1px solid #222;border-radius:8px;padding:12px 16px;flex:1;min-width:140px;">
+      <div style="color:#ff6b35;font-weight:700;font-size:12px;margin-bottom:4px;">⚡ n8n</div>
+      <div style="color:#666;font-size:11px;">Notifications, Automationen</div>
+    </div>
+    <div style="background:#111;border:1px solid #222;border-radius:8px;padding:12px 16px;flex:1;min-width:140px;">
+      <div style="color:#a78bfa;font-weight:700;font-size:12px;margin-bottom:4px;">🤖 Claude API</div>
+      <div style="color:#666;font-size:11px;">Menü-Chatbot + Analytics-KI</div>
+    </div>
+    <div style="background:#111;border:1px solid #222;border-radius:8px;padding:12px 16px;flex:1;min-width:140px;">
+      <div style="color:#3ecf8e;font-weight:700;font-size:12px;margin-bottom:4px;">🗄️ Supabase</div>
+      <div style="color:#666;font-size:11px;">DB + Auth + Realtime + Storage</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;text-align:center;">Sieht die Architektur so aus wie du sie dir vorstellst? Sag's mir im Terminal</p>

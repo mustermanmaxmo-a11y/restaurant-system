@@ -1,0 +1,139 @@
+<h2>Datenbankschema</h2>
+<p class="subtitle">Multi-Tenant — alle Restaurants in einer Datenbank, isoliert per restaurant_id + RLS</p>
+
+<div style="font-family:sans-serif;margin-top:20px;">
+
+  <!-- Row 1: Core tenant tables -->
+  <div class="label" style="margin-bottom:10px;">KERN — TENANTS & AUTH</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+
+    <div style="background:#111;border:1px solid #6c63ff44;border-radius:10px;padding:14px;min-width:200px;flex:1;">
+      <div style="color:#6c63ff;font-weight:700;font-size:12px;margin-bottom:8px;">🏢 restaurants</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        <span style="color:#555;">owner_id</span> uuid → auth.users<br>
+        name text<br>
+        slug text UNIQUE<br>
+        plan text <span style="color:#6c63ff;">'basic' | 'pro'</span><br>
+        stripe_customer_id text<br>
+        stripe_subscription_id text<br>
+        active boolean<br>
+        created_at timestamptz
+      </div>
+    </div>
+
+    <div style="background:#111;border:1px solid #3ecf8e44;border-radius:10px;padding:14px;min-width:180px;flex:1;">
+      <div style="color:#3ecf8e;font-weight:700;font-size:12px;margin-bottom:8px;">👤 staff</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        name text<br>
+        code text <span style="color:#3ecf8e;">(4-PIN)</span><br>
+        role text <span style="color:#3ecf8e;">'kitchen' | 'waiter'</span><br>
+        active boolean<br>
+        created_at timestamptz
+      </div>
+    </div>
+
+    <div style="background:#111;border:1px solid #f7c59f44;border-radius:10px;padding:14px;min-width:180px;flex:1;">
+      <div style="color:#f7c59f;font-weight:700;font-size:12px;margin-bottom:8px;">🪑 tables</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        table_num integer<br>
+        label text <span style="color:#f7c59f;">(z.B. "Terrasse 3")</span><br>
+        qr_token text UNIQUE<br>
+        active boolean<br>
+        created_at timestamptz
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 2: Menu -->
+  <div class="label" style="margin-bottom:10px;">MENÜ</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+
+    <div style="background:#111;border:1px solid #ff6b3544;border-radius:10px;padding:14px;min-width:180px;flex:1;">
+      <div style="color:#ff6b35;font-weight:700;font-size:12px;margin-bottom:8px;">📂 menu_categories</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        name text<br>
+        sort_order integer<br>
+        active boolean
+      </div>
+    </div>
+
+    <div style="background:#111;border:1px solid #ff6b3544;border-radius:10px;padding:14px;min-width:220px;flex:2;">
+      <div style="color:#ff6b35;font-weight:700;font-size:12px;margin-bottom:8px;">🍔 menu_items</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        category_id uuid → menu_categories<br>
+        name text<br>
+        description text<br>
+        price numeric(10,2)<br>
+        image_url text<br>
+        allergens text[] <span style="color:#ff6b35;">(Array)</span><br>
+        tags text[] <span style="color:#ff6b35;">(vegan, vegetarisch...)</span><br>
+        available boolean<br>
+        sort_order integer
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 3: Orders -->
+  <div class="label" style="margin-bottom:10px;">BESTELLUNGEN</div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+
+    <div style="background:#111;border:1px solid #a78bfa44;border-radius:10px;padding:14px;min-width:240px;flex:2;">
+      <div style="color:#a78bfa;font-weight:700;font-size:12px;margin-bottom:8px;">📦 orders</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        order_type text <span style="color:#a78bfa;">'dine_in' | 'delivery' | 'pickup'</span><br>
+        table_id uuid → tables <span style="color:#555;">(nullable, nur dine_in)</span><br>
+        status text <span style="color:#a78bfa;">'new' | 'cooking' | 'served' | 'cancelled'</span><br>
+        items jsonb <span style="color:#555;">[{item_id, name, price, qty}]</span><br>
+        note text<br>
+        total numeric(10,2)<br>
+        customer_name text <span style="color:#555;">(delivery/pickup)</span><br>
+        customer_phone text<br>
+        delivery_address jsonb <span style="color:#555;">(nullable)</span><br>
+        estimated_time integer <span style="color:#555;">(Minuten)</span><br>
+        created_at timestamptz
+      </div>
+    </div>
+
+    <div style="background:#111;border:1px solid #a78bfa44;border-radius:10px;padding:14px;min-width:180px;flex:1;">
+      <div style="color:#a78bfa;font-weight:700;font-size:12px;margin-bottom:8px;">🔔 service_calls</div>
+      <div style="font-size:11px;line-height:2;color:#aaa;">
+        <span style="color:#555;">id</span> uuid PK<br>
+        restaurant_id uuid → restaurants<br>
+        table_id uuid → tables<br>
+        type text <span style="color:#a78bfa;">'waiter' | 'bill'</span><br>
+        resolved boolean<br>
+        created_at timestamptz
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RLS Notice -->
+  <div style="background:#0a1f0a;border:1px solid #3ecf8e33;border-radius:8px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;">
+    <span style="font-size:16px;">🔒</span>
+    <div>
+      <div style="color:#3ecf8e;font-weight:700;font-size:12px;margin-bottom:4px;">Row Level Security (RLS)</div>
+      <div style="color:#aaa;font-size:11px;line-height:1.6;">
+        Jede Tabelle hat RLS aktiviert. Restaurant-Owner sehen nur ihre eigenen Daten.
+        Staff sieht nur Daten ihres Restaurants. Gäste können nur lesen/schreiben was ihr Token erlaubt.
+        Kein Restaurant kann Daten eines anderen sehen — auch wenn sie dieselbe DB teilen.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;text-align:center;">Macht das Schema Sinn für dich? Etwas fehlt oder anders geplant?</p>

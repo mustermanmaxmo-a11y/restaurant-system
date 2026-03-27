@@ -1,0 +1,113 @@
+<h2>Feature-Scope</h2>
+<p class="subtitle">Was kommt wann — MVP zuerst, dann skalieren</p>
+
+<div style="font-family:sans-serif;margin-top:20px;display:flex;flex-direction:column;gap:20px;">
+
+  <!-- Phase 1: MVP -->
+  <div style="background:#111;border:1px solid #3ecf8e44;border-radius:12px;padding:18px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="background:#3ecf8e22;border-radius:8px;padding:6px 12px;color:#3ecf8e;font-weight:700;font-size:12px;">PHASE 1 — MVP</div>
+      <div style="color:#555;font-size:11px;">Erstes funktionierendes System · Zahlende Kunden möglich</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="label" style="margin-bottom:8px;">KERN-SYSTEM</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Supabase Schema + RLS</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Restaurant Registrierung (Supabase Auth)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Stripe Abo (Basic + Pro)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Setup-Wizard für neue Restaurants</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> QR-Code Generierung + Download</div>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:8px;">BESTELLUNGEN</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Dine-In Bestellung (QR → Tisch)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Delivery + Pickup (Home-Ordering)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Realtime Staff-Dashboard</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Status: neu → küche → serviert</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Kellner rufen / Rechnung</div>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:8px;">ADMIN PANEL</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Menü-Verwaltung (Kategorien + Items)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Tische verwalten + QR drucken</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Staff PINs verwalten</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Billing-Portal (Stripe)</div>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:8px;">AUTOMATIONEN</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Bestätigungs-Email bei Bestellung (n8n)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Sound-Alert bei neuer Order</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#3ecf8e;">✓</span> Dark / Light Mode Toggle</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div style="background:#111;border:1px solid #6c63ff44;border-radius:12px;padding:18px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="background:#6c63ff22;border-radius:8px;padding:6px 12px;color:#6c63ff;font-weight:700;font-size:12px;">PHASE 2 — KI + RESERVIERUNG</div>
+      <div style="color:#555;font-size:11px;">Pro-Plan Features · klarer Upgrade-Anreiz</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="label" style="margin-bottom:8px;">KI-FEATURES</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> KI-Chatbot für Gäste (Menü-Fragen)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Analytics-KI für Owner (Claude API)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Bestseller-Erkennung + Empfehlungen</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Umsatz-Reports (täglich/wöchentlich)</div>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:8px;">RESERVIERUNG</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Interaktiver Grundriss (drag & drop)</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Online Tisch-Reservierung mit Karte</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Bestätigungs-Email + Erinnerung</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;"><span style="color:#6c63ff;">✦</span> Reservierungs-Verwaltung im Admin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div style="background:#111;border:1px solid #ff6b3522;border-radius:12px;padding:18px;opacity:0.8;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="background:#ff6b3511;border-radius:8px;padding:6px 12px;color:#ff6b35;font-weight:700;font-size:12px;">PHASE 3 — SCALE</div>
+      <div style="color:#555;font-size:11px;">Enterprise-Features · Marktführer-Position</div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#666;"><span style="color:#ff6b3566;">◆</span> Multi-Standort pro Restaurant-Kette</div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#666;"><span style="color:#ff6b3566;">◆</span> Loyalty-Programm / Treuepunkte</div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#666;"><span style="color:#ff6b3566;">◆</span> Mehrsprachiges Menü</div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#666;"><span style="color:#ff6b3566;">◆</span> Lieferfahrer-Tracking</div>
+      <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:#666;"><span style="color:#ff6b3566;">◆</span> White-Label Option</div>
+    </div>
+  </div>
+
+  <!-- Pricing clarity -->
+  <div style="background:#0a1f0a;border:1px solid #3ecf8e33;border-radius:8px;padding:14px 16px;">
+    <div style="color:#3ecf8e;font-weight:700;font-size:12px;margin-bottom:8px;">💡 Pricing-Logik</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="color:#aaa;font-size:12px;font-weight:600;margin-bottom:4px;">Basic — ~29€/Monat</div>
+        <div style="color:#666;font-size:11px;line-height:1.7;">Phase 1 Features<br>bis 10 Tische<br>Dine-In + Delivery + Pickup</div>
+      </div>
+      <div>
+        <div style="color:#6c63ff;font-size:12px;font-weight:600;margin-bottom:4px;">Pro — ~79€/Monat</div>
+        <div style="color:#666;font-size:11px;line-height:1.7;">Alles aus Basic<br>+ KI-Chatbot + Analytics<br>+ Reservierungssystem<br>unbegrenzte Tische</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;text-align:center;">Passt die Aufteilung in Phase 1 / 2 / 3 für dich?</p>

@@ -1,31 +1,38 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Restaurant Bestellung</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
   <style>
     body {
-      background: #0b132b;
-      color: white;
       font-family: Arial;
+      background: #0f172a;
+      color: white;
       text-align: center;
-      padding-top: 50px;
+      padding-top: 100px;
     }
 
     button {
+      padding: 20px 40px;
+      font-size: 20px;
       background: #22c55e;
       border: none;
-      padding: 20px;
-      font-size: 20px;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+
+    #status {
+      margin-top: 20px;
     }
   </style>
 </head>
-
 <body>
 
   <h1>🍽️ Restaurant Bestellung</h1>
@@ -35,24 +42,25 @@
   <p id="status">Status: Noch keine Bestellung</p>
 
   <script>
-    const { createClient } = supabase;
+    // 🔑 DEINE DATEN HIER EINSETZEN
+    const supabaseUrl = "https://qkzftuweimyouklzlfes.supabase.co";
+    const supabaseKey = "sb_publishable_OZ-ENgPtw1sj5Yal-K1mpw_VrYGQOXi";
 
-    const supabaseClient = createClient(
-      "https://qkzftuweimyouklzlfes.supabase.co",
-      "sb_publishable_OZ-ENgPtw1sj5Yal-K1mpw_VrYGQOXi"
-    );
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     async function createOrder() {
-      console.log("Sende Bestellung...");
+      document.getElementById("status").innerText = "Sende Bestellung...";
 
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from("orders")
         .insert([
           {
-            restaurant_id: "1",
-            table_num: 5,
-            items: { pizza: 1 },
-            status: "neu"
+            restaurant_id: "rest1",
+            table_num: 7,
+            items: [
+              { name: "Pizza", qty: 1 }
+            ],
+            status: "new"
           }
         ]);
 
@@ -60,8 +68,8 @@
         console.error("FEHLER:", error);
         document.getElementById("status").innerText = "❌ Fehler!";
       } else {
-        console.log("Erfolg:", data);
-        document.getElementById("status").innerText = "✅ Bestellung gesendet!";
+        console.log("SUCCESS:", data);
+        document.getElementById("status").innerText = "✅ Bestellung erfolgreich!";
       }
     }
   </script>
