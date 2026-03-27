@@ -8,17 +8,11 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
+      className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs cursor-pointer"
       style={{
         background: 'var(--surface-2)',
-        border: '1px solid var(--border)',
-        borderRadius: '20px',
-        padding: '4px 12px',
+        borderColor: 'var(--border)',
         color: 'var(--text-muted)',
-        fontSize: '12px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
       }}
       aria-label="Toggle theme"
     >
