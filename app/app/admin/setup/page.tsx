@@ -14,11 +14,13 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push('/owner-login'); return }
       setUserId(session.user.id)
+      setUserEmail(session.user.email ?? '')
     })
   }, [router])
 
@@ -86,7 +88,7 @@ export default function SetupPage() {
     const response = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, user_id: userId, user_email: userEmail }),
     })
 
     const data = await response.json()
