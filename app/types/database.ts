@@ -152,3 +152,17 @@ export interface Reservation {
   table_id: string | null
   created_at: string
 }
+
+export type GroupPaymentStatus = 'pending' | 'paid' | 'covered' | 'cash' | 'terminal'
+
+export interface GroupPayment {
+  id: string
+  group_id: string
+  member_name: string
+  stripe_session_id: string | null
+  amount: number
+  status: GroupPaymentStatus
+  covered_by: string | null
+  paid_at: string | null
+  created_at: string
+}
