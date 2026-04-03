@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+
+export const runtime = 'nodejs'
+
+const BodySchema = z.object({
+  group_id: z.string().uuid(),
+  member_name: z.string().min(1).max(100),
+})
 
 export async function POST(request: NextRequest) {
-  const { group_id, member_name } = await request.json()
-
-  if (!group_id || !member_name) {
-    return NextResponse.json({ error: 'Missing params' }, { status: 400 })
+  const ip = getClientIp(request.headers)
+  if (!rateLimit(`group-checkout:${ip}`, 20, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte warte kurz.' }, { status: 429 })
   }
+
+  const body = await request.json()
+  const parsed = BodySchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid params' }, { status: 400 })
+  }
+  const { group_id, member_name } = parsed.data
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,29 +89,35 @@ export async function POST(request: NextRequest) {
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    line_items: items.map(i => ({
-      price_data: {
-        currency: 'eur',
-        product_data: { name: i.name },
-        unit_amount: Math.round(i.price * 100),
+  let session: Stripe.Checkout.Session
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card', 'paypal'],
+      line_items: items.map(i => ({
+        price_data: {
+          currency: 'eur',
+          product_data: { name: i.name },
+          unit_amount: Math.round(i.price * 100),
+        },
+        quantity: i.qty,
+      })),
+      metadata: {
+        type: 'group_payment',
+        group_id: group.id,
+        member_name,
       },
-      quantity: i.qty,
-    })),
-    metadata: {
-      type: 'group_payment',
-      group_id: group.id,
-      member_name,
-    },
-    success_url: `${base}?group_paid=${group_id}&member=${encodeURIComponent(member_name)}`,
-    cancel_url: `${base}?group_cancel=${group_id}`,
-  })
+      success_url: `${base}?group_paid=${group_id}&member=${encodeURIComponent(member_name)}`,
+      cancel_url: `${base}?group_cancel=${group_id}`,
+    })
+  } catch (err) {
+    console.error('Stripe session creation failed:', err)
+    return NextResponse.json({ error: 'Payment session failed' }, { status: 500 })
+  }
 
   const total = items.reduce((s, i) => s + i.price * i.qty, 0)
 
-  await supabase.from('group_payments').upsert({
+  const { error: upsertError } = await supabase.from('group_payments').upsert({
     group_id: group.id,
     member_name,
     stripe_session_id: session.id,
@@ -104,7 +125,10 @@ export async function POST(request: NextRequest) {
     status: 'pending',
   }, { onConflict: 'group_id,member_name' })
 
+  if (upsertError) {
+    console.error('group_payments upsert failed:', upsertError)
+    return NextResponse.json({ error: 'Failed to save payment record' }, { status: 500 })
+  }
+
   return NextResponse.json({ url: session.url })
 }
-
-export const runtime = 'nodejs'
