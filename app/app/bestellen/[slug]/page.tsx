@@ -7,12 +7,13 @@ import { supabase } from '@/lib/supabase'
 import { darken } from '@/lib/color-utils'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
+import GroupPayView from './GroupPayView'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'delivery' | 'pickup'
 type View = 'menu' | 'checkout' | 'status'
 type PageTab = 'order' | 'reserve'
-type OrderMode = 'solo' | 'group-create' | 'group-join' | 'group-active' | 'confirmed-solo'
+type OrderMode = 'solo' | 'group-create' | 'group-join' | 'group-active' | 'confirmed-solo' | 'group-pay'
 type TableStatus = 'available' | 'tight' | 'taken' | 'no-position'
 
 type ResInfo = { id: string; table_id: string | null; date: string; time_from: string; guests: number; status: string }
@@ -134,10 +135,22 @@ export default function HomeOrderPage() {
   // After Stripe payment redirect: load order by ID from URL param
   useEffect(() => {
     const orderId = searchParams.get('order_id')
-    if (!orderId) return
-    supabase.from('orders').select('*').eq('id', orderId).single().then(({ data }) => {
-      if (data) { setOrder(data as Order); setView('status') }
-    })
+    if (orderId) {
+      supabase.from('orders').select('*').eq('id', orderId).single().then(({ data }) => {
+        if (data) { setOrder(data as Order); setView('status') }
+      })
+    }
+
+    const groupPaid = searchParams.get('group_paid')
+    const paidMember = searchParams.get('member')
+    if (groupPaid && paidMember) {
+      setGroupId(groupPaid)
+      setMemberName(decodeURIComponent(paidMember))
+      setOrderMode('group-pay')
+      supabase.from('group_items').select('*').eq('group_id', groupPaid).then(({ data }) => {
+        if (data) setGroupItems(data as GroupItem[])
+      })
+    }
   }, [searchParams])
 
   // Auto-join group from URL param ?group=XXXX
@@ -303,40 +316,24 @@ export default function HomeOrderPage() {
   }
 
   async function submitGroupOrder() {
-    if (!restaurant || !groupId) return
-    setSubmitting(true)
-    setError('')
-    // Aggregate all group items
-    const aggregated: Record<string, { item_id: string; name: string; price: number; qty: number }> = {}
-    groupItems.forEach(gi => {
-      if (aggregated[gi.item_id]) { aggregated[gi.item_id].qty += gi.qty }
-      else { aggregated[gi.item_id] = { item_id: gi.item_id, name: gi.name, price: gi.price, qty: gi.qty } }
-    })
-    const groupTotal = groupItems.reduce((s, gi) => s + gi.price * gi.qty, 0)
-    // Build note with person breakdown
-    const byPerson: Record<string, string[]> = {}
-    groupItems.forEach(gi => {
-      if (!byPerson[gi.added_by]) byPerson[gi.added_by] = []
-      byPerson[gi.added_by].push(`${gi.qty}× ${gi.name}`)
-    })
-    const groupNote = Object.entries(byPerson).map(([name, items]) => `${name}: ${items.join(', ')}`).join(' | ')
+    if (!groupId || !restaurant) return
 
-    const { data, error: err } = await supabase.from('orders').insert({
-      restaurant_id: restaurant.id,
-      order_type: 'pickup',
-      status: 'new',
-      items: Object.values(aggregated),
-      note: groupNote,
-      total: groupTotal,
-      customer_name: memberName,
-      customer_phone: null,
-    }).select().single()
+    const members = [...new Set(groupItems.map(gi => gi.added_by))]
 
-    if (err || !data) { setError('Fehler beim Bestellen.'); setSubmitting(false); return }
+    const payments = members.map(member => {
+      const memberItems = groupItems.filter(gi => gi.added_by === member)
+      const amount = memberItems.reduce((s, i) => s + i.price * i.qty, 0)
+      return {
+        group_id: groupId,
+        member_name: member,
+        amount: Math.round(amount * 100) / 100,
+        status: 'pending' as const,
+      }
+    })
+
+    await supabase.from('group_payments').insert(payments)
     await supabase.from('order_groups').update({ status: 'submitted' }).eq('id', groupId)
-    setOrder(data as Order)
-    setView('status')
-    setSubmitting(false)
+    setOrderMode('group-pay')
   }
 
   function scrollToCategory(catId: string) {
@@ -1203,6 +1200,16 @@ export default function HomeOrderPage() {
             )
           })()}
         </div>
+      )}
+
+      {/* Group pay view */}
+      {orderMode === 'group-pay' && groupId && (
+        <GroupPayView
+          groupId={groupId}
+          memberName={memberName}
+          groupItems={groupItems}
+          accent={restaurant?.primary_color ?? '#6c63ff'}
+        />
       )}
 
       {/* Order type toggle */}
