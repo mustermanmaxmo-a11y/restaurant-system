@@ -85,10 +85,14 @@ export default function SetupPage() {
     setLoading(true)
     setError('')
 
+    const { data: { session: authSession } } = await supabase.auth.getSession()
     const response = await fetch('/api/stripe/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan, user_id: userId, user_email: userEmail }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authSession?.access_token ?? ''}`,
+      },
+      body: JSON.stringify({ plan }),
     })
 
     const data = await response.json()

@@ -25,21 +25,44 @@ export async function POST(request: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const userId = session.metadata?.user_id
-    const plan = (session.metadata?.plan as 'basic' | 'pro') || 'basic'
-    const customerId = session.customer as string
-    const subscriptionId = session.subscription as string
 
-    if (userId) {
+    if (session.mode === 'subscription') {
+      // Subscription checkout — update restaurant plan
+      const userId = session.metadata?.user_id
+      const plan = (session.metadata?.plan as 'basic' | 'pro') || 'basic'
+      const customerId = session.customer as string
+      const subscriptionId = session.subscription as string
+
+      if (userId) {
+        await supabaseAdmin
+          .from('restaurants')
+          .update({
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            plan,
+            active: true,
+          })
+          .eq('owner_id', userId)
+      }
+    }
+    if (session.mode === 'payment' && session.metadata?.order_id) {
+      // Payment confirmed — activate the order for the kitchen
       await supabaseAdmin
-        .from('restaurants')
-        .update({
-          stripe_customer_id: customerId,
-          stripe_subscription_id: subscriptionId,
-          plan,
-          active: true,
-        })
-        .eq('owner_id', userId)
+        .from('orders')
+        .update({ status: 'new' })
+        .eq('id', session.metadata.order_id)
+        .eq('status', 'pending_payment')
+    }
+  }
+
+  if (event.type === 'checkout.session.expired') {
+    // Order payment abandoned — mark order as cancelled
+    const session = event.data.object as Stripe.Checkout.Session
+    if (session.mode === 'payment' && session.metadata?.order_id) {
+      await supabaseAdmin
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', session.metadata.order_id)
     }
   }
 

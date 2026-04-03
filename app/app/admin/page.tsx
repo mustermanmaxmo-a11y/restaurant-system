@@ -35,11 +35,6 @@ function AdminContent() {
     load()
   }, [router])
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/owner-login')
-  }
-
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
@@ -72,20 +67,6 @@ function AdminContent() {
               )}
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              color: 'var(--text-muted)',
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-            }}
-          >
-            Ausloggen
-          </button>
         </div>
 
         {/* Welcome Banner */}
@@ -148,10 +129,13 @@ function AdminContent() {
         {/* Navigation Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
           {[
+            { icon: '🍽', label: 'Bestellungen', href: '/admin/orders', available: true },
             { icon: '🍔', label: 'Menü verwalten', href: '/admin/menu', available: true },
             { icon: '🪑', label: 'Tische & QR-Codes', href: '/admin/tables', available: true },
             { icon: '👨‍🍳', label: 'Staff verwalten', href: '/admin/staff', available: true },
-            { icon: '📊', label: 'Analytics', href: '/admin/analytics', available: restaurant.plan === 'pro' },
+            { icon: '📅', label: 'Reservierungen', href: '/admin/reservations', available: true },
+            { icon: '🕐', label: 'Öffnungszeiten', href: '/admin/opening-hours', available: true },
+            { icon: '📊', label: 'Statistik', href: '/admin/stats', available: true },
             { icon: '💳', label: 'Billing', href: '/admin/billing', available: true },
           ].map(card => (
             <button

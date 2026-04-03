@@ -1,5 +1,5 @@
 export type OrderType = 'dine_in' | 'delivery' | 'pickup'
-export type OrderStatus = 'new' | 'cooking' | 'served' | 'cancelled'
+export type OrderStatus = 'pending_payment' | 'new' | 'cooking' | 'served' | 'cancelled'
 export type StaffRole = 'kitchen' | 'waiter'
 export type RestaurantPlan = 'basic' | 'pro'
 export type ServiceCallType = 'waiter' | 'bill'
@@ -13,7 +13,18 @@ export interface Restaurant {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   active: boolean
+  floor_plan_url: string | null
+  opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null
   created_at: string
+  // Branding
+  primary_color:   string | null
+  surface_color:   string | null
+  logo_url:        string | null
+  brand_preset:    string | null
+  contact_email:   string | null
+  contact_phone:   string | null
+  contact_address: string | null
+  description:     string | null
 }
 
 export interface Staff {
@@ -98,5 +109,46 @@ export interface ServiceCall {
   table_id: string
   type: ServiceCallType
   resolved: boolean
+  created_at: string
+}
+
+export type GroupStatus = 'active' | 'submitted' | 'cancelled'
+
+export interface OrderGroup {
+  id: string
+  restaurant_id: string
+  table_id: string | null
+  group_code: string
+  status: GroupStatus
+  created_at: string
+  expires_at: string
+}
+
+export interface GroupItem {
+  id: string
+  group_id: string
+  added_by: string
+  item_id: string
+  name: string
+  price: number
+  qty: number
+  note: string | null
+  created_at: string
+}
+
+export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled'
+
+export interface Reservation {
+  id: string
+  restaurant_id: string
+  customer_name: string
+  customer_email: string | null
+  customer_phone: string
+  guests: number
+  date: string
+  time_from: string
+  note: string | null
+  status: ReservationStatus
+  table_id: string | null
   created_at: string
 }
