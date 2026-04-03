@@ -49,8 +49,8 @@ export async function POST(request: NextRequest) {
     .eq('member_name', member_name)
     .single()
 
-  if (payment && payment.status !== 'pending') {
-    return NextResponse.json({ error: 'Already committed' }, { status: 409 })
+  if (!payment || payment.status !== 'pending') {
+    return NextResponse.json({ error: 'Payment not found or already committed' }, { status: 409 })
   }
 
   // Status auf 'cash' oder 'terminal' setzen
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update payment status' }, { status: 500 })
   }
 
-  // Prüfen ob alle Members eine Wahl getroffen haben
+  // Check if all members committed
   const { data: allPayments } = await supabase
     .from('group_payments')
     .select('status')
@@ -74,7 +74,21 @@ export async function POST(request: NextRequest) {
   const allCommitted = allPayments?.every(p => p.status !== 'pending')
 
   if (allCommitted) {
-    await createOrderForGroup(supabase, group)
+    // Atomic transition: only one concurrent request wins this update
+    const { count } = await supabase
+      .from('order_groups')
+      .update({ status: 'ordering' })
+      .eq('id', group_id)
+      .eq('status', 'submitted')  // Only succeeds if still 'submitted'
+
+    if (count === 1) {
+      // We won the race — create the order
+      const orderResult = await createOrderForGroup(supabase, group)
+      if (!orderResult.ok) {
+        return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+      }
+    }
+    // If count = 0, another request already won — that's fine, skip silently
   }
 
   return NextResponse.json({ ok: true })
@@ -83,13 +97,13 @@ export async function POST(request: NextRequest) {
 async function createOrderForGroup(
   supabase: ReturnType<typeof createClient>,
   group: { id: string; restaurant_id: string; table_id: string | null }
-) {
+): Promise<{ ok: boolean }> {
   const { data: groupItems } = await supabase
     .from('group_items')
     .select('item_id, name, price, qty, added_by')
     .eq('group_id', group.id)
 
-  if (!groupItems || groupItems.length === 0) return
+  if (!groupItems || groupItems.length === 0) return { ok: false }
 
   const aggregated: Record<string, { item_id: string; name: string; price: number; qty: number }> = {}
   const byPerson: Record<string, string[]> = {}
@@ -122,5 +136,8 @@ async function createOrderForGroup(
 
   if (orderError) {
     console.error('Failed to create order for group:', orderError)
+    return { ok: false }
   }
+
+  return { ok: true }
 }

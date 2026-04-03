@@ -51,3 +51,8 @@ CREATE POLICY "owner_all_group_payments"
   );
 
 ALTER PUBLICATION supabase_realtime ADD TABLE public.group_payments;
+
+-- Allow 'ordering' status on order_groups to prevent race conditions
+ALTER TABLE order_groups DROP CONSTRAINT IF EXISTS order_groups_status_check;
+ALTER TABLE order_groups ADD CONSTRAINT order_groups_status_check
+  CHECK (status IN ('active', 'submitted', 'ordering', 'cancelled'));
