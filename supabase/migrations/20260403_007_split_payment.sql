@@ -24,9 +24,30 @@ ALTER TABLE group_payments ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "anon_select_group_payments"
   ON group_payments FOR SELECT
-  USING (true);
+  USING (
+    group_id IN (
+      SELECT id FROM order_groups WHERE status != 'cancelled'
+    )
+  );
 
 CREATE POLICY "service_role_all_group_payments"
   ON group_payments FOR ALL
   TO service_role
   WITH CHECK (true);
+
+CREATE POLICY "owner_all_group_payments"
+  ON group_payments FOR ALL
+  USING (
+    group_id IN (
+      SELECT id FROM order_groups
+      WHERE restaurant_id = get_owner_restaurant_id()
+    )
+  )
+  WITH CHECK (
+    group_id IN (
+      SELECT id FROM order_groups
+      WHERE restaurant_id = get_owner_restaurant_id()
+    )
+  );
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.group_payments;
