@@ -50,7 +50,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { channel.unsubscribe() }
   }, [groupId])
 
   const myItems = groupItems.filter(i => i.added_by === memberName)
@@ -62,26 +62,37 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
 
   async function payOnline() {
     setLoading('online')
-    const res = await fetch('/api/stripe/group-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ group_id: groupId, member_name: memberName }),
-    })
-    const json = await res.json()
-    if (json.url) window.location.href = json.url
-    else setLoading(null)
+    try {
+      const res = await fetch('/api/stripe/group-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId, member_name: memberName }),
+      })
+      if (!res.ok) { setLoading(null); return }
+      const json = await res.json()
+      if (json.url) window.location.href = json.url
+      else setLoading(null)
+    } catch {
+      setLoading(null)
+    }
   }
 
   async function payOffline(method: 'cash' | 'terminal') {
     setLoading(method)
-    await fetch('/api/group-payment/offline', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ group_id: groupId, member_name: memberName, method }),
-    })
-    setPayments(prev => prev.map(p =>
-      p.member_name === memberName ? { ...p, status: method } : p
-    ))
+    try {
+      const res = await fetch('/api/group-payment/offline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_id: groupId, member_name: memberName, method }),
+      })
+      if (res.ok) {
+        setPayments(prev => prev.map(p =>
+          p.member_name === memberName ? { ...p, status: method } : p
+        ))
+      }
+    } catch {
+      // silent — user can retry
+    }
     setLoading(null)
   }
 
@@ -89,24 +100,28 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
     const coveredItems = groupItems.filter(i => i.added_by === targetMember)
     const coveredAmount = coveredItems.reduce((s, i) => s + i.price * i.qty, 0)
 
-    await supabase.from('group_payments')
-      .update({ status: 'covered', covered_by: memberName })
-      .eq('group_id', groupId)
-      .eq('member_name', targetMember)
-
-    const ownPayment = payments.find(p => p.member_name === memberName)
-    if (ownPayment) {
+    try {
       await supabase.from('group_payments')
-        .update({ amount: ownPayment.amount + coveredAmount })
+        .update({ status: 'covered', covered_by: memberName })
         .eq('group_id', groupId)
-        .eq('member_name', memberName)
-    }
+        .eq('member_name', targetMember)
 
-    setPayments(prev => prev.map(p => {
-      if (p.member_name === targetMember) return { ...p, status: 'covered' as const, covered_by: memberName }
-      if (p.member_name === memberName) return { ...p, amount: p.amount + coveredAmount }
-      return p
-    }))
+      const ownPayment = payments.find(p => p.member_name === memberName)
+      if (ownPayment) {
+        await supabase.from('group_payments')
+          .update({ amount: ownPayment.amount + coveredAmount })
+          .eq('group_id', groupId)
+          .eq('member_name', memberName)
+      }
+
+      setPayments(prev => prev.map(p => {
+        if (p.member_name === targetMember) return { ...p, status: 'covered' as const, covered_by: memberName }
+        if (p.member_name === memberName) return { ...p, amount: p.amount + coveredAmount }
+        return p
+      }))
+    } catch {
+      // silent — realtime will sync correct state
+    }
   }
 
   return (
