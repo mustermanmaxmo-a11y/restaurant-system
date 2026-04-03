@@ -142,3 +142,4 @@ vite.config.ts.timestamp-*
 app/.env.local
 app/.env
 .superpowers/
+.worktrees/
