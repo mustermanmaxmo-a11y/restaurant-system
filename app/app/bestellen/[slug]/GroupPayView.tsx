@@ -30,6 +30,7 @@ const STATUS_COLOR: Record<string, string> = {
 export default function GroupPayView({ groupId, memberName, groupItems, accent }: Props) {
   const [payments, setPayments] = useState<GroupPayment[]>([])
   const [loading, setLoading] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     supabase.from('group_payments').select('*').eq('group_id', groupId).then(({ data }) => {
@@ -70,6 +71,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
   const allCommitted = payments.length > 0 && payments.every(p => p.status !== 'pending')
 
   async function payOnline() {
+    setShowModal(false)
     setLoading('online')
     try {
       const res = await fetch('/api/stripe/group-checkout', {
@@ -87,6 +89,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
   }
 
   async function payOffline(method: 'cash' | 'terminal') {
+    setShowModal(false)
     setLoading(method)
     try {
       const res = await fetch('/api/group-payment/offline', {
@@ -158,45 +161,26 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
       </div>
 
       {/* Zahlungsauswahl */}
-      {!alreadyCommitted ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-          <button
-            onClick={payOnline}
-            disabled={loading !== null}
-            style={{
-              padding: '14px', borderRadius: '12px', border: 'none',
-              background: accent, color: '#fff',
-              fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-              opacity: loading === 'online' ? 0.7 : 1,
-            }}
-          >
-            {loading === 'online' ? 'Weiterleitung...' : `💳 Online zahlen — ${myTotal.toFixed(2)} €`}
-          </button>
-          <button
-            onClick={() => payOffline('cash')}
-            disabled={loading !== null}
-            style={{
-              padding: '14px', borderRadius: '12px',
-              border: '1.5px solid var(--border)', background: 'transparent',
-              color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
-              opacity: loading === 'cash' ? 0.7 : 1,
-            }}
-          >
-            {loading === 'cash' ? 'Wird gespeichert...' : '💵 Bar zahlen'}
-          </button>
-          <button
-            onClick={() => payOffline('terminal')}
-            disabled={loading !== null}
-            style={{
-              padding: '14px', borderRadius: '12px',
-              border: '1.5px solid var(--border)', background: 'transparent',
-              color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
-              opacity: loading === 'terminal' ? 0.7 : 1,
-            }}
-          >
-            {loading === 'terminal' ? 'Wird gespeichert...' : '🃏 Mit Karte – Kellner kommt'}
-          </button>
+      {loading !== null ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: '12px', padding: '14px', textAlign: 'center',
+          color: 'var(--text-muted)', fontWeight: 600, marginBottom: '24px', fontSize: '0.9rem',
+        }}>
+          {loading === 'online' ? 'Weiterleitung...' : 'Wird gespeichert...'}
         </div>
+      ) : !alreadyCommitted ? (
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            width: '100%', padding: '15px', borderRadius: '12px', border: 'none',
+            background: accent, color: '#fff',
+            fontWeight: 700, fontSize: '1rem', cursor: 'pointer',
+            marginBottom: '24px',
+          }}
+        >
+          Zahlungsmethode wählen →
+        </button>
       ) : (
         <div style={{
           background: '#10b98115', border: '1px solid #10b98133',
@@ -204,6 +188,79 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
           color: '#10b981', fontWeight: 700, marginBottom: '24px', fontSize: '0.9rem',
         }}>
           {STATUS_LABEL[myPayment?.status ?? 'pending']}
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div
+          onClick={() => setShowModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--bg, #fff)', borderRadius: '20px 20px 0 0',
+              padding: '28px 20px 36px', width: '100%', maxWidth: '480px',
+            }}
+          >
+            <div style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '0 auto 24px' }} />
+            <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>
+              Wie möchtest du zahlen?
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '24px' }}>
+              Deine Bestellung: {myTotal.toFixed(2)} €
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                onClick={payOnline}
+                style={{
+                  padding: '16px', borderRadius: '12px', border: 'none',
+                  background: accent, color: '#fff',
+                  fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                💳 Online zahlen — {myTotal.toFixed(2)} €
+              </button>
+              <button
+                onClick={() => payOffline('cash')}
+                style={{
+                  padding: '16px', borderRadius: '12px',
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                💵 Bar zahlen
+              </button>
+              <button
+                onClick={() => payOffline('terminal')}
+                style={{
+                  padding: '16px', borderRadius: '12px',
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  color: 'var(--text)', fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                🃏 Mit Karte – Kellner kommt
+              </button>
+            </div>
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                marginTop: '16px', width: '100%', padding: '12px', borderRadius: '10px',
+                border: 'none', background: 'transparent',
+                color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer',
+              }}
+            >
+              Abbrechen
+            </button>
+          </div>
         </div>
       )}
 
