@@ -1508,21 +1508,30 @@ export default function HomeOrderPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.3 }}
+              onDragEnd={(_, info) => { if (info.offset.y > 80) setShowGroupPay(false) }}
               style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201,
                 background: 'var(--bg)', borderRadius: '20px 20px 0 0',
                 maxHeight: '90vh', overflowY: 'auto',
+                cursor: 'grab',
               }}
             >
               <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', padding: '14px 20px 0', zIndex: 1 }}>
-                <div style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '0 auto 14px' }} />
+                <div
+                  style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '0 auto 14px', cursor: 'grab' }}
+                />
               </div>
-              <GroupPayView
-                groupId={groupId}
-                memberName={memberName}
-                groupItems={groupItems}
-                accent={restaurant?.primary_color ?? '#6c63ff'}
-              />
+              <div style={{ cursor: 'default' }} onPointerDown={e => e.stopPropagation()}>
+                <GroupPayView
+                  groupId={groupId}
+                  memberName={memberName}
+                  groupItems={groupItems}
+                  accent={restaurant?.primary_color ?? '#6c63ff'}
+                />
+              </div>
             </motion.div>
           </>
         )}
