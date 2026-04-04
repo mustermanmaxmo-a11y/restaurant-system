@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
 }
 
 async function createOrderForGroup(
-  supabase: ReturnType<typeof createClient>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
   group: { id: string; restaurant_id: string; table_id: string | null }
 ): Promise<{ ok: boolean }> {
   const { data: groupItems } = await supabase
