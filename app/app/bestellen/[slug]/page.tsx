@@ -92,6 +92,7 @@ export default function HomeOrderPage() {
   const [isGroupCreator, setIsGroupCreator] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showCart, setShowCart] = useState(false)
+  const [showGroupPay, setShowGroupPay] = useState(false)
 
   // Filters
   const [activeDietary, setActiveDietary] = useState<string[]>([])
@@ -1207,15 +1208,7 @@ export default function HomeOrderPage() {
         </div>
       )}
 
-      {/* Group pay view */}
-      {orderMode === 'group-pay' && groupId && (
-        <GroupPayView
-          groupId={groupId}
-          memberName={memberName}
-          groupItems={groupItems}
-          accent={restaurant?.primary_color ?? '#6c63ff'}
-        />
-      )}
+      {/* Group pay view — als Overlay, geöffnet via floating button */}
 
       {/* Order type toggle */}
       <div style={{ background: 'var(--surface)', padding: '14px 20px 12px', borderBottom: '1px solid #EEECE8', display: 'flex', gap: '8px' }}>
@@ -1462,6 +1455,76 @@ export default function HomeOrderPage() {
               <span style={{ fontWeight: 800 }}>{total.toFixed(2)} €</span>
             </motion.button>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Group Pay Button */}
+      <AnimatePresence>
+        {orderMode === 'group-pay' && groupId && (
+          <motion.div
+            initial={{ y: 80, opacity: 0, scale: 0.8 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 80, opacity: 0, scale: 0.8 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            style={{ position: 'fixed', bottom: '24px', left: '16px', right: '16px', zIndex: 100 }}
+          >
+            <motion.button
+              onClick={() => setShowGroupPay(true)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              style={{
+                background: 'var(--accent)', border: 'none', borderRadius: '50px',
+                padding: '16px 22px', color: '#fff', fontWeight: 700,
+                cursor: 'pointer', fontSize: '0.95rem',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+                display: 'flex', alignItems: 'center', gap: '14px', width: '100%',
+                justifyContent: 'center',
+              }}
+            >
+              <span>💳 Gruppenkorb & Zahlung</span>
+              <span style={{ opacity: 0.6 }}>·</span>
+              <span style={{ fontWeight: 800 }}>
+                {groupItems.filter(gi => gi.added_by === memberName).reduce((s, gi) => s + gi.price * gi.qty, 0).toFixed(2)} €
+              </span>
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Group Pay Overlay */}
+      <AnimatePresence>
+        {showGroupPay && groupId && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGroupPay(false)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 }}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+              style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201,
+                background: 'var(--bg)', borderRadius: '20px 20px 0 0',
+                maxHeight: '90vh', overflowY: 'auto',
+              }}
+            >
+              <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', padding: '14px 20px 0', zIndex: 1 }}>
+                <div style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '0 auto 14px' }} />
+              </div>
+              <GroupPayView
+                groupId={groupId}
+                memberName={memberName}
+                groupItems={groupItems}
+                accent={restaurant?.primary_color ?? '#6c63ff'}
+              />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
