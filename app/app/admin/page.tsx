@@ -136,6 +136,7 @@ function AdminContent() {
             { icon: '📅', label: 'Reservierungen', href: '/admin/reservations', available: true },
             { icon: '🕐', label: 'Öffnungszeiten', href: '/admin/opening-hours', available: true },
             { icon: '📊', label: 'Statistik', href: '/admin/stats', available: true },
+            { icon: '📦', label: 'Lagerbestand', href: '/admin/inventory', available: true },
             { icon: '🔌', label: 'Integrationen', href: '/admin/integrations', available: true },
             { icon: '💳', label: 'Billing', href: '/admin/billing', available: true },
           ].map(card => (

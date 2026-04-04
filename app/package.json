@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
     "@ark-ui/react": "^5.35.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.47.0",

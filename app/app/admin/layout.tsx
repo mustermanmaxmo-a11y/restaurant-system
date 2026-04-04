@@ -6,18 +6,20 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/components/providers/theme-provider'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
-  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat,
+  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag,
 } from 'lucide-react'
 
 const NAV = [
   { icon: LayoutDashboard, label: 'Übersicht',     href: '/admin' },
   { icon: ChefHat,         label: 'Bestellungen',  href: '/admin/orders' },
   { icon: UtensilsCrossed, label: 'Menü',           href: '/admin/menu' },
+  { icon: Tag,             label: 'Tagesangebote', href: '/admin/specials' },
   { icon: QrCode,          label: 'Tische & QR',   href: '/admin/tables' },
   { icon: CalendarDays,    label: 'Reservierungen', href: '/admin/reservations' },
   { icon: Users,           label: 'Staff',          href: '/admin/staff' },
   { icon: Clock,           label: 'Öffnungszeiten', href: '/admin/opening-hours' },
   { icon: Palette,         label: 'Branding',       href: '/admin/branding' },
+  { icon: Package,         label: 'Lagerbestand',   href: '/admin/inventory' },
   { icon: BarChart2,       label: 'Statistik',      href: '/admin/stats' },
   { icon: CreditCard,      label: 'Billing',        href: '/admin/billing' },
 ]
@@ -48,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const Sidebar = () => (
     <aside style={{
       width: '220px',
-      minHeight: '100vh',
+      height: '100%',
       background: 'var(--sidebar-bg)',
       display: 'flex',
       flexDirection: 'column',
@@ -82,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px 12px' }} />
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
         {NAV.map(item => {
           const isActive = pathname === item.href
           return (

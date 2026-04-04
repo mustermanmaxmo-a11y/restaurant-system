@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { buildColors } from '@/lib/color-utils'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
+import ChatWidget from '@/components/ChatWidget'
 
 type CartItem = { item: MenuItem; qty: number; note: string }
 type View = 'menu' | 'cart' | 'status'
@@ -49,10 +50,11 @@ function SkeletonBlock({ w = '100%', h = '18px', r = '8px' }: { w?: string; h?: 
 }
 
 function ItemCard({
-  item, qty, isFav, index, C,
+  item, qty, isFav, index, C, special,
   onOpen, onAdd, onRemove, onFav,
 }: {
   item: MenuItem; qty: number; isFav: boolean; index: number; C: Record<string, string>
+  special?: { label: string; special_price: number | null }
   onOpen: () => void; onAdd: () => void; onRemove: () => void; onFav: () => void
 }) {
   const inCart = qty > 0
@@ -99,6 +101,11 @@ function ItemCard({
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
+        {special && (
+          <span style={{ display: 'inline-block', background: '#f59e0b18', color: '#f59e0b', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', marginBottom: '4px', letterSpacing: '0.02em' }}>
+            🔥 {special.label}
+          </span>
+        )}
         <p style={{ color: C.text, fontWeight: 600, fontSize: '0.92rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
         {item.description && (
           <p style={{ color: C.muted, fontSize: '0.78rem', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{item.description}</p>
@@ -110,7 +117,14 @@ function ItemCard({
             ))}
           </div>
         )}
-        <p style={{ color: C.accent, fontWeight: 700, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
+        {special?.special_price != null ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <p style={{ color: C.accent, fontWeight: 700, fontSize: '0.95rem' }}>{Number(special.special_price).toFixed(2)} €</p>
+            <p style={{ color: C.muted, fontWeight: 500, fontSize: '0.8rem', textDecoration: 'line-through' }}>{item.price.toFixed(2)} €</p>
+          </div>
+        ) : (
+          <p style={{ color: C.accent, fontWeight: 700, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
+        )}
       </div>
 
       <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
@@ -183,6 +197,8 @@ export default function OrderPage() {
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'later' | null>(null)
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
+  const [specials, setSpecials] = useState<Record<string, { label: string; special_price: number | null }>>({})
+
   // Filters
   const [activeDietary, setActiveDietary] = useState<string[]>([])
   const [excludedAllergens, setExcludedAllergens] = useState<string[]>([])
@@ -222,13 +238,15 @@ export default function OrderPage() {
 
       const restaurantId = tableData.restaurant_id
 
-      const [{ data: cats }, { data: menuItems }] = await Promise.all([
+      const [{ data: cats }, { data: menuItems }, { data: specialsData }] = await Promise.all([
         supabase.from('menu_categories').select('*').eq('restaurant_id', restaurantId).eq('active', true).order('sort_order'),
         supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('available', true).order('sort_order'),
+        supabase.from('daily_specials').select('menu_item_id, label, special_price').eq('restaurant_id', restaurantId).eq('active', true),
       ])
 
       setCategories(cats || [])
       setItems(menuItems || [])
+      setSpecials(Object.fromEntries((specialsData || []).map(s => [s.menu_item_id, { label: s.label, special_price: s.special_price }])))
       if (cats && cats.length > 0) setActiveCategory(cats[0].id)
       setLoading(false)
     }
@@ -1042,7 +1060,7 @@ export default function OrderPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filterItems(items.filter(i => favorites.has(i.id))).map((item, idx) => {
                     const qty = getItemQty(item.id)
-                    return <ItemCard key={item.id} item={item} qty={qty} isFav index={idx} C={C} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
+                    return <ItemCard key={item.id} item={item} qty={qty} isFav index={idx} C={C} special={specials[item.id]} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
                   })}
                 </div>
               )}
@@ -1078,6 +1096,28 @@ export default function OrderPage() {
             </motion.div>
           )}
         </div>
+
+        {/* Chat Widget */}
+        {view === 'menu' && restaurant && (
+          <ChatWidget
+            restaurantSlug={restaurant.slug}
+            restaurantName={restaurant.name}
+            items={items}
+            cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
+            accentColor={restaurant.primary_color ?? undefined}
+            tableId={table.id}
+            restaurantId={restaurant.id}
+            onAddToCart={(itemId, _name, qty) => {
+              const found = items.find(i => i.id === itemId)
+              if (!found) return
+              setCart(prev => {
+                const existing = prev.find(c => c.item.id === itemId)
+                if (existing) return prev.map(c => c.item.id === itemId ? { ...c, qty: c.qty + qty, note: c.note } : c)
+                return [...prev, { item: found, qty, note: '' }]
+              })
+            }}
+          />
+        )}
 
         {/* ── Floating Cart Button ── */}
         <AnimatePresence>
@@ -1245,10 +1285,14 @@ export default function OrderPage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.3 }}
+              onDragEnd={(_, info) => { if (info.offset.y > 80) setShowMenu(false) }}
               style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301, background: C.surface, borderRadius: '24px 24px 0 0', maxHeight: '92vh', overflowY: 'auto' }}
             >
               <div style={{ padding: '12px 20px 0', textAlign: 'center' }}>
-                <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: C.border, margin: '0 auto 18px' }} />
+                <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: C.border, margin: '0 auto 18px', cursor: 'grab' }} />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px 16px', borderBottom: `1px solid ${C.border}` }}>

@@ -8,6 +8,7 @@ import { darken } from '@/lib/color-utils'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
+import ChatWidget from '@/components/ChatWidget'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'delivery' | 'pickup'
@@ -53,6 +54,8 @@ export default function HomeOrderPage() {
   const [pageTab, setPageTab] = useState<PageTab>('order')
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [detailQty, setDetailQty] = useState(1)
+
+  const [specials, setSpecials] = useState<Record<string, { label: string; special_price: number | null }>>({})
 
   // Floor plan + availability
   const [tables, setTables] = useState<Table[]>([])
@@ -116,17 +119,19 @@ export default function HomeOrderPage() {
 
       setRestaurant(resto)
 
-      const [{ data: cats }, { data: menuItems }, { data: tablesData }, { data: resData }] = await Promise.all([
+      const [{ data: cats }, { data: menuItems }, { data: tablesData }, { data: resData }, { data: specialsData }] = await Promise.all([
         supabase.from('menu_categories').select('*').eq('restaurant_id', resto.id).eq('active', true).order('sort_order'),
         supabase.from('menu_items').select('*').eq('restaurant_id', resto.id).eq('available', true).order('sort_order'),
         supabase.from('tables').select('*').eq('restaurant_id', resto.id).eq('active', true).order('table_num'),
         supabase.from('reservations').select('id,table_id,date,time_from,guests,status').eq('restaurant_id', resto.id).neq('status', 'cancelled'),
+        supabase.from('daily_specials').select('menu_item_id, label, special_price').eq('restaurant_id', resto.id).eq('active', true),
       ])
 
       setCategories(cats || [])
       setItems(menuItems || [])
       setTables((tablesData as Table[]) || [])
       setAllReservations((resData as ResInfo[]) || [])
+      setSpecials(Object.fromEntries((specialsData || []).map(s => [s.menu_item_id, { label: s.label, special_price: s.special_price }])))
       if (cats && cats.length > 0) setActiveCategory(cats[0].id)
       setLoading(false)
     }
@@ -1360,6 +1365,11 @@ export default function HomeOrderPage() {
                         <img src={item.image_url} alt={item.name} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
+                        {specials[item.id] && (
+                          <span style={{ display: 'inline-block', background: '#f59e0b18', color: '#f59e0b', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', marginBottom: '4px', letterSpacing: '0.02em' }}>
+                            🔥 {specials[item.id].label}
+                          </span>
+                        )}
                         <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '3px', fontSize: '0.95rem' }}>{item.name}</p>
                         {item.description && <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.description}</p>}
                         {item.tags.length > 0 && (
@@ -1369,7 +1379,14 @@ export default function HomeOrderPage() {
                             ))}
                           </div>
                         )}
-                        <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
+                        {specials[item.id]?.special_price != null ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                            <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.95rem' }}>{Number(specials[item.id].special_price).toFixed(2)} €</p>
+                            <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.8rem', textDecoration: 'line-through' }}>{item.price.toFixed(2)} €</p>
+                          </div>
+                        ) : (
+                          <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
+                        )}
                       </div>
                       <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
                         {qty > 0 && (
@@ -1415,6 +1432,26 @@ export default function HomeOrderPage() {
           </div>
         )}
       </div>
+
+      {/* Chat Widget */}
+      {view === 'menu' && pageTab === 'order' && restaurant && (
+        <ChatWidget
+          restaurantSlug={params.slug as string}
+          restaurantName={restaurant.name}
+          items={items}
+          cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
+          accentColor={restaurant.primary_color ?? undefined}
+          onAddToCart={(itemId, _name, qty) => {
+            const found = items.find(i => i.id === itemId)
+            if (!found) return
+            setCart(prev => {
+              const existing = prev.find(c => c.item.id === itemId)
+              if (existing) return prev.map(c => c.item.id === itemId ? { ...c, qty: c.qty + qty } : c)
+              return [...prev, { item: found, qty }]
+            })
+          }}
+        />
+      )}
 
       {/* Floating Cart Button */}
       <AnimatePresence>
@@ -1555,16 +1592,21 @@ export default function HomeOrderPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.3 }}
+              onDragEnd={(_, info) => { if (info.offset.y > 80) setShowCart(false) }}
               style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201,
                 background: 'var(--surface)', borderRadius: '24px 24px 0 0',
                 maxHeight: '82vh', display: 'flex', flexDirection: 'column',
                 boxShadow: '0 -8px 48px rgba(0,0,0,0.2)',
+                cursor: 'grab',
               }}
             >
               {/* Handle + header */}
               <div style={{ padding: '12px 20px 0', textAlign: 'center' }}>
-                <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 16px' }} />
+                <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: 'var(--border)', margin: '0 auto 16px', cursor: 'grab' }} />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                   <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>
                     {orderMode === 'group-active' ? `👥 Gruppenkorb · ${groupCode}` : '🛒 Dein Warenkorb'}
@@ -1577,7 +1619,7 @@ export default function HomeOrderPage() {
               </div>
 
               {/* Items list */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px', cursor: 'default' }} onPointerDown={e => e.stopPropagation()}>
                 {orderMode === 'group-active' ? (
                   /* Group cart: items grouped by person */
                   (() => {

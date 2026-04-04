@@ -51,6 +51,12 @@ function IntegrationsContent() {
   const [loading, setLoading] = useState(true)
   const [disconnecting, setDisconnecting] = useState<string | null>(null)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  // KI-Einstellungen
+  const [aiKey, setAiKey] = useState('')
+  const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null)
+  const [aiKeyEditing, setAiKeyEditing] = useState(false)
+  const [aiKeySaving, setAiKeySaving] = useState(false)
+  const [aiGuideOpen, setAiGuideOpen] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -65,6 +71,11 @@ function IntegrationsContent() {
         .select('provider, connected_at')
         .eq('restaurant_id', resto.id)
       setConnections((conn as PosConnection[]) || [])
+
+      // KI-Key: nur prüfen ob gesetzt, nie den echten Key laden
+      if (resto.anthropic_api_key) {
+        setAiKeyMasked(resto.anthropic_api_key.slice(0, 10) + '••••••••••••••')
+      }
       setLoading(false)
     }
     load()
@@ -80,6 +91,24 @@ function IntegrationsContent() {
       setTimeout(() => setStatusMsg(null), 5000)
     }
   }, [router, searchParams])
+
+  async function saveAiKey() {
+    if (!restaurant || !aiKey.trim()) return
+    setAiKeySaving(true)
+    await supabase.from('restaurants').update({ anthropic_api_key: aiKey.trim() }).eq('id', restaurant.id)
+    setAiKeyMasked(aiKey.trim().slice(0, 10) + '••••••••••••••')
+    setAiKey('')
+    setAiKeyEditing(false)
+    setAiKeySaving(false)
+  }
+
+  async function removeAiKey() {
+    if (!restaurant || !confirm('API Key wirklich entfernen? Die KI-Features werden deaktiviert.')) return
+    await supabase.from('restaurants').update({ anthropic_api_key: null }).eq('id', restaurant.id)
+    setAiKeyMasked(null)
+    setAiKeyEditing(false)
+    setAiKey('')
+  }
 
   async function disconnect(provider: string) {
     if (!restaurant) return
@@ -212,6 +241,130 @@ function IntegrationsContent() {
             )
           })}
         </div>
+
+        {/* KI-Assistent */}
+        {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (
+          <div style={{
+            marginTop: '24px', background: 'var(--surface)',
+            border: `1px solid ${aiKeyMasked ? '#6c63ff44' : 'var(--border)'}`,
+            borderRadius: '16px', padding: '24px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#6c63ff' }} />
+              <h3 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem' }}>🤖 KI-Assistent</h3>
+              {restaurant.plan === 'enterprise' ? (
+                <span style={{ background: '#6c63ff20', color: '#a78bfa', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Enterprise — aktiv
+                </span>
+              ) : aiKeyMasked ? (
+                <span style={{ background: '#10b98120', color: '#10b981', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Aktiv
+                </span>
+              ) : (
+                <span style={{ background: '#f59e0b20', color: '#f59e0b', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Key fehlt
+                </span>
+              )}
+            </div>
+
+            {restaurant.plan === 'enterprise' ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Im Enterprise-Plan ist die KI automatisch aktiv — du musst nichts einrichten.
+                Menü-Assistent für Gäste und Bestandsanalyse im Admin sind sofort verfügbar.
+              </p>
+            ) : (
+              <>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '16px' }}>
+                  Im Pro-Plan benötigst du einen eigenen Anthropic API Key. Du zahlst direkt bei Anthropic —
+                  ca. <strong style={{ color: 'var(--text)' }}>0,001€ pro Chat-Anfrage</strong> (5€ Guthaben ≈ 5.000 Gäste-Chats).
+                </p>
+
+                {/* Key-Eingabe */}
+                {!aiKeyEditing && aiKeyMasked ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <code style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 14px', color: 'var(--text)', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+                      {aiKeyMasked}
+                    </code>
+                    <button onClick={() => setAiKeyEditing(true)} style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                      Ändern
+                    </button>
+                    <button onClick={removeAiKey} style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef444433', borderRadius: '8px', padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                      Entfernen
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <input
+                      type="password"
+                      value={aiKey}
+                      onChange={e => setAiKey(e.target.value)}
+                      placeholder="sk-ant-api03-..."
+                      style={{ flex: 1, minWidth: '220px', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                    />
+                    <button
+                      onClick={saveAiKey}
+                      disabled={aiKeySaving || !aiKey.trim()}
+                      style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', opacity: aiKeySaving || !aiKey.trim() ? 0.5 : 1 }}
+                    >
+                      {aiKeySaving ? 'Speichert...' : 'Speichern'}
+                    </button>
+                    {aiKeyEditing && (
+                      <button onClick={() => { setAiKeyEditing(false); setAiKey('') }} style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 14px', fontSize: '0.82rem', cursor: 'pointer' }}>
+                        Abbrechen
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Anleitung */}
+                <button
+                  onClick={() => setAiGuideOpen(o => !o)}
+                  style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  📖 Anleitung: Anthropic API Key einrichten {aiGuideOpen ? '▲' : '▼'}
+                </button>
+
+                {aiGuideOpen && (
+                  <div style={{ marginTop: '14px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px 20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { step: '1', text: 'Gehe zu', link: 'https://console.anthropic.com', linkText: 'console.anthropic.com' },
+                        { step: '2', text: 'Erstelle einen Account (private E-Mail reicht aus, kein Gewerbe nötig)' },
+                        { step: '3', text: 'Klicke oben rechts auf "API Keys"' },
+                        { step: '4', text: 'Klicke auf "+ Create Key", gib einen Namen ein (z.B. "RestaurantOS") und kopiere den Key — er wird nur einmal angezeigt!' },
+                        { step: '5', text: 'Lade dein Guthaben unter "Billing → Add Credits" auf — empfohlen: 5€ (reicht für ~5.000 Gäste-Chats)' },
+                        { step: '6', text: 'Füge den Key oben ein und klicke auf "Speichern"' },
+                      ].map(item => (
+                        <div key={item.step} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                            {item.step}
+                          </div>
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, margin: 0 }}>
+                            {item.text}
+                            {item.link && (
+                              <> <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>{item.linkText}</a></>
+                            )}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '16px' }}>
+                      <div style={{ background: '#14532d22', border: '1px solid #14532d44', borderRadius: '8px', padding: '10px 14px' }}>
+                        <p style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>💡 Kosten</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>~0,001€ pro Anfrage · 5€ ≈ 5.000 Chats</p>
+                      </div>
+                      <div style={{ background: '#45091422', border: '1px solid #45091444', borderRadius: '8px', padding: '10px 14px' }}>
+                        <p style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>⚠️ Sicherheit</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Teile deinen Key mit niemandem — er gibt Zugriff auf dein Anthropic-Konto.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* Hinweis Bareinnahmen */}
         <div style={{

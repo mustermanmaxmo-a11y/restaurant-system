@@ -1,7 +1,7 @@
 export type OrderType = 'dine_in' | 'delivery' | 'pickup'
 export type OrderStatus = 'pending_payment' | 'new' | 'cooking' | 'out_for_delivery' | 'served' | 'cancelled'
 export type StaffRole = 'kitchen' | 'waiter' | 'delivery'
-export type RestaurantPlan = 'basic' | 'pro'
+export type RestaurantPlan = 'basic' | 'pro' | 'enterprise'
 export type ServiceCallType = 'waiter' | 'bill'
 
 export interface Restaurant {
@@ -25,6 +25,7 @@ export interface Restaurant {
   contact_phone:   string | null
   contact_address: string | null
   description:     string | null
+  anthropic_api_key: string | null
 }
 
 export interface Staff {
@@ -188,5 +189,85 @@ export interface GroupPayment {
   status: GroupPaymentStatus
   covered_by: string | null
   paid_at: string | null
+  created_at: string
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+
+export type StockMovementType = 'order_deduction' | 'delivery' | 'correction' | 'waste'
+export type WasteReason = 'spoiled' | 'overcooked' | 'dropped' | 'other'
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'received'
+
+export interface Ingredient {
+  id: string
+  restaurant_id: string
+  name: string
+  unit: string
+  current_stock: number
+  min_stock: number
+  purchase_price: number | null
+  supplier_id: string | null
+  created_at: string
+}
+
+export interface MenuItemIngredient {
+  id: string
+  menu_item_id: string
+  ingredient_id: string
+  quantity_per_serving: number
+  created_at: string
+}
+
+export interface StockMovement {
+  id: string
+  restaurant_id: string
+  ingredient_id: string
+  movement_type: StockMovementType
+  quantity_delta: number
+  note: string | null
+  order_id: string | null
+  created_at: string
+}
+
+export interface Supplier {
+  id: string
+  restaurant_id: string
+  name: string
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface PurchaseOrder {
+  id: string
+  restaurant_id: string
+  supplier_id: string
+  status: PurchaseOrderStatus
+  notes: string | null
+  ordered_at: string | null
+  received_at: string | null
+  created_at: string
+}
+
+export interface PurchaseOrderLine {
+  id: string
+  purchase_order_id: string
+  ingredient_id: string
+  quantity_ordered: number
+  quantity_received: number | null
+  unit_price: number | null
+  created_at: string
+}
+
+export interface WasteLog {
+  id: string
+  restaurant_id: string
+  ingredient_id: string
+  quantity: number
+  reason: WasteReason
+  note: string | null
+  logged_at: string
   created_at: string
 }

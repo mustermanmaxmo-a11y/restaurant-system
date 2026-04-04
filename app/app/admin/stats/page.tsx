@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Order, Restaurant } from '@/types/database'
+import type { Order, Restaurant, Ingredient } from '@/types/database'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -43,6 +43,7 @@ export default function StatsPage() {
   const [cashNote, setCashNote] = useState('')
   const [cashDate, setCashDate] = useState(new Date().toISOString().split('T')[0])
   const [cashSaving, setCashSaving] = useState(false)
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
 
   useEffect(() => {
     async function load() {
@@ -71,7 +72,7 @@ export default function StatsPage() {
       const fromDateStr = from.toISOString().split('T')[0]
       const todayStr = now.toISOString().split('T')[0]
 
-      const [{ data }, { data: resData }, { data: extData }] = await Promise.all([
+      const [{ data }, { data: resData }, { data: extData }, { data: ingData }] = await Promise.all([
         supabase
           .from('orders')
           .select('*')
@@ -92,10 +93,15 @@ export default function StatsPage() {
           .eq('restaurant_id', restaurant!.id)
           .gte('paid_at', from.toISOString())
           .order('paid_at', { ascending: true }),
+        supabase
+          .from('ingredients')
+          .select('id, name, current_stock, min_stock, purchase_price, unit')
+          .eq('restaurant_id', restaurant!.id),
       ])
       setOrders((data as Order[]) || [])
       setReservationCount(((resData as Reservation[]) || []).length)
       setExternalTx((extData as ExternalTransaction[]) || [])
+      setIngredients((ingData as Ingredient[]) || [])
     }
     loadData()
   }, [restaurant, range])
@@ -125,6 +131,10 @@ export default function StatsPage() {
       <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
     </div>
   )
+
+  // --- Inventory Berechnungen ---
+  const lowStockIngredients = ingredients.filter(i => i.current_stock <= i.min_stock)
+  const inventoryValue = ingredients.reduce((s, i) => s + (i.current_stock * (i.purchase_price ?? 0)), 0)
 
   // --- Berechnungen ---
   const qrRevenue = orders.reduce((s, o) => s + o.total, 0)
@@ -223,7 +233,34 @@ export default function StatsPage() {
               <StatCard label="Ø Bestellwert" value={`${avgOrder.toFixed(2)} €`} />
               <StatCard label="Gerichte" value={String(totalDishes)} />
               <StatCard label="Reservierungen" value={String(reservationCount)} />
+              <StatCard label="Lagerwert" value={inventoryValue > 0 ? `${inventoryValue.toFixed(2)} €` : '–'} />
+              <StatCard label="Niedrig-Bestand" value={`${lowStockIngredients.length} Artikel`} warn={lowStockIngredients.length > 0} />
             </div>
+
+            {/* Inventory Low-Stock Alert */}
+            {lowStockIngredients.length > 0 && (
+              <div
+                onClick={() => router.push('/admin/inventory?tab=bestellungen')}
+                style={{
+                  background: '#431407', border: '1px solid #fb923c44', borderRadius: '12px',
+                  padding: '14px 20px', marginBottom: '20px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                  <div>
+                    <p style={{ color: '#fdba74', fontWeight: 600, fontSize: '0.875rem', marginBottom: '2px' }}>
+                      {lowStockIngredients.length} {lowStockIngredients.length === 1 ? 'Zutat hat' : 'Zutaten haben'} niedrigen Bestand
+                    </p>
+                    <p style={{ color: '#fb923c88', fontSize: '0.8rem' }}>
+                      {lowStockIngredients.slice(0, 3).map(i => i.name).join(', ')}{lowStockIngredients.length > 3 ? ` + ${lowStockIngredients.length - 3} weitere` : ''}
+                    </p>
+                  </div>
+                </div>
+                <span style={{ color: '#fb923c', fontSize: '0.875rem', fontWeight: 600 }}>Bestellvorschläge →</span>
+              </div>
+            )}
 
             {/* Umsatz nach Quelle */}
             {sourceBreakdown.length > 1 && (
@@ -431,11 +468,11 @@ export default function StatsPage() {
   )
 }
 
-function StatCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function StatCard({ label, value, accent, warn }: { label: string; value: string; accent?: boolean; warn?: boolean }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px 24px' }}>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>{label}</p>
-      <p style={{ color: accent ? 'var(--accent)' : 'var(--text)', fontWeight: 700, fontSize: '1.6rem', lineHeight: 1 }}>{value}</p>
+      <p style={{ color: warn ? '#f87171' : accent ? 'var(--accent)' : 'var(--text)', fontWeight: 700, fontSize: '1.6rem', lineHeight: 1 }}>{value}</p>
     </div>
   )
 }
