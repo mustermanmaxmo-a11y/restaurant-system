@@ -53,6 +53,82 @@ export async function POST(request: NextRequest) {
         .eq('id', session.metadata.order_id)
         .eq('status', 'pending_payment')
     }
+
+    // Gruppenanteil online bezahlt
+    if (session.mode === 'payment' && session.metadata?.type === 'group_payment') {
+      const groupId = session.metadata.group_id
+      const memberName = session.metadata.member_name
+
+      await supabaseAdmin
+        .from('group_payments')
+        .update({ status: 'paid', paid_at: new Date().toISOString() })
+        .eq('group_id', groupId)
+        .eq('member_name', memberName)
+
+      // Prüfen ob alle Members eine Wahl getroffen haben (kein 'pending' mehr)
+      const { data: allPayments } = await supabaseAdmin
+        .from('group_payments')
+        .select('status')
+        .eq('group_id', groupId)
+
+      const allCommitted = allPayments?.every(p => p.status !== 'pending')
+
+      if (allCommitted) {
+        // Atomic transition: only one concurrent request wins
+        const { count } = await supabaseAdmin
+          .from('order_groups')
+          .update({ status: 'ordering' }, { count: 'exact' })
+          .eq('id', groupId)
+          .eq('status', 'submitted')
+
+        if (count === 1) {
+          const { data: group } = await supabaseAdmin
+            .from('order_groups')
+            .select('id, restaurant_id, table_id')
+            .eq('id', groupId)
+            .single()
+
+          if (group) {
+            const { data: groupItems } = await supabaseAdmin
+              .from('group_items')
+              .select('item_id, name, price, qty, added_by')
+              .eq('group_id', groupId)
+
+            if (groupItems && groupItems.length > 0) {
+              const aggregated: Record<string, { item_id: string; name: string; price: number; qty: number }> = {}
+              const byPerson: Record<string, string[]> = {}
+
+              groupItems.forEach(gi => {
+                if (aggregated[gi.item_id]) {
+                  aggregated[gi.item_id].qty += gi.qty
+                } else {
+                  aggregated[gi.item_id] = { item_id: gi.item_id, name: gi.name, price: gi.price, qty: gi.qty }
+                }
+                if (!byPerson[gi.added_by]) byPerson[gi.added_by] = []
+                byPerson[gi.added_by].push(`${gi.qty}× ${gi.name}`)
+              })
+
+              const groupNote = Object.entries(byPerson)
+                .map(([name, items]) => `${name}: ${items.join(', ')}`)
+                .join(' | ')
+
+              const total = groupItems.reduce((s: number, i: { price: number; qty: number }) => s + i.price * i.qty, 0)
+
+              await supabaseAdmin.from('orders').insert({
+                restaurant_id: group.restaurant_id,
+                order_type: 'dine_in',
+                table_id: group.table_id,
+                status: 'new',
+                items: Object.values(aggregated),
+                note: `[Gruppenbestellung] ${groupNote}`,
+                total: Math.round(total * 100) / 100,
+                customer_name: memberName,
+              })
+            }
+          }
+        }
+      }
+    }
   }
 
   if (event.type === 'checkout.session.expired') {
