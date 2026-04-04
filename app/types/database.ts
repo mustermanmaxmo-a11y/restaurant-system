@@ -112,7 +112,7 @@ export interface ServiceCall {
   created_at: string
 }
 
-export type GroupStatus = 'active' | 'submitted' | 'cancelled'
+export type GroupStatus = 'active' | 'submitted' | 'ordering' | 'cancelled'
 
 export interface OrderGroup {
   id: string

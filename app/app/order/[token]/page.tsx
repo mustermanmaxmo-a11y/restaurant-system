@@ -408,7 +408,12 @@ export default function OrderPage() {
       }
     })
 
-    await supabase.from('group_payments').insert(payments)
+    const { error: insertError } = await supabase.from('group_payments').insert(payments)
+    if (insertError) {
+      console.error('Failed to create group payments:', insertError)
+      return
+    }
+
     await supabase.from('order_groups').update({ status: 'submitted' }).eq('id', groupId)
     setGroupMode('group-pay')
   }

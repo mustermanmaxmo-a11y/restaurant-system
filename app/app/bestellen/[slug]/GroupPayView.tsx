@@ -39,6 +39,15 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
     const channel = supabase
       .channel(`group-payments-${groupId}`)
       .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'group_payments',
+        filter: `group_id=eq.${groupId}`,
+      }, payload => {
+        setPayments(prev => {
+          const exists = prev.some(p => p.member_name === (payload.new as GroupPayment).member_name)
+          return exists ? prev : [...prev, payload.new as GroupPayment]
+        })
+      })
+      .on('postgres_changes', {
         event: 'UPDATE', schema: 'public', table: 'group_payments',
         filter: `group_id=eq.${groupId}`,
       }, payload => {

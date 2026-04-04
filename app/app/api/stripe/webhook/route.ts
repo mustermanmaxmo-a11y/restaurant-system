@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         // Atomic transition: only one concurrent request wins
         const { count } = await supabaseAdmin
           .from('order_groups')
-          .update({ status: 'ordering' })
+          .update({ status: 'ordering' }, { count: 'exact' })
           .eq('id', groupId)
           .eq('status', 'submitted')
 

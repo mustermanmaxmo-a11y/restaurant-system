@@ -50,6 +50,31 @@ CREATE POLICY "owner_all_group_payments"
     )
   );
 
+-- Anon kann group_payments einfügen wenn die Gruppe 'submitted' ist
+CREATE POLICY "anon_insert_group_payments"
+  ON group_payments FOR INSERT
+  TO anon
+  WITH CHECK (
+    group_id IN (
+      SELECT id FROM order_groups WHERE status IN ('submitted', 'ordering')
+    )
+  );
+
+-- Anon kann group_payments aktualisieren (eigene Zeile: covered_by, amount)
+CREATE POLICY "anon_update_group_payments"
+  ON group_payments FOR UPDATE
+  TO anon
+  USING (
+    group_id IN (
+      SELECT id FROM order_groups WHERE status IN ('submitted', 'ordering')
+    )
+  )
+  WITH CHECK (
+    group_id IN (
+      SELECT id FROM order_groups WHERE status IN ('submitted', 'ordering')
+    )
+  );
+
 ALTER PUBLICATION supabase_realtime ADD TABLE public.group_payments;
 
 -- Allow 'ordering' status on order_groups to prevent race conditions
