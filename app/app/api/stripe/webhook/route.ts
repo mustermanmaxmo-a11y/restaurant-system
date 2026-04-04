@@ -76,6 +76,23 @@ export async function POST(request: NextRequest) {
       .eq('stripe_customer_id', customerId)
   }
 
+  if (event.type === 'payment_intent.succeeded') {
+    const pi = event.data.object as Stripe.PaymentIntent
+    // Nur Terminal-Zahlungen (card_present = physisches Kartenlesegerät)
+    const isTerminal = pi.payment_method_types?.includes('card_present')
+    const restaurantId = pi.metadata?.restaurant_id
+    if (isTerminal && restaurantId) {
+      await supabaseAdmin.from('external_transactions').insert({
+        restaurant_id: restaurantId,
+        source: 'stripe_terminal',
+        external_id: pi.id,
+        amount: pi.amount / 100,
+        currency: pi.currency.toUpperCase(),
+        paid_at: new Date(pi.created * 1000).toISOString(),
+      })
+    }
+  }
+
   if (event.type === 'customer.subscription.updated') {
     const subscription = event.data.object as Stripe.Subscription
     const customerId = subscription.customer as string

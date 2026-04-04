@@ -14,7 +14,7 @@ export default function StaffPage() {
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
-  const [role, setRole] = useState<'kitchen' | 'waiter'>('kitchen')
+  const [role, setRole] = useState<'kitchen' | 'waiter' | 'delivery'>('kitchen')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -105,14 +105,14 @@ export default function StaffPage() {
             {staffList.map(staff => (
               <div key={staff.id} style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border)', opacity: staff.active ? 1 : 0.5, flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: staff.role === 'kitchen' ? '#ff6b3522' : '#6c63ff22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-                    {staff.role === 'kitchen' ? '👨‍🍳' : '🛎️'}
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: staff.role === 'kitchen' ? '#ff6b3522' : staff.role === 'delivery' ? '#f59e0b22' : '#6c63ff22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
+                    {staff.role === 'kitchen' ? '👨‍🍳' : staff.role === 'delivery' ? '🚗' : '🛎️'}
                   </div>
                   <div>
                     <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px' }}>{staff.name}</p>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        {staff.role === 'kitchen' ? 'Küche' : 'Service'}
+                        {staff.role === 'kitchen' ? 'Küche' : staff.role === 'delivery' ? 'Lieferant' : 'Service'}
                       </span>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>·</span>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontFamily: 'monospace' }}>PIN: {staff.code}</span>
@@ -165,10 +165,10 @@ export default function StaffPage() {
               </div>
               <div>
                 <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Rolle</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {(['kitchen', 'waiter'] as const).map(r => (
-                    <button key={r} onClick={() => setRole(r)} style={{ padding: '12px', borderRadius: '8px', border: '2px solid', borderColor: role === r ? 'var(--accent)' : 'var(--border)', background: role === r ? 'var(--accent-subtle)' : 'transparent', color: role === r ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}>
-                      {r === 'kitchen' ? '👨‍🍳 Küche' : '🛎️ Service'}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  {(['kitchen', 'waiter', 'delivery'] as const).map(r => (
+                    <button key={r} onClick={() => setRole(r)} style={{ padding: '12px', borderRadius: '8px', border: '2px solid', borderColor: role === r ? 'var(--accent)' : 'var(--border)', background: role === r ? 'var(--accent-subtle)' : 'transparent', color: role === r ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>
+                      {r === 'kitchen' ? '👨‍🍳 Küche' : r === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
                     </button>
                   ))}
                 </div>

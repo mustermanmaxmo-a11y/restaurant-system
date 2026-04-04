@@ -41,7 +41,7 @@ export default function DashboardPage() {
   // Load orders
   const loadOrders = useCallback(async (restaurantId: string) => {
     const [{ data: ordersData }, { data: tablesData }] = await Promise.all([
-      supabase.from('orders').select('*').eq('restaurant_id', restaurantId).in('status', ['new', 'cooking', 'served']).order('created_at', { ascending: true }), // pending_payment excluded intentionally
+      supabase.from('orders').select('*').eq('restaurant_id', restaurantId).in('status', ['new', 'cooking', 'out_for_delivery', 'served']).order('created_at', { ascending: true }), // pending_payment excluded intentionally
       supabase.from('tables').select('id, table_num').eq('restaurant_id', restaurantId),
     ])
     setOrders((ordersData as Order[]) || [])
@@ -161,7 +161,7 @@ export default function DashboardPage() {
     setLoginLoading(false)
   }
 
-  async function updateOrderStatus(orderId: string, newStatus: Column) {
+  async function updateOrderStatus(orderId: string, newStatus: Column | 'out_for_delivery') {
     setUpdatingOrder(orderId)
     await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
     setUpdatingOrder(null)
@@ -263,6 +263,147 @@ export default function DashboardPage() {
     )
   }
 
+  // ── LIEFERANTEN VIEW ────────────────────────────────────────────────────────
+  if (session?.staff.role === 'delivery') {
+    const DELIVERY_COLS = [
+      { key: 'new' as const,              label: 'Neu',          icon: '📋', color: '#f59e0b', nextStatus: 'cooking' as const,          nextLabel: 'In Zubereitung →' },
+      { key: 'cooking' as const,          label: 'Wird zubereitet', icon: '👨‍🍳', color: '#ff6b35', nextStatus: 'out_for_delivery' as const, nextLabel: 'Abgeholt 🚗' },
+      { key: 'out_for_delivery' as const, label: 'Unterwegs',    icon: '🚗', color: '#8b5cf6', nextStatus: 'served' as const,           nextLabel: 'Ausgeliefert ✓' },
+    ]
+    const deliveryOrders = orders.filter(o => o.order_type === 'delivery')
+
+    return (
+      <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.restaurant.name}</span>
+            <span style={{ color: '#444', fontSize: '0.8rem', flexShrink: 0 }}>·</span>
+            <span style={{ color: '#aaa', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{session.staff.name}</span>
+            <span style={{ background: '#f59e0b22', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
+              🚗 Lieferant
+            </span>
+          </div>
+          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', flexShrink: 0, marginLeft: '8px' }}>
+            ✕
+          </button>
+        </div>
+
+        {/* Delivery Kanban */}
+        <div style={{ flex: 1, display: 'flex', gap: '1px', background: '#2a2a2a', overflow: 'hidden' }}>
+          {DELIVERY_COLS.map(col => {
+            const colOrders = deliveryOrders.filter(o => o.status === col.key)
+            return (
+              <div key={col.key} style={{ background: '#0f0f0f', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+                {/* Column Header */}
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '1rem' }}>{col.icon}</span>
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>{col.label}</span>
+                  </div>
+                  {colOrders.length > 0 && (
+                    <span style={{ background: col.color + '22', color: col.color, borderRadius: '20px', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 700 }}>
+                      {colOrders.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Orders */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {colOrders.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: '#333', fontSize: '0.875rem' }}>
+                      Keine Lieferungen
+                    </div>
+                  )}
+                  <AnimatePresence>
+                  {colOrders.map((order, idx) => (
+                    <motion.div
+                      key={order.id}
+                      initial={{ x: 40, opacity: 0 }}
+                      animate={{ x: 0, opacity: updatingOrder === order.id ? 0.5 : 1 }}
+                      exit={{ x: -40, opacity: 0, height: 0, marginBottom: 0, padding: 0 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 26, delay: idx * 0.04 }}
+                      layout
+                      style={{ background: '#1a1a1a', borderRadius: '12px', padding: '14px', border: `1px solid ${col.color}33` }}
+                    >
+                      {/* Order ID + time */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 700, color: col.color, background: col.color + '22', padding: '2px 7px', borderRadius: '5px' }}>
+                          #{order.id.slice(-4).toUpperCase()}
+                        </span>
+                        <span style={{ color: '#555', fontSize: '0.72rem' }}>{timeAgo(order.created_at)}</span>
+                      </div>
+
+                      {/* Customer */}
+                      {order.customer_name && (
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>
+                          👤 {order.customer_name}
+                        </p>
+                      )}
+                      {order.customer_phone && (
+                        <a href={`tel:${order.customer_phone}`} style={{ color: '#f59e0b', fontSize: '0.8rem', textDecoration: 'none', display: 'block', marginBottom: '8px' }}>
+                          📞 {order.customer_phone}
+                        </a>
+                      )}
+
+                      {/* Delivery address */}
+                      {order.delivery_address && (
+                        <div style={{ background: '#8b5cf611', border: '1px solid #8b5cf633', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px' }}>
+                          <p style={{ color: '#8b5cf6', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px' }}>📍 Lieferadresse</p>
+                          <p style={{ color: '#ccc', fontSize: '0.82rem' }}>{order.delivery_address.street}</p>
+                          <p style={{ color: '#aaa', fontSize: '0.78rem' }}>{order.delivery_address.zip} {order.delivery_address.city}</p>
+                        </div>
+                      )}
+
+                      {/* Items */}
+                      <div style={{ marginBottom: '8px' }}>
+                        {order.items.map((item, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ color: '#ccc', fontSize: '0.8rem' }}>
+                              <span style={{ color: col.color, fontWeight: 700 }}>{item.qty}×</span> {item.name}
+                            </span>
+                            <span style={{ color: '#555', fontSize: '0.78rem' }}>{(item.price * item.qty).toFixed(2)}€</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Note */}
+                      {order.note && (
+                        <div style={{ background: '#f59e0b11', border: '1px solid #f59e0b33', borderRadius: '6px', padding: '6px 8px', marginBottom: '8px' }}>
+                          <p style={{ color: '#f59e0b', fontSize: '0.75rem' }}>⚠ {order.note}</p>
+                        </div>
+                      )}
+
+                      {/* Total + Action */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #2a2a2a', paddingTop: '10px' }}>
+                        <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>{order.total.toFixed(2)} €</span>
+                        <motion.button
+                          onClick={() => updateOrderStatus(order.id, col.nextStatus)}
+                          disabled={updatingOrder === order.id}
+                          whileTap={{ scale: 0.9 }}
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+                          style={{ background: col.color, border: 'none', borderRadius: '6px', padding: '6px 12px', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          {col.nextLabel}
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <style>{`
+          @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+        `}</style>
+      </div>
+    )
+  }
+
   // ── DASHBOARD ───────────────────────────────────────────────────────────────
   const unresolvedCalls = serviceCalls.filter(c => !c.resolved)
   const newOrders = orders.filter(o => o.status === 'new')
@@ -277,8 +418,8 @@ export default function DashboardPage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.restaurant.name}</span>
             <span style={{ color: '#444', fontSize: '0.8rem', flexShrink: 0 }}>·</span>
             <span style={{ color: '#aaa', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{session.staff.name}</span>
-            <span style={{ background: session.staff.role === 'kitchen' ? '#ff6b3522' : '#6c63ff22', color: session.staff.role === 'kitchen' ? '#ff6b35' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
-              {session.staff.role === 'kitchen' ? '👨‍🍳 Küche' : '🛎️ Service'}
+            <span style={{ background: session.staff.role === 'kitchen' ? '#ff6b3522' : session.staff.role === 'delivery' ? '#f59e0b22' : '#6c63ff22', color: session.staff.role === 'kitchen' ? '#ff6b35' : session.staff.role === 'delivery' ? '#f59e0b' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
+              {session.staff.role === 'kitchen' ? '👨‍🍳 Küche' : session.staff.role === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
             </span>
           </div>
           <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', flexShrink: 0, marginLeft: '8px' }}>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Table, Restaurant } from '@/types/database'
@@ -13,6 +13,7 @@ export default function TablesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [tableNum, setTableNum] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [tableLabel, setTableLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [qrModal, setQrModal] = useState<Table | null>(null)
@@ -68,9 +69,11 @@ export default function TablesPage() {
     return `${window.location.origin}/order/${table.qr_token}`
   }
 
-  function copyUrl(table: Table) {
+  const copyUrl = useCallback((table: Table) => {
     navigator.clipboard.writeText(getQrUrl(table))
-  }
+    setCopiedId(table.id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }, [])
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -156,9 +159,15 @@ export default function TablesPage() {
                   </button>
                   <button
                     onClick={() => copyUrl(table)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer' }}
+                    style={{
+                      width: '100%', padding: '8px', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer',
+                      border: `1px solid ${copiedId === table.id ? '#10b98144' : 'var(--border)'}`,
+                      background: copiedId === table.id ? '#10b98112' : 'transparent',
+                      color: copiedId === table.id ? '#10b981' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}
                   >
-                    Link kopieren
+                    {copiedId === table.id ? '✓ Kopiert!' : 'Link kopieren'}
                   </button>
                   <button
                     onClick={() => deleteTable(table.id)}
@@ -232,7 +241,7 @@ export default function TablesPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 600, cursor: 'pointer' }}>Link kopieren</button>
+              <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${copiedId === qrModal.id ? '#10b98144' : 'var(--border)'}`, background: copiedId === qrModal.id ? '#10b98112' : 'transparent', color: copiedId === qrModal.id ? '#10b981' : 'var(--text)' }}>{copiedId === qrModal.id ? '✓ Kopiert!' : 'Link kopieren'}</button>
               <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Schließen</button>
             </div>
           </div>

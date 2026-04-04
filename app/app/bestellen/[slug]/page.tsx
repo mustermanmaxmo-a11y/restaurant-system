@@ -699,7 +699,7 @@ export default function HomeOrderPage() {
                   }}>
                     {statusIdx > i ? '✓' : step.icon}
                   </div>
-                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? '#111' : '#aaa', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
+                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? 'var(--btn-text)' : 'var(--text-muted)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
                 </div>
                 {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? 'var(--btn-bg)' : 'var(--border)', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
               </div>
@@ -825,7 +825,7 @@ export default function HomeOrderPage() {
               style={{
                 width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
                 background: submitting || !customerName || !customerPhone ? 'var(--border)' : 'var(--btn-bg)',
-                color: submitting || !customerName || !customerPhone ? '#aaa' : '#fff',
+                color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--btn-text)',
                 fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em',
                 cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
                 boxShadow: submitting || !customerName || !customerPhone ? 'none' : '0 4px 16px rgba(0,0,0,0.2)',
@@ -842,7 +842,7 @@ export default function HomeOrderPage() {
                 style={{
                   width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
                   background: submitting || !customerName || !customerPhone ? 'var(--border)' : 'var(--btn-bg)',
-                  color: submitting || !customerName || !customerPhone ? '#aaa' : '#fff',
+                  color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--btn-text)',
                   fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em',
                   cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
                   boxShadow: submitting || !customerName || !customerPhone ? 'none' : '0 4px 16px rgba(0,0,0,0.2)',
@@ -854,9 +854,9 @@ export default function HomeOrderPage() {
                 onClick={submitOrder}
                 disabled={submitting || !customerName || !customerPhone}
                 style={{
-                  width: '100%', padding: '17px', borderRadius: '14px', border: '2px solid #EEECE8',
+                  width: '100%', padding: '17px', borderRadius: '14px', border: '1px solid var(--border)',
                   background: 'transparent',
-                  color: submitting || !customerName || !customerPhone ? '#ccc' : '#555',
+                  color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--text)',
                   fontSize: '1rem', fontWeight: 700,
                   cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
                 }}
@@ -984,7 +984,7 @@ export default function HomeOrderPage() {
                 </div>
               </div>
               <button onClick={() => { setResDone(null); setResName(''); setResPhone(''); setResEmail(''); setResDate(''); setResTime('12:00'); setResGuests(2); setResNote('') }}
-                style={{ background: 'var(--btn-bg)', border: 'none', borderRadius: '12px', padding: '13px 28px', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+                style={{ background: 'var(--btn-bg)', border: 'none', borderRadius: '12px', padding: '13px 28px', color: 'var(--btn-text)', fontWeight: 800, cursor: 'pointer' }}>
                 Weitere Reservierung
               </button>
             </div>

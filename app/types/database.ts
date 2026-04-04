@@ -1,6 +1,6 @@
 export type OrderType = 'dine_in' | 'delivery' | 'pickup'
-export type OrderStatus = 'pending_payment' | 'new' | 'cooking' | 'served' | 'cancelled'
-export type StaffRole = 'kitchen' | 'waiter'
+export type OrderStatus = 'pending_payment' | 'new' | 'cooking' | 'out_for_delivery' | 'served' | 'cancelled'
+export type StaffRole = 'kitchen' | 'waiter' | 'delivery'
 export type RestaurantPlan = 'basic' | 'pro'
 export type ServiceCallType = 'waiter' | 'bill'
 
@@ -134,6 +134,30 @@ export interface GroupItem {
   qty: number
   note: string | null
   created_at: string
+}
+
+export type PosProvider = 'sumup' | 'zettle' | 'square'
+export type ExternalTransactionSource = 'stripe_terminal' | 'sumup' | 'zettle' | 'square' | 'cash'
+
+export interface ExternalTransaction {
+  id: string
+  restaurant_id: string
+  source: ExternalTransactionSource
+  external_id: string | null
+  amount: number
+  currency: string
+  note: string | null
+  paid_at: string
+  created_at: string
+}
+
+export interface PosConnection {
+  id: string
+  restaurant_id: string
+  provider: PosProvider
+  access_token: string
+  refresh_token: string | null
+  connected_at: string
 }
 
 export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled'

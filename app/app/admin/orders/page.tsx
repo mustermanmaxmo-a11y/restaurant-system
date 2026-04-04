@@ -7,10 +7,11 @@ import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X } fr
 
 type OrderWithTable = Order & { table_label?: string }
 
-const STATUS_COLS: { status: OrderStatus; label: string; color: string; bg: string; next?: OrderStatus }[] = [
-  { status: 'new',     label: 'Neu',       color: '#FF3B30', bg: '#FF3B3012', next: 'cooking' },
-  { status: 'cooking', label: 'In Arbeit', color: '#FF9500', bg: '#FF950012', next: 'served'  },
-  { status: 'served',  label: 'Serviert',  color: '#34C759', bg: '#34C75912'                  },
+const STATUS_COLS: { status: OrderStatus; label: string; color: string; bg: string; next?: OrderStatus; deliveryOnly?: boolean }[] = [
+  { status: 'new',              label: 'Neu',        color: '#FF3B30', bg: '#FF3B3012', next: 'cooking'           },
+  { status: 'cooking',          label: 'In Arbeit',  color: '#FF9500', bg: '#FF950012'                            },
+  { status: 'out_for_delivery', label: 'Unterwegs',  color: '#f59e0b', bg: '#f59e0b12', next: 'served', deliveryOnly: true },
+  { status: 'served',           label: 'Serviert',   color: '#34C759', bg: '#34C75912'                            },
 ]
 
 function timeAgo(dateStr: string): string {
@@ -120,19 +121,28 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
               <X size={13} />
             </button>
           )}
-          {col.next && (
-            <button
-              onClick={() => onAdvance(order.id, col.next!)}
-              style={{
-                background: col.color, border: 'none', color: '#fff',
-                borderRadius: '6px', padding: '5px 12px', cursor: 'pointer',
-                fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px',
-              }}
-            >
-              {col.status === 'new' ? <ChefHat size={12} /> : <Check size={12} />}
-              {col.status === 'new' ? 'Zubereiten' : 'Serviert'}
-            </button>
-          )}
+          {(() => {
+            const next = col.status === 'cooking'
+              ? (order.order_type === 'delivery' ? 'out_for_delivery' : 'served') as OrderStatus
+              : col.next
+            const label = col.status === 'new' ? 'Zubereiten'
+              : col.status === 'cooking' && order.order_type === 'delivery' ? 'Übergeben'
+              : col.status === 'out_for_delivery' ? 'Ausgeliefert'
+              : 'Serviert'
+            return next ? (
+              <button
+                onClick={() => onAdvance(order.id, next)}
+                style={{
+                  background: col.color, border: 'none', color: '#fff',
+                  borderRadius: '6px', padding: '5px 12px', cursor: 'pointer',
+                  fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px',
+                }}
+              >
+                {col.status === 'new' ? <ChefHat size={12} /> : <Check size={12} />}
+                {label}
+              </button>
+            ) : null
+          })()}
         </div>
       </div>
     </div>
@@ -202,7 +212,7 @@ export default function OrdersPage() {
           supabase.from('tables').select('*').eq('restaurant_id', restaurant.id),
           supabase.from('orders').select('*')
             .eq('restaurant_id', restaurant.id)
-            .in('status', ['new', 'cooking', 'served'])
+            .in('status', ['new', 'cooking', 'out_for_delivery', 'served'])
             .order('created_at', { ascending: true }),
           supabase.from('service_calls').select('*')
             .eq('restaurant_id', restaurant.id)
@@ -233,7 +243,7 @@ export default function OrdersPage() {
   const loadOrders = useCallback(async (rId: string) => {
     const { data } = await supabase.from('orders').select('*')
       .eq('restaurant_id', rId)
-      .in('status', ['new', 'cooking', 'served'])
+      .in('status', ['new', 'cooking', 'out_for_delivery', 'served'])
       .order('created_at', { ascending: true })
     setOrders(enrichOrders(data ?? [], tablesRef.current))
   }, [])
@@ -287,7 +297,9 @@ export default function OrdersPage() {
 
   const cols = STATUS_COLS.map(col => ({
     ...col,
-    orders: orders.filter(o => o.status === col.status),
+    orders: orders.filter(o =>
+      o.status === col.status && (!col.deliveryOnly || o.order_type === 'delivery')
+    ),
   }))
 
   const totalActive = orders.filter(o => o.status !== 'served').length
@@ -324,7 +336,7 @@ export default function OrdersPage() {
       <ServiceCallBanner calls={calls} tables={tables} onResolve={resolveCall} />
 
       {/* Kanban columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', alignItems: 'start' }}>
         {cols.map(col => (
           <div key={col.status}>
             {/* Column header */}
