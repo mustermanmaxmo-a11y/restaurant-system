@@ -274,10 +274,275 @@ function HistoryCard({ handover }: { handover: ShiftHandover }) {
   )
 }
 
+interface SupplierPrice {
+  id: string
+  supplier_id: string
+  ingredient_id: string
+  price_per_unit: number
+  source: string
+  updated_at: string
+}
+
+interface Ingredient { id: string; name: string; unit: string; purchase_price: number | null }
+interface Supplier { id: string; name: string }
+
+interface CostResult {
+  supplier_recommendations: { ingredient: string; best_supplier: string; saving: string; reason: string }[]
+  margin_alerts: { dish: string; margin: string; issue: string }[]
+  price_trends: string[]
+  savings_potential: string
+  dishMargins?: { name: string; price: number; cost: number; margin: number }[]
+}
+
 function KostenTab({ restaurant, disabled }: { restaurant: Restaurant; disabled: boolean }) {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [prices, setPrices] = useState<SupplierPrice[]>([])
+  const [loadingData, setLoadingData] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [result, setResult] = useState<CostResult | null>(null)
+  const [error, setError] = useState('')
+  const lastCall = useRef(0)
+
+  const [addIngId, setAddIngId] = useState('')
+  const [addSuppId, setAddSuppId] = useState('')
+  const [addPrice, setAddPrice] = useState('')
+  const [addSaving, setAddSaving] = useState(false)
+
+  const [csvText, setCsvText] = useState('')
+  const [csvSuppId, setCsvSuppId] = useState('')
+  const [csvModalOpen, setCsvModalOpen] = useState(false)
+  const [csvSaving, setCsvSaving] = useState(false)
+  const [csvError, setCsvError] = useState('')
+
+  useEffect(() => {
+    async function load() {
+      const [{ data: ings }, { data: supps }, { data: sps }] = await Promise.all([
+        supabase.from('ingredients').select('id, name, unit, purchase_price').eq('restaurant_id', restaurant.id).order('name'),
+        supabase.from('suppliers').select('id, name').eq('restaurant_id', restaurant.id).order('name'),
+        supabase.from('supplier_prices').select('*').eq('restaurant_id', restaurant.id),
+      ])
+      setIngredients((ings as Ingredient[]) || [])
+      setSuppliers((supps as Supplier[]) || [])
+      setPrices((sps as SupplierPrice[]) || [])
+      setLoadingData(false)
+    }
+    load()
+  }, [restaurant.id])
+
+  async function savePrice() {
+    if (!addIngId || !addSuppId || !addPrice) return
+    setAddSaving(true)
+    const existing = prices.find(p => p.supplier_id === addSuppId && p.ingredient_id === addIngId)
+    if (existing) {
+      await supabase.from('supplier_prices').update({ price_per_unit: parseFloat(addPrice), source: 'manual', updated_at: new Date().toISOString() }).eq('id', existing.id)
+    } else {
+      await supabase.from('supplier_prices').insert({ restaurant_id: restaurant.id, supplier_id: addSuppId, ingredient_id: addIngId, price_per_unit: parseFloat(addPrice), source: 'manual' })
+    }
+    const { data } = await supabase.from('supplier_prices').select('*').eq('restaurant_id', restaurant.id)
+    setPrices((data as SupplierPrice[]) || [])
+    setAddIngId(''); setAddSuppId(''); setAddPrice('')
+    setAddSaving(false)
+  }
+
+  async function importCsv() {
+    if (!csvSuppId || !csvText.trim()) { setCsvError('Lieferant und CSV-Inhalt erforderlich'); return }
+    setCsvSaving(true); setCsvError('')
+    const lines = csvText.trim().split('\n').slice(1)
+    const toUpsert: { restaurant_id: string; supplier_id: string; ingredient_id: string; price_per_unit: number; source: string }[] = []
+
+    for (const line of lines) {
+      const parts = line.split(/[,;]/).map(p => p.trim().replace(/^"|"$/g, ''))
+      if (parts.length < 2) continue
+      const ingName = parts[0]
+      const price = parseFloat(parts[1])
+      if (!ingName || isNaN(price)) continue
+      const ing = ingredients.find(i => i.name.toLowerCase() === ingName.toLowerCase())
+      if (!ing) continue
+      toUpsert.push({ restaurant_id: restaurant.id, supplier_id: csvSuppId, ingredient_id: ing.id, price_per_unit: price, source: 'csv' })
+    }
+
+    if (!toUpsert.length) { setCsvError('Keine passenden Zutaten gefunden. Prüfe Zutatenname in Spalte 1.'); setCsvSaving(false); return }
+
+    for (const row of toUpsert) {
+      const existing = prices.find(p => p.supplier_id === row.supplier_id && p.ingredient_id === row.ingredient_id)
+      if (existing) {
+        await supabase.from('supplier_prices').update({ price_per_unit: row.price_per_unit, source: 'csv', updated_at: new Date().toISOString() }).eq('id', existing.id)
+      } else {
+        await supabase.from('supplier_prices').insert(row)
+      }
+    }
+
+    const { data } = await supabase.from('supplier_prices').select('*').eq('restaurant_id', restaurant.id)
+    setPrices((data as SupplierPrice[]) || [])
+    setCsvModalOpen(false); setCsvText(''); setCsvSuppId(''); setCsvSaving(false)
+  }
+
+  async function analyze() {
+    if (disabled) return
+    const now = Date.now()
+    if (now - lastCall.current < 30000) { setError('Bitte 30 Sekunden warten.'); return }
+    setAnalyzing(true); setError(''); setResult(null)
+    lastCall.current = now
+    const res = await fetch('/api/ai/cost-analysis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId: restaurant.id }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error || 'Fehler'); setAnalyzing(false); return }
+    setResult(data)
+    setAnalyzing(false)
+  }
+
+  if (loadingData) return <p style={{ color: 'var(--text-muted)', padding: '24px' }}>Lädt Daten...</p>
+
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Kostenanalyse wird in Task 7 implementiert.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Lieferantenpreise</h2>
+          <button onClick={() => setCsvModalOpen(true)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-muted)', borderRadius: '8px', padding: '7px 14px', fontSize: '0.8rem', cursor: 'pointer' }}>
+            CSV importieren
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px auto', gap: '8px', marginBottom: '16px', alignItems: 'end' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>ZUTAT</label>
+            <select value={addIngId} onChange={e => setAddIngId(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.85rem' }}>
+              <option value="">Zutat wählen</option>
+              {ingredients.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>LIEFERANT</label>
+            <select value={addSuppId} onChange={e => setAddSuppId(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.85rem' }}>
+              <option value="">Lieferant wählen</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>PREIS (€)</label>
+            <input type="number" step="0.01" min="0" value={addPrice} onChange={e => setAddPrice(e.target.value)} placeholder="0.00" style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+          </div>
+          <button onClick={savePrice} disabled={addSaving || !addIngId || !addSuppId || !addPrice} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '7px', padding: '8px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {addSaving ? '...' : '+ Hinzufügen'}
+          </button>
+        </div>
+
+        {prices.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Noch keine Lieferantenpreise eingetragen.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>ZUTAT</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>LIEFERANT</th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>PREIS</th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>AKTUALISIERT</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prices.map(p => {
+                  const ing = ingredients.find(i => i.id === p.ingredient_id)
+                  const sup = suppliers.find(s => s.id === p.supplier_id)
+                  const ingPrices = prices.filter(x => x.ingredient_id === p.ingredient_id)
+                  const isCheapest = ingPrices.length > 1 && p.price_per_unit === Math.min(...ingPrices.map(x => x.price_per_unit))
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '9px 12px', color: 'var(--text)' }}>{ing?.name || '–'}</td>
+                      <td style={{ padding: '9px 12px', color: 'var(--text-muted)' }}>{sup?.name || '–'}</td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right', color: isCheapest ? '#34C759' : 'var(--text)', fontWeight: isCheapest ? 700 : 400 }}>
+                        {Number(p.price_per_unit).toFixed(2)}€/{ing?.unit || ''}
+                        {isCheapest && <span style={{ marginLeft: '6px', fontSize: '0.7rem' }}>✓ günstigster</span>}
+                      </td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                        {new Date(p.updated_at).toLocaleDateString('de-DE')}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>KI-Kostenanalyse</h2>
+          <button onClick={analyze} disabled={analyzing || disabled} style={{ background: disabled ? 'rgba(255,255,255,0.1)' : 'var(--accent)', color: disabled ? 'var(--text-muted)' : '#fff', border: 'none', borderRadius: '9px', padding: '9px 20px', fontWeight: 700, fontSize: '0.85rem', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+            {analyzing ? 'Analysiert...' : 'Analyse starten'}
+          </button>
+        </div>
+
+        {error && <p style={{ color: '#FF3B30', fontSize: '0.85rem', margin: '0 0 12px' }}>{error}</p>}
+
+        {result && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {result.supplier_recommendations?.length > 0 && (
+              <div>
+                <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#34C759', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Lieferantenempfehlungen</p>
+                {result.supplier_recommendations.map((r, i) => (
+                  <div key={i} style={{ background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.2)', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px' }}>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>{r.ingredient} → {r.best_supplier} <span style={{ color: '#34C759' }}>({r.saving} sparen)</span></p>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{r.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {result.margin_alerts?.length > 0 && (
+              <div>
+                <p style={{ fontSize: '0.78rem', fontWeight: 700, color: '#FF9500', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Margen-Warnungen</p>
+                {result.margin_alerts.map((a, i) => (
+                  <div key={i} style={{ background: 'rgba(255,149,0,0.08)', border: '1px solid rgba(255,149,0,0.2)', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px' }}>
+                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>{a.dish} — Marge {a.margin}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.issue}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {result.savings_potential && (
+              <div style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)', borderRadius: '8px', padding: '14px 16px' }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: '0.85rem', color: 'var(--text)' }}>Gesamtes Sparpotenzial</p>
+                <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{result.savings_potential}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {csvModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px' }}>
+            <h3 style={{ margin: '0 0 16px', color: 'var(--text)', fontSize: '1rem', fontWeight: 700 }}>Preisliste importieren (CSV)</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0 0 16px' }}>
+              Format: erste Zeile = Header, dann eine Zeile pro Zutat.<br />
+              Spalten: <code>Zutat,Preis pro Einheit</code> (Komma oder Semikolon als Trenner)
+            </p>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>LIEFERANT</label>
+              <select value={csvSuppId} onChange={e => setCsvSuppId(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem' }}>
+                <option value="">Lieferant wählen</option>
+                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>CSV-INHALT</label>
+              <textarea value={csvText} onChange={e => setCsvText(e.target.value)} placeholder={"Zutat,Preis\nTomaten,2.10\nPasta,0.95\nOlivenöl,8.50"} rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.85rem', fontFamily: 'monospace', resize: 'vertical', boxSizing: 'border-box' }} />
+            </div>
+            {csvError && <p style={{ color: '#FF3B30', fontSize: '0.85rem', margin: '0 0 12px' }}>{csvError}</p>}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setCsvModalOpen(false); setCsvError('') }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-muted)', borderRadius: '8px', padding: '9px 18px', fontSize: '0.875rem', cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={importCsv} disabled={csvSaving} style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+                {csvSaving ? 'Importiert...' : 'Importieren'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
