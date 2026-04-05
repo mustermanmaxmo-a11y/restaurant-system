@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/components/providers/theme-provider'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
-  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag,
+  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, Brain,
 } from 'lucide-react'
 
 const NAV = [
@@ -20,6 +20,7 @@ const NAV = [
   { icon: Clock,           label: 'Öffnungszeiten', href: '/admin/opening-hours' },
   { icon: Palette,         label: 'Branding',       href: '/admin/branding' },
   { icon: Package,         label: 'Lagerbestand',   href: '/admin/inventory' },
+  { icon: Brain,           label: 'KI-Tools',       href: '/admin/ki-tools' },
   { icon: BarChart2,       label: 'Statistik',      href: '/admin/stats' },
   { icon: CreditCard,      label: 'Billing',        href: '/admin/billing' },
 ]

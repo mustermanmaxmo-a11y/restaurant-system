@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Order, OrderStatus, ServiceCall, Table } from '@/types/database'
-import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X } from 'lucide-react'
+import { Brain, ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X } from 'lucide-react'
 
 type OrderWithTable = Order & { table_label?: string }
 
@@ -188,6 +189,7 @@ function ServiceCallBanner({ calls, tables, onResolve }: {
 }
 
 export default function OrdersPage() {
+  const router = useRouter()
   const [orders, setOrders]       = useState<OrderWithTable[]>([])
   const [tables, setTables]       = useState<Table[]>([])
   const tablesRef                 = useRef<Table[]>([])
@@ -330,6 +332,18 @@ export default function OrdersPage() {
             </p>
           </div>
         </div>
+        <button
+          onClick={() => router.push('/admin/ki-tools?tab=schicht')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+            color: 'var(--text-muted)', borderRadius: '8px', padding: '7px 14px',
+            fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500,
+          }}
+        >
+          <Brain size={14} />
+          Schicht übergeben
+        </button>
       </div>
 
       {/* Service Calls */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { Brain } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type {
   Restaurant, MenuItem,
@@ -457,12 +458,26 @@ export default function InventoryPage() {
               <h1 style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2px' }}>📦 Lagerbestand</h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{ingredients.length} Zutaten · {suppliers.length} Lieferanten</p>
             </div>
-            {tab === 'bestand' && (
-              <button onClick={openAddIng} style={btnPrimary}>+ Zutat</button>
-            )}
-            {tab === 'lieferanten' && (
-              <button onClick={openAddSup} style={btnPrimary}>+ Lieferant</button>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {tab === 'bestand' && (
+                <button onClick={openAddIng} style={btnPrimary}>+ Zutat</button>
+              )}
+              {tab === 'lieferanten' && (
+                <button onClick={openAddSup} style={btnPrimary}>+ Lieferant</button>
+              )}
+              <button
+                onClick={() => router.push('/admin/ki-tools?tab=kosten')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'var(--text-muted)', borderRadius: '8px', padding: '7px 14px',
+                  fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500,
+                }}
+              >
+                <Brain size={14} />
+                Kostenanalyse
+              </button>
+            </div>
           </div>
 
           {/* Low stock banner */}

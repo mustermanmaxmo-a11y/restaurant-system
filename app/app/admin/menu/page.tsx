@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Brain } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { MenuCategory, MenuItem, Restaurant } from '@/types/database'
 
@@ -207,12 +208,26 @@ export default function MenuPage() {
           <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
           <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Menü verwalten</h1>
         </div>
-        <button
-          onClick={openAddCategory}
-          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-        >
-          + Kategorie
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => router.push('/admin/ki-tools?tab=vorbereitung')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+              color: 'var(--text-muted)', borderRadius: '8px', padding: '7px 14px',
+              fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500,
+            }}
+          >
+            <Brain size={14} />
+            Vorbereitungsliste
+          </button>
+          <button
+            onClick={openAddCategory}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+          >
+            + Kategorie
+          </button>
+        </div>
       </div>
 
       <div className="menu-layout" style={{ display: 'flex', height: 'calc(100vh - 57px)' }}>
