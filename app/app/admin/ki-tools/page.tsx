@@ -547,10 +547,175 @@ function KostenTab({ restaurant, disabled }: { restaurant: Restaurant; disabled:
   )
 }
 
+interface PrepItem {
+  ingredient: string
+  unit: string
+  quantity: number
+  note: string
+}
+
+interface PrepResult {
+  estimated_guests: number
+  confidence: 'high' | 'medium' | 'low'
+  reasoning: string
+  prep_items: PrepItem[]
+  specials_note: string
+}
+
 function VorbereitungTab({ restaurant, disabled }: { restaurant: Restaurant; disabled: boolean }) {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+
+  const [targetDate, setTargetDate] = useState(tomorrowStr)
+  const [guestOverride, setGuestOverride] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<PrepResult | null>(null)
+  const [error, setError] = useState('')
+  const lastCall = useRef(0)
+
+  async function generate(override?: number) {
+    if (disabled) return
+    const now = Date.now()
+    if (now - lastCall.current < 20000) { setError('Bitte 20 Sekunden warten.'); return }
+    setLoading(true); setError('')
+    lastCall.current = now
+    const body: { restaurantId: string; targetDate: string; guestCountOverride?: number } = {
+      restaurantId: restaurant.id,
+      targetDate,
+    }
+    if (override != null) body.guestCountOverride = override
+    const res = await fetch('/api/ai/prep-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error || 'Fehler'); setLoading(false); return }
+    setResult(data)
+    if (!override) setGuestOverride(String(data.estimated_guests))
+    setLoading(false)
+  }
+
+  const confidenceColor = { high: '#34C759', medium: '#FF9500', low: '#FF3B30' }
+
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Vorbereitungsliste wird in Task 9 implementiert.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 20px' }}>
+          Vorbereitungsliste erstellen
+        </h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
+              ZIELDATUM
+            </label>
+            <input
+              type="date"
+              value={targetDate}
+              onChange={e => { setTargetDate(e.target.value); setResult(null) }}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>
+              ERWARTETE GÄSTE (optional)
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={guestOverride}
+              onChange={e => setGuestOverride(e.target.value)}
+              placeholder="KI schätzt automatisch"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
+
+        {error && <p style={{ color: '#FF3B30', fontSize: '0.85rem', margin: '0 0 12px' }}>{error}</p>}
+
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={() => generate()}
+            disabled={loading || disabled}
+            style={{ background: disabled ? 'rgba(255,255,255,0.1)' : 'var(--accent)', color: disabled ? 'var(--text-muted)' : '#fff', border: 'none', borderRadius: '9px', padding: '11px 24px', fontWeight: 700, fontSize: '0.875rem', cursor: disabled ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? 'KI berechnet...' : 'Liste generieren'}
+          </button>
+          {result && guestOverride && parseInt(guestOverride) !== result.estimated_guests && (
+            <button
+              onClick={() => generate(parseInt(guestOverride))}
+              disabled={loading}
+              style={{ background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)', borderRadius: '9px', padding: '11px 20px', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+            >
+              Mit {guestOverride} Gästen neu berechnen
+            </button>
+          )}
+        </div>
+      </div>
+
+      {result && (
+        <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div>
+              <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 4px' }}>
+                Vorbereitungsliste — {new Date(targetDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' })}
+              </h2>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                {result.estimated_guests} erwartete Gäste ·{' '}
+                <span style={{ color: confidenceColor[result.confidence], fontWeight: 600 }}>
+                  {result.confidence === 'high' ? 'Hohe Sicherheit' : result.confidence === 'medium' ? 'Mittlere Sicherheit' : 'Wenig Datenbasis'}
+                </span>
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{result.reasoning}</p>
+            </div>
+            <button
+              onClick={() => window.print()}
+              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-muted)', borderRadius: '8px', padding: '7px 14px', fontSize: '0.8rem', cursor: 'pointer' }}
+            >
+              Drucken
+            </button>
+          </div>
+
+          {result.specials_note && (
+            <div style={{ background: 'rgba(255,149,0,0.1)', border: '1px solid rgba(255,149,0,0.25)', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#FF9500', fontWeight: 600 }}>Tagesangebote</p>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{result.specials_note}</p>
+            </div>
+          )}
+
+          {result.prep_items.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              Keine Zutaten berechenbar — bitte Rezeptverknüpfungen im Lagerbestand pflegen.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>ZUTAT</th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>MENGE</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>HINWEIS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.prep_items
+                  .sort((a, b) => b.quantity - a.quantity)
+                  .map((item, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{item.ingredient}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--accent)', fontWeight: 700, fontFamily: 'monospace' }}>
+                        {item.quantity % 1 === 0 ? item.quantity : item.quantity.toFixed(2)} {item.unit}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.note}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   )
 }
