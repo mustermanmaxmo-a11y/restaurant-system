@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Brain, ArrowRight } from 'lucide-react'
@@ -105,10 +105,171 @@ function KiToolsContent() {
 
 // ── Placeholder tab components (filled in Tasks 5, 7, 9) ─────────────────────
 
+interface ShiftReport {
+  highlights: string[]
+  issues: string[]
+  open_items: string[]
+  recommendation: string
+}
+
+interface ShiftSummary {
+  totalOrders: number
+  totalRevenue: number
+  topItems: string[]
+  waiterCalls: number
+  billCalls: number
+}
+
+interface ShiftHandover {
+  id: string
+  shift_date: string
+  shift_type: string
+  ai_report: ShiftReport
+  orders_summary: ShiftSummary
+  created_at: string
+}
+
 function SchichtTab({ restaurant, disabled }: { restaurant: Restaurant; disabled: boolean }) {
+  const today = new Date().toISOString().split('T')[0]
+  const [shiftDate, setShiftDate] = useState(today)
+  const [shiftType, setShiftType] = useState<'morning' | 'evening' | 'full'>('evening')
+  const [rawNotes, setRawNotes] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState<{ report: ShiftReport; summary: ShiftSummary } | null>(null)
+  const [history, setHistory] = useState<ShiftHandover[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const lastCall = useRef(0)
+
+  useEffect(() => {
+    supabase
+      .from('shift_handovers')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => { setHistory((data as ShiftHandover[]) || []); setHistoryLoading(false) })
+  }, [restaurant.id, result])
+
+  async function generate() {
+    if (disabled) return
+    const now = Date.now()
+    if (now - lastCall.current < 30000) { setError('Bitte 30 Sekunden warten.'); return }
+    setLoading(true); setError(''); setResult(null)
+    lastCall.current = now
+    const res = await fetch('/api/ai/shift-handover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId: restaurant.id, shiftDate, shiftType, rawNotes }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error || 'Fehler beim Generieren'); setLoading(false); return }
+    setResult(data)
+    setLoading(false)
+  }
+
+  const shiftTypeOptions = [
+    { value: 'morning', label: 'Frühschicht' },
+    { value: 'evening', label: 'Abendschicht' },
+    { value: 'full',    label: 'Ganztag' },
+  ]
+
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Schichtübergabe wird in Task 5 implementiert.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 20px' }}>
+          Schicht übergeben
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>DATUM</label>
+            <input type="date" value={shiftDate} onChange={e => setShiftDate(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>SCHICHT</label>
+            <select value={shiftType} onChange={e => setShiftType(e.target.value as 'morning' | 'evening' | 'full')} style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', boxSizing: 'border-box' }}>
+              {shiftTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>NOTIZEN / BESONDERHEITEN</label>
+          <textarea value={rawNotes} onChange={e => setRawNotes(e.target.value)} placeholder="z.B. Tisch 4 hatte Beschwerden, Tomatenlieferung fehlt noch, Freitag war sehr voll..." rows={4} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+        </div>
+        {error && <p style={{ color: '#FF3B30', fontSize: '0.85rem', margin: '0 0 12px' }}>{error}</p>}
+        <button onClick={generate} disabled={loading || disabled} style={{ background: disabled ? 'rgba(255,255,255,0.1)' : 'var(--accent)', color: disabled ? 'var(--text-muted)' : '#fff', border: 'none', borderRadius: '9px', padding: '11px 24px', fontWeight: 700, fontSize: '0.875rem', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'KI analysiert...' : 'Übergabebericht generieren'}
+        </button>
+      </div>
+
+      {result && (
+        <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Übergabebericht</h2>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              {result.summary.totalOrders} Bestellungen · {result.summary.totalRevenue.toFixed(2)}€ Umsatz
+            </div>
+          </div>
+          {result.report.highlights.length > 0 && <ReportSection color="#34C759" label="Highlights" items={result.report.highlights} />}
+          {result.report.issues.length > 0 && <ReportSection color="#FF3B30" label="Probleme" items={result.report.issues} />}
+          {result.report.open_items.length > 0 && <ReportSection color="#FF9500" label="Offene Punkte" items={result.report.open_items} />}
+          {result.report.recommendation && (
+            <div style={{ background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.2)', borderRadius: '8px', padding: '14px 16px' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text)', fontWeight: 600 }}>Empfehlung für nächste Schicht</p>
+              <p style={{ margin: '6px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{result.report.recommendation}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '24px' }}>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: '0 0 16px' }}>Letzte Übergaben</h2>
+        {historyLoading ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Lädt...</p>
+        ) : history.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Noch keine Übergaben gespeichert.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {history.map(h => <HistoryCard key={h.id} handover={h} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ReportSection({ color, label, items }: { color: string; label: string; items: string[] }) {
+  return (
+    <div style={{ marginBottom: '14px', background: `${color}0d`, border: `1px solid ${color}33`, borderRadius: '8px', padding: '14px 16px' }}>
+      <p style={{ margin: '0 0 8px', fontSize: '0.78rem', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+      <ul style={{ margin: 0, padding: '0 0 0 16px' }}>
+        {items.map((item, i) => <li key={i} style={{ fontSize: '0.875rem', color: 'var(--text)', marginBottom: i < items.length - 1 ? '4px' : 0 }}>{item}</li>)}
+      </ul>
+    </div>
+  )
+}
+
+function HistoryCard({ handover }: { handover: ShiftHandover }) {
+  const [open, setOpen] = useState(false)
+  const shiftLabel = { morning: 'Frühschicht', evening: 'Abendschicht', full: 'Ganztag' }[handover.shift_type] || handover.shift_type
+  const date = new Date(handover.shift_date)
+  const dateStr = date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' })
+
+  return (
+    <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{dateStr} — {shiftLabel}</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && handover.ai_report && (
+        <div style={{ padding: '0 16px 16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {handover.ai_report.highlights?.length > 0 && <p style={{ fontSize: '0.8rem', color: '#34C759', margin: '12px 0 4px', fontWeight: 600 }}>Highlights</p>}
+          {handover.ai_report.highlights?.map((h, i) => <p key={i} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0' }}>• {h}</p>)}
+          {handover.ai_report.issues?.length > 0 && <p style={{ fontSize: '0.8rem', color: '#FF3B30', margin: '10px 0 4px', fontWeight: 600 }}>Probleme</p>}
+          {handover.ai_report.issues?.map((h, i) => <p key={i} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0' }}>• {h}</p>)}
+          {handover.ai_report.recommendation && <p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '10px 0 0' }}>💡 {handover.ai_report.recommendation}</p>}
+        </div>
+      )}
     </div>
   )
 }
