@@ -7,6 +7,26 @@ import { resolveAiKey } from '@/lib/ai-key'
 // Only aggregated order stats, service call counts, and staff notes.
 
 export async function POST(request: NextRequest) {
+  // Auth check: validate session cookie via Supabase anon client
+  const supabaseAnon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false } }
+  )
+
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  let userId: string | null = null
+  if (token) {
+    const { data: { user } } = await supabaseAnon.auth.getUser(token)
+    userId = user?.id ?? null
+  }
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+  }
+
   const body = await request.json()
   const { restaurantId, shiftDate, shiftType, rawNotes } = body as {
     restaurantId: string
@@ -17,6 +37,14 @@ export async function POST(request: NextRequest) {
 
   if (!restaurantId || !shiftDate || !shiftType) {
     return NextResponse.json({ error: 'restaurantId, shiftDate und shiftType sind erforderlich' }, { status: 400 })
+  }
+
+  if (rawNotes && rawNotes.length > 1000) {
+    return NextResponse.json({ error: 'Notizen dürfen maximal 1000 Zeichen lang sein' }, { status: 400 })
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(shiftDate) || isNaN(new Date(shiftDate).getTime())) {
+    return NextResponse.json({ error: 'Ungültiges Datum' }, { status: 400 })
   }
 
   const supabase = createClient(

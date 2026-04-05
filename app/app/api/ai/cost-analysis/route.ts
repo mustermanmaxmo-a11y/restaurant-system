@@ -6,6 +6,26 @@ import { resolveAiKey } from '@/lib/ai-key'
 // Security: No customer PII. Only ingredient names, prices, supplier names, dish names/prices.
 
 export async function POST(request: NextRequest) {
+  // Auth check: validate session cookie via Supabase anon client
+  const supabaseAnon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false } }
+  )
+
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  let userId: string | null = null
+  if (token) {
+    const { data: { user } } = await supabaseAnon.auth.getUser(token)
+    userId = user?.id ?? null
+  }
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+  }
+
   const body = await request.json()
   const { restaurantId } = body
 

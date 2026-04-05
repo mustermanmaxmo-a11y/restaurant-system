@@ -6,6 +6,26 @@ import { resolveAiKey } from '@/lib/ai-key'
 // Security: No customer PII. Only reservation counts, aggregate order history, menu item names/quantities.
 
 export async function POST(request: NextRequest) {
+  // Auth check: validate session cookie via Supabase anon client
+  const supabaseAnon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false } }
+  )
+
+  const authHeader = request.headers.get('authorization')
+  const token = authHeader?.replace('Bearer ', '')
+
+  let userId: string | null = null
+  if (token) {
+    const { data: { user } } = await supabaseAnon.auth.getUser(token)
+    userId = user?.id ?? null
+  }
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 })
+  }
+
   const body = await request.json()
   const { restaurantId, targetDate, guestCountOverride } = body as {
     restaurantId: string
@@ -15,6 +35,14 @@ export async function POST(request: NextRequest) {
 
   if (!restaurantId || !targetDate) {
     return NextResponse.json({ error: 'restaurantId und targetDate erforderlich' }, { status: 400 })
+  }
+
+  if (guestCountOverride != null && (!Number.isInteger(guestCountOverride) || guestCountOverride < 1 || guestCountOverride > 10000)) {
+    return NextResponse.json({ error: 'Gästeanzahl muss eine ganze Zahl zwischen 1 und 10000 sein' }, { status: 400 })
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate) || isNaN(new Date(targetDate).getTime())) {
+    return NextResponse.json({ error: 'Ungültiges Datum' }, { status: 400 })
   }
 
   const supabase = createClient(
