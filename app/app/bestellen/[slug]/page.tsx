@@ -9,6 +9,8 @@ import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
 import ChatWidget from '@/components/ChatWidget'
+import { useLanguage } from '@/components/providers/language-provider'
+import { LanguageSelector } from '@/components/ui/language-selector'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'delivery' | 'pickup'
@@ -26,18 +28,12 @@ const TABLE_STATUS_COLORS: Record<TableStatus, string | null> = {
   'no-position': null,
 }
 
-const STATUS_LABELS: Record<string, { label: string; icon: string }> = {
-  new: { label: 'Bestellung eingegangen', icon: '📋' },
-  cooking: { label: 'Wird zubereitet', icon: '👨‍🍳' },
-  served: { label: 'Unterwegs zu dir!', icon: '🛵' },
-  cancelled: { label: 'Storniert', icon: '❌' },
-}
-
 export default function HomeOrderPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const slug = params.slug as string
   const { theme, toggleTheme } = useTheme()
+  const { lang, t } = useLanguage()
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [categories, setCategories] = useState<MenuCategory[]>([])
@@ -363,12 +359,16 @@ export default function HomeOrderPage() {
   const filterCount = activeDietary.length + excludedAllergens.length
 
   const DIETARY_FILTERS = [
-    { key: 'vegetarisch', label: '🌱 Vegetarisch' },
-    { key: 'vegan', label: '🌿 Vegan' },
-    { key: 'glutenfrei', label: '🌾 Glutenfrei' },
-    { key: 'laktosefrei', label: '🥛 Laktosefrei' },
-    { key: 'scharf', label: '🌶️ Scharf' },
+    { key: 'vegetarisch', label: t('order.dietary.vegetarisch') },
+    { key: 'vegan',       label: t('order.dietary.vegan') },
+    { key: 'glutenfrei',  label: t('order.dietary.glutenfrei') },
+    { key: 'laktosefrei', label: t('order.dietary.laktosefrei') },
+    { key: 'scharf',      label: t('order.dietary.scharf') },
   ]
+
+  const STATUS_ICONS: Record<string, string> = {
+    new: '📋', cooking: '👨‍🍳', served: '🛵', cancelled: '❌',
+  }
 
   const ALLERGEN_FILTERS = [
     'Gluten', 'Nüsse', 'Milch', 'Eier', 'Fisch',
@@ -558,7 +558,7 @@ export default function HomeOrderPage() {
             >
               <span style={{ fontSize: '2rem' }}>👤</span>
               <div>
-                <div style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '1rem' }}>Alleine bestellen</div>
+                <div style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '1rem' }}>{t('order.continueAlone')}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>Nur für mich</div>
               </div>
             </motion.button>
@@ -571,7 +571,7 @@ export default function HomeOrderPage() {
             >
               <span style={{ fontSize: '2rem' }}>👥</span>
               <div>
-                <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem' }}>Gruppe erstellen</div>
+                <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem' }}>{t('order.createGroup')}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '2px' }}>Alle bestellen gemeinsam — ein einziger Auftrag</div>
               </div>
             </motion.button>
@@ -580,19 +580,19 @@ export default function HomeOrderPage() {
               onClick={() => setOrderMode('group-join')}
               style={{ padding: '14px 20px', borderRadius: '14px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
             >
-              🔗 Gruppe beitreten (Code eingeben)
+              🔗 {t('order.joinGroup')}
             </button>
           </>)}
 
           {/* Group create */}
           {orderMode === 'group-create' && (<>
-            <button onClick={() => setOrderMode('solo')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left', padding: 0, marginBottom: '4px' }}>← Zurück</button>
+            <button onClick={() => setOrderMode('solo')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left', padding: 0, marginBottom: '4px' }}>← {t('common.back')}</button>
             <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem' }}>👥 Gruppe erstellen</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '-8px' }}>Gib deinen Namen ein, dann bekommst du einen Code den du teilen kannst.</p>
             <input
               value={memberName}
               onChange={e => setMemberName(e.target.value)}
-              placeholder="Dein Vorname"
+              placeholder={t('order.guestName')}
               autoFocus
               style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '1rem', outline: 'none' }}
             />
@@ -610,12 +610,12 @@ export default function HomeOrderPage() {
 
           {/* Group join */}
           {orderMode === 'group-join' && (<>
-            <button onClick={() => setOrderMode('solo')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left', padding: 0, marginBottom: '4px' }}>← Zurück</button>
+            <button onClick={() => setOrderMode('solo')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left', padding: 0, marginBottom: '4px' }}>← {t('common.back')}</button>
             <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem' }}>🔗 Gruppe beitreten</h2>
             <input
               value={memberName}
               onChange={e => setMemberName(e.target.value)}
-              placeholder="Dein Vorname"
+              placeholder={t('order.guestName')}
               autoFocus
               style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '1rem', outline: 'none' }}
             />
@@ -676,18 +676,21 @@ export default function HomeOrderPage() {
 
   // Order status view
   if (view === 'status' && order) {
-    const status = STATUS_LABELS[order.status] ?? STATUS_LABELS.new
+    const statusLabel = order.status === 'served' && order.order_type === 'delivery'
+      ? t('order.status.servedDelivery')
+      : t(`order.status.${order.status}`)
+    const statusIcon = STATUS_ICONS[order.status] ?? '📋'
     const isPickup = order.order_type === 'pickup'
     const statusIdx = ['new', 'cooking', 'served'].indexOf(order.status)
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg)', width: '100%', overflowX: 'hidden' }}>
         <div style={{ background: 'var(--btn-bg)', padding: '40px 20px 32px', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>{status.icon}</div>
+          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>{statusIcon}</div>
           <h1 style={{ color: 'var(--surface)', fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.02em' }}>
-            {status.label}
+            {statusLabel}
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem' }}>
-            {restaurant?.name} · {isPickup ? 'Abholung' : 'Lieferung'}
+            {restaurant?.name} · {isPickup ? t('order.pickup') : t('order.delivery')}
           </p>
         </div>
 
@@ -724,7 +727,7 @@ export default function HomeOrderPage() {
               </div>
             ))}
             <div style={{ borderTop: '1px solid #EEECE8', marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text)', fontWeight: 800 }}>Gesamt</span>
+              <span style={{ color: 'var(--text)', fontWeight: 800 }}>{t('order.total')}</span>
               <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{order.total.toFixed(2)} €</span>
             </div>
           </div>
@@ -768,7 +771,7 @@ export default function HomeOrderPage() {
                 }}
               >
                 <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>{type === 'pickup' ? '🏃' : '🛵'}</div>
-                {type === 'pickup' ? 'Abholung' : 'Lieferung'}
+                {type === 'pickup' ? t('order.pickup') : t('order.delivery')}
               </button>
             ))}
           </div>
@@ -777,7 +780,7 @@ export default function HomeOrderPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
             <div>
               <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name *</label>
-              <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Dein Name" style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
+              <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder={t('order.guestName')} style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Telefon *</label>
@@ -818,7 +821,7 @@ export default function HomeOrderPage() {
               </div>
             ))}
             <div style={{ borderTop: '1px solid #e0e0e0', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text)', fontWeight: 800 }}>Gesamt</span>
+              <span style={{ color: 'var(--text)', fontWeight: 800 }}>{t('order.total')}</span>
               <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{total.toFixed(2)} €</span>
             </div>
           </div>
@@ -935,17 +938,20 @@ export default function HomeOrderPage() {
             )}
           </div>
           </div>{/* end logo+text wrapper */}
-          <button
-            onClick={toggleTheme}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '4px', color: '#fff', fontWeight: 700 }}
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginTop: '4px' }}>
+            <LanguageSelector />
+            <button
+              onClick={toggleTheme}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}
+              title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          </div>
         </div>
         {/* Page tabs */}
         <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
-          {([['order', 'Bestellen'], ['reserve', 'Reservieren']] as [PageTab, string][]).map(([tab, label]) => (
+          {([['order', t('order.orderTab')], ['reserve', t('order.reserveTab')]] as [PageTab, string][]).map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => setPageTab(tab)}
@@ -998,7 +1004,7 @@ export default function HomeOrderPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Tisch reservieren</h2>
+              <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>{t('order.reserveTable')}</h2>
 
               {/* Mode selector — only show if floor plan exists */}
               {restaurant?.floor_plan_url && placedTables.length > 0 && (
@@ -1092,7 +1098,7 @@ export default function HomeOrderPage() {
                   </div>
                   {/* Legend */}
                   <div style={{ display: 'flex', gap: '14px', marginTop: '8px', flexWrap: 'wrap' }}>
-                    {[{ color: '#10b981', label: 'Frei' }, { color: '#ef4444', label: 'Belegt' }].map(({ color, label }) => (
+                    {[{ color: '#10b981', label: t('order.free') }, { color: '#ef4444', label: t('order.occupied') }].map(({ color, label }) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: color }} />
                         <span style={{ color: '#888', fontSize: '0.75rem' }}>{label}</span>
@@ -1190,7 +1196,7 @@ export default function HomeOrderPage() {
               }}
               style={{ padding: '6px 12px', borderRadius: '8px', border: '1.5px solid var(--accent)', background: 'transparent', color: 'var(--accent)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
             >
-              {copied ? '✓ Kopiert!' : '🔗 Link teilen'}
+              {copied ? `✓ ${t('order.copied')}` : '🔗 Link teilen'}
             </motion.button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
@@ -1224,7 +1230,7 @@ export default function HomeOrderPage() {
             color: orderType === type ? 'var(--btn-text)' : 'var(--text-muted)',
             fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
           }}>
-            {type === 'pickup' ? '↗ Abholung' : '→ Lieferung'}
+            {type === 'pickup' ? `↗ ${t('order.pickup')}` : `→ ${t('order.delivery')}`}
           </button>
         ))}
       </div>
@@ -1344,6 +1350,8 @@ export default function HomeOrderPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {catItems.map((item, idx) => {
                   const qty = getQty(item.id)
+                  const displayName = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.name ?? item.name
+                  const displayDesc = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.description ?? item.description
                   return (
                     <motion.div
                       key={item.id}
@@ -1362,7 +1370,7 @@ export default function HomeOrderPage() {
                       }}
                     >
                       {item.image_url && (
-                        <img src={item.image_url} alt={item.name} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+                        <img src={item.image_url} alt={displayName} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {specials[item.id] && (
@@ -1370,8 +1378,8 @@ export default function HomeOrderPage() {
                             🔥 {specials[item.id].label}
                           </span>
                         )}
-                        <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '3px', fontSize: '0.95rem' }}>{item.name}</p>
-                        {item.description && <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.description}</p>}
+                        <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '3px', fontSize: '0.95rem' }}>{displayName}</p>
+                        {displayDesc && <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayDesc}</p>}
                         {item.tags.length > 0 && (
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
                             {item.tags.map(tag => (
@@ -1487,7 +1495,7 @@ export default function HomeOrderPage() {
                   style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '20px', padding: '3px 10px', fontSize: '0.82rem', fontWeight: 800, display: 'inline-block' }}
                 >{orderMode === 'group-active' ? groupItems.reduce((s,gi)=>s+gi.qty,0) : cartCount}</motion.span>
               </AnimatePresence>
-              <span>🛒 Warenkorb</span>
+              <span>🛒 {t('order.cart')}</span>
               <span style={{ opacity: 0.6 }}>·</span>
               <span style={{ fontWeight: 800 }}>{total.toFixed(2)} €</span>
             </motion.button>
@@ -1712,7 +1720,7 @@ export default function HomeOrderPage() {
               {/* Footer: total + action */}
               <div style={{ padding: '16px 20px 32px', borderTop: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Gesamt</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t('order.total')}</span>
                   <span style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem' }}>{total.toFixed(2)} €</span>
                 </div>
                 {orderMode === 'group-active' ? (
@@ -1773,13 +1781,17 @@ export default function HomeOrderPage() {
           </div>
 
           {/* Bild links + Info rechts */}
+          {(() => {
+            const detailName = (selectedItem.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.name ?? selectedItem.name
+            const detailDesc = (selectedItem.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.description ?? selectedItem.description
+            return (
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             {/* Bild links */}
             <div style={{ flex: '1 1 300px', minHeight: '280px', maxHeight: '480px' }}>
               {selectedItem.image_url ? (
                 <img
                   src={selectedItem.image_url}
-                  alt={selectedItem.name}
+                  alt={detailName}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: '280px', maxHeight: '480px' }}
                 />
               ) : (
@@ -1792,13 +1804,13 @@ export default function HomeOrderPage() {
             {/* Info rechts */}
             <div style={{ flex: '1 1 280px', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '0' }}>
               <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.6rem', lineHeight: 1.2, marginBottom: '10px', fontFamily: 'var(--font-heading), system-ui, sans-serif', letterSpacing: '-0.03em' }}>
-                {selectedItem.name}
+                {detailName}
               </h1>
               <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '1.5rem' }}>{selectedItem.price.toFixed(2)} €</span>
 
-              {selectedItem.description && (
+              {detailDesc && (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.7, margin: '18px 0 0' }}>
-                  {selectedItem.description}
+                  {detailDesc}
                 </p>
               )}
 
@@ -1838,11 +1850,13 @@ export default function HomeOrderPage() {
                   transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                   style={{ flex: 1, height: '44px', borderRadius: '12px', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem', fontWeight: 700 }}
                 >
-                  In den Warenkorb · {(selectedItem.price * detailQty).toFixed(2)} €
+                  {t('order.addToCart')} · {(selectedItem.price * detailQty).toFixed(2)} €
                 </motion.button>
               </div>
             </div>
           </div>
+            )
+          })()}
         </motion.div>
       )}
       </AnimatePresence>
