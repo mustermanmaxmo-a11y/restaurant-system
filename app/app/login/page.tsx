@@ -3,11 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useLanguage } from '@/components/providers/language-provider'
+import { LanguageSelector } from '@/components/ui/language-selector'
 
 const PINS = ['', '', '', '']
 
 export default function LoginPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [pin, setPin] = useState<string[]>(PINS)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -43,7 +46,7 @@ export default function LoginPage() {
       .limit(1)
 
     if (error || !data || data.length === 0) {
-      setError('Falscher PIN')
+      setError(t('auth.invalidPin'))
       setPin(['', '', '', ''])
       setLoading(false)
       return
@@ -54,13 +57,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6" style={{ position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}>
+        <LanguageSelector />
+      </div>
       <div className="w-full max-w-xs">
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="text-5xl mb-3">🍽️</div>
-          <h1 className="text-white text-2xl font-bold">Personal Login</h1>
-          <p className="text-zinc-400 text-sm mt-1">PIN eingeben</p>
+          <h1 className="text-white text-2xl font-bold">{t('auth.staffLogin')}</h1>
+          <p className="text-zinc-400 text-sm mt-1">{t('auth.pin')}</p>
         </div>
 
         {/* PIN Display */}
