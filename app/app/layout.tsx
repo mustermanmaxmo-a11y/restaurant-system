@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Syne, DM_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
+import { LanguageProvider } from '@/components/providers/language-provider'
 import './globals.css'
 
 const syne = Syne({ subsets: ['latin'], variable: '--font-heading', weight: ['700', '800'] })
@@ -27,7 +28,9 @@ export default function RootLayout({
       </head>
       <body className={`${syne.variable} ${dmSans.variable}`} style={{ fontFamily: 'var(--font-body), system-ui, sans-serif' }}>
         <ThemeProvider>
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
