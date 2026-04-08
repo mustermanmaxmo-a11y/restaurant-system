@@ -8,18 +8,13 @@ import { buildColors } from '@/lib/color-utils'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
 import ChatWidget from '@/components/ChatWidget'
+import { useLanguage } from '@/components/providers/language-provider'
+import { LanguageSelector } from '@/components/ui/language-selector'
 
 type CartItem = { item: MenuItem; qty: number; note: string }
 type View = 'menu' | 'cart' | 'status'
 type GroupMode = 'none' | 'create' | 'join' | 'active' | 'group-pay'
 
-const DIETARY_FILTERS = [
-  { key: 'vegetarisch', label: '🌱 Vegeta­risch' },
-  { key: 'vegan', label: '🌿 Vegan' },
-  { key: 'glutenfrei', label: '🌾 Glutenfrei' },
-  { key: 'laktosefrei', label: '🥛 Laktosefrei' },
-  { key: 'scharf', label: '🌶️ Scharf' },
-]
 
 const ALLERGEN_FILTERS = [
   'Gluten', 'Nüsse', 'Milch', 'Eier', 'Fisch',
@@ -27,13 +22,6 @@ const ALLERGEN_FILTERS = [
 ]
 
 // C is derived per-render from restaurant branding (see buildColors call inside component)
-
-const STATUS_LABELS: Record<string, { label: string; icon: string }> = {
-  new: { label: 'Bestellung eingegangen', icon: '📋' },
-  cooking: { label: 'Wird zubereitet', icon: '👨‍🍳' },
-  served: { label: 'Serviert — Guten Appetit!', icon: '✅' },
-  cancelled: { label: 'Storniert', icon: '❌' },
-}
 
 const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
 const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
@@ -50,13 +38,17 @@ function SkeletonBlock({ w = '100%', h = '18px', r = '8px' }: { w?: string; h?: 
 }
 
 function ItemCard({
-  item, qty, isFav, index, C, special,
+  item, qty, isFav, index, C, special, lang,
   onOpen, onAdd, onRemove, onFav,
 }: {
   item: MenuItem; qty: number; isFav: boolean; index: number; C: Record<string, string>
   special?: { label: string; special_price: number | null }
+  lang?: string
   onOpen: () => void; onAdd: () => void; onRemove: () => void; onFav: () => void
 }) {
+  const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
+  const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
+  const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
   const inCart = qty > 0
   return (
     <motion.div
@@ -106,9 +98,9 @@ function ItemCard({
             🔥 {special.label}
           </span>
         )}
-        <p style={{ color: C.text, fontWeight: 600, fontSize: '0.92rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
-        {item.description && (
-          <p style={{ color: C.muted, fontSize: '0.78rem', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{item.description}</p>
+        <p style={{ color: C.text, fontWeight: 600, fontSize: '0.92rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
+        {displayDesc && (
+          <p style={{ color: C.muted, fontSize: '0.78rem', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{displayDesc}</p>
         )}
         {item.tags.length > 0 && (
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '5px' }}>
@@ -174,6 +166,20 @@ export default function OrderPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const token = params.token as string
+
+  const { lang, t } = useLanguage()
+
+  const STATUS_ICONS: Record<string, string> = {
+    new: '📋', cooking: '👨‍🍳', served: '✅', cancelled: '❌',
+  }
+
+  const DIETARY_FILTERS = [
+    { key: 'vegetarisch', label: t('order.dietary.vegetarisch') },
+    { key: 'vegan',       label: t('order.dietary.vegan') },
+    { key: 'glutenfrei',  label: t('order.dietary.glutenfrei') },
+    { key: 'laktosefrei', label: t('order.dietary.laktosefrei') },
+    { key: 'scharf',      label: t('order.dietary.scharf') },
+  ]
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [table, setTable] = useState<Table | null>(null)
@@ -595,7 +601,8 @@ export default function OrderPage() {
 
   // ─── Status View ───────────────────────────────────────────────────────────
   if (view === 'status' && order) {
-    const status = STATUS_LABELS[order.status] ?? STATUS_LABELS.new
+    const statusIcon = STATUS_ICONS[order.status] ?? STATUS_ICONS.new
+    const statusLabel = t(`order.status.${order.status}`) || t('order.status.new')
     const statusIdx = ['new', 'cooking', 'served'].indexOf(order.status)
     const isServed = order.status === 'served'
     const confettiColors = [C.accent, '#f59e0b', '#10b981', '#3b82f6', '#ec4899']
@@ -623,14 +630,14 @@ export default function OrderPage() {
               initial={{ scale: 0.4, opacity: 0, rotate: -15 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.4, opacity: 0 }}
               transition={springBouncy}
               style={{ fontSize: '4.5rem', marginBottom: '18px', display: 'inline-block' }}
-            >{status.icon}</motion.div>
+            >{statusIcon}</motion.div>
           </AnimatePresence>
           <AnimatePresence mode="wait">
             <motion.h1 key={order.status + 'l'}
               initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
               transition={spring}
               style={{ color: C.text, fontSize: 'clamp(1.3rem, 5vw, 1.6rem)', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.02em' }}
-            >{status.label}</motion.h1>
+            >{statusLabel}</motion.h1>
           </AnimatePresence>
           <p style={{ color: C.muted, fontSize: '0.85rem' }}>Tisch {table?.table_num} · {restaurant?.name}</p>
         </div>
@@ -687,7 +694,7 @@ export default function OrderPage() {
               </div>
             ))}
             <div style={{ borderTop: `1px solid ${C.border}`, marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: C.text, fontWeight: 700 }}>Gesamt</span>
+              <span style={{ color: C.text, fontWeight: 700 }}>{t('order.total')}</span>
               <span style={{ color: C.accent, fontWeight: 800, fontSize: '1.05rem' }}>{order.total.toFixed(2)} €</span>
             </div>
           </div>
@@ -707,7 +714,7 @@ export default function OrderPage() {
             onClick={() => { setCart([]); setNote(''); setView('menu') }}
             whileTap={{ scale: 0.98 }} transition={spring}
             style={{ width: '100%', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '13px', color: C.muted, cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
-          >Weitere Bestellung aufgeben</motion.button>
+          >{t('order.backToMenu')}</motion.button>
         </div>
       </div>
     )
@@ -726,7 +733,7 @@ export default function OrderPage() {
             style={{ width: '38px', height: '38px', borderRadius: '50%', background: C.surface2, border: `1px solid ${C.border}`, color: C.text, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
             ←
           </motion.button>
-          <h2 style={{ color: C.text, fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.01em' }}>Warenkorb</h2>
+          <h2 style={{ color: C.text, fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.01em' }}>{t('order.cart')}</h2>
         </div>
 
         <div style={{ padding: '20px', maxWidth: '480px', margin: '0 auto', paddingBottom: '40px' }}>
@@ -734,7 +741,7 @@ export default function OrderPage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={spring}
               style={{ textAlign: 'center', padding: '80px 0' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: '14px', opacity: 0.4 }}>🛒</div>
-              <p style={{ color: C.muted, fontWeight: 600 }}>Dein Warenkorb ist leer</p>
+              <p style={{ color: C.muted, fontWeight: 600 }}>{t('order.emptyCart')}</p>
             </motion.div>
           ) : (
             <>
@@ -848,7 +855,7 @@ export default function OrderPage() {
                   </div>
                 )}
                 <div style={{ borderTop: `1px solid ${C.border}`, marginTop: tipAmount > 0 ? '0' : '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: C.text, fontWeight: 700 }}>Gesamt</span>
+                  <span style={{ color: C.text, fontWeight: 700 }}>{t('order.total')}</span>
                   <span style={{ color: C.text, fontWeight: 800, fontSize: '1.2rem' }}>{total.toFixed(2)} €</span>
                 </div>
               </div>
@@ -872,12 +879,12 @@ export default function OrderPage() {
                 }}
               >
                 {submitting
-                  ? 'Bitte warten...'
+                  ? t('common.loading')
                   : !paymentMethod
                     ? 'Zahlungsart wählen'
                     : paymentMethod === 'online'
                       ? `Jetzt bezahlen · ${total.toFixed(2)} €`
-                      : `Bestellen · ${subtotal.toFixed(2)} €`
+                      : `${t('order.placeOrder')} · ${subtotal.toFixed(2)} €`
                 }
               </motion.button>
             </>
@@ -927,7 +934,8 @@ export default function OrderPage() {
             </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <LanguageSelector />
             <motion.button onClick={() => setShowFilters(f => !f)} whileTap={{ scale: 0.88 }} transition={springBouncy}
               style={{ position: 'relative', background: filterCount > 0 ? C.accentDim : C.surface2, border: `1px solid ${filterCount > 0 ? C.accent : C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
               🔍
@@ -1060,7 +1068,7 @@ export default function OrderPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {filterItems(items.filter(i => favorites.has(i.id))).map((item, idx) => {
                     const qty = getItemQty(item.id)
-                    return <ItemCard key={item.id} item={item} qty={qty} isFav index={idx} C={C} special={specials[item.id]} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
+                    return <ItemCard key={item.id} item={item} qty={qty} isFav index={idx} C={C} lang={lang} special={specials[item.id]} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
                   })}
                 </div>
               )}
@@ -1081,7 +1089,7 @@ export default function OrderPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {catItems.map((item, idx) => {
                     const qty = getItemQty(item.id)
-                    return <ItemCard key={item.id} item={item} qty={qty} isFav={favorites.has(item.id)} index={idx} C={C} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
+                    return <ItemCard key={item.id} item={item} qty={qty} isFav={favorites.has(item.id)} index={idx} C={C} lang={lang} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
                   })}
                 </div>
               </div>
@@ -1222,7 +1230,7 @@ export default function OrderPage() {
 
                 {selectedItem.allergens.length > 0 && (
                   <div style={{ marginTop: '12px' }}>
-                    <p style={{ color: C.muted2, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Allergene</p>
+                    <p style={{ color: C.muted2, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>{t('order.allergens')}</p>
                     <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                       {selectedItem.allergens.map(a => (
                         <span key={a} style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '0.7rem', padding: '3px 8px', borderRadius: '5px', fontWeight: 600 }}>{a}</span>
@@ -1265,7 +1273,7 @@ export default function OrderPage() {
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }} transition={spring}
                     style={{ flex: 1, height: '44px', borderRadius: '12px', background: C.accent, border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 800, boxShadow: `0 4px 18px ${C.accentGlow}`, letterSpacing: '-0.01em' }}
                   >
-                    In den Warenkorb · {(selectedItem.price * detailQty).toFixed(2)} €
+                    {t('order.addToCart')} · {(selectedItem.price * detailQty).toFixed(2)} €
                   </motion.button>
                 </div>
               </div>
@@ -1317,17 +1325,17 @@ export default function OrderPage() {
                 </div>
 
                 {/* Group ordering */}
-                <p style={{ color: C.muted2, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>Gruppenbestellung</p>
+                <p style={{ color: C.muted2, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>{t('order.groupOrder')}</p>
 
                 {groupMode === 'none' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                     <motion.button onClick={() => setGroupMode('create')} whileTap={{ scale: 0.97 }} transition={spring}
                       style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.accent}66`, background: C.accentDim, color: C.accent, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left' }}>
-                      👥 Gruppe erstellen — Code teilen, alle bestellen gemeinsam
+                      👥 {t('order.createGroup')} — Code teilen, alle bestellen gemeinsam
                     </motion.button>
                     <motion.button onClick={() => setGroupMode('join')} whileTap={{ scale: 0.97 }} transition={spring}
                       style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left' }}>
-                      🔗 Gruppe beitreten (Code eingeben)
+                      🔗 {t('order.joinGroup')} (Code eingeben)
                     </motion.button>
                   </div>
                 )}
@@ -1372,7 +1380,7 @@ export default function OrderPage() {
                     <div style={{ background: C.bg, borderRadius: '14px', padding: '16px', marginBottom: '14px', border: `1px solid ${C.border}` }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <div>
-                          <p style={{ color: C.muted, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '3px' }}>Gruppen-Code</p>
+                          <p style={{ color: C.muted, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '3px' }}>{t('order.groupCode')}</p>
                           <span style={{ color: C.accent, fontWeight: 800, fontSize: '1.4rem', letterSpacing: '0.2em' }}>{groupCode}</span>
                         </div>
                         <motion.button whileTap={{ scale: 0.94 }} transition={spring}
@@ -1381,7 +1389,7 @@ export default function OrderPage() {
                             setCopiedGroup(true); setTimeout(() => setCopiedGroup(false), 2000)
                           }}
                           style={{ padding: '8px 16px', borderRadius: '10px', border: `1.5px solid ${copiedGroup ? '#10b981' : C.accent}`, background: copiedGroup ? 'rgba(16,185,129,0.1)' : C.accentDim, color: copiedGroup ? '#10b981' : C.accent, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
-                          {copiedGroup ? '✓ Kopiert!' : 'Link kopieren'}
+                          {copiedGroup ? `✓ ${t('order.copied')}` : t('order.copyCode')}
                         </motion.button>
                       </div>
                       <p style={{ color: C.muted, fontSize: '0.78rem', lineHeight: 1.5, marginBottom: groupItems.length > 0 ? '14px' : '0' }}>
