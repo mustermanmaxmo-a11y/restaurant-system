@@ -75,6 +75,7 @@ export interface MenuItem {
   available: boolean
   sort_order: number
   created_at: string
+  translations?: Record<string, { name: string; description: string }> | null
 }
 
 export interface OrderItem {
