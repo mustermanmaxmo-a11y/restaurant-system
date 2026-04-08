@@ -51,6 +51,20 @@ export default function MenuPage() {
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
+  const [translatingId, setTranslatingId] = useState<string | null>(null)
+
+  async function triggerTranslation(itemId: string, name: string, description: string | null) {
+    setTranslatingId(itemId)
+    try {
+      await supabase.functions.invoke('translate-menu-item', {
+        body: { item_id: itemId, name, description: description || '' },
+      })
+    } catch (e) {
+      console.error('Translation failed:', e)
+    } finally {
+      setTranslatingId(null)
+    }
+  }
 
   useEffect(() => {
     async function load() {
@@ -175,6 +189,22 @@ export default function MenuPage() {
       })
     }
     await loadData(restaurant.id)
+    // Trigger auto-translation in background
+    if (editingItem) {
+      triggerTranslation(editingItem.id, itemName.trim(), itemDesc.trim() || null)
+    } else {
+      // For new items, find the just-inserted item by name
+      const { data: newItems } = await supabase
+        .from('menu_items')
+        .select('id')
+        .eq('restaurant_id', restaurant.id)
+        .eq('name', itemName.trim())
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (newItems && newItems[0]) {
+        triggerTranslation(newItems[0].id, itemName.trim(), itemDesc.trim() || null)
+      }
+    }
     setModal(null)
     setSaving(false)
   }
@@ -285,6 +315,11 @@ export default function MenuPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', flexWrap: 'wrap' }}>
                           <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</span>
+                          {translatingId === item.id && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', marginLeft: '6px' }}>
+                              🌐 wird übersetzt...
+                            </span>
+                          )}
                           {item.tags.map(tag => {
                             const dl = DIETARY_LABELS.find(d => d.key === tag)
                             return <span key={tag} style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 700 }}>{dl ? dl.label : tag}</span>
