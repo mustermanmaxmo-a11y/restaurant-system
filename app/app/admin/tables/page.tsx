@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Table, Restaurant } from '@/types/database'
 import FloorPlanEditor from '@/components/FloorPlanEditor'
+import { useLanguage } from '@/components/providers/language-provider'
 
 export default function TablesPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [tables, setTables] = useState<Table[]>([])
   const [loading, setLoading] = useState(true)
@@ -77,7 +79,7 @@ export default function TablesPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 
@@ -173,7 +175,7 @@ export default function TablesPage() {
                     onClick={() => deleteTable(table.id)}
                     style={{ width: '100%', padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#ef4444', fontSize: '0.8rem', cursor: 'pointer' }}
                   >
-                    Löschen
+                    {t('common.delete')}
                   </button>
                 </div>
               </div>
@@ -210,7 +212,7 @@ export default function TablesPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
               <button onClick={addTable} disabled={saving || !tableNum} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                 {saving ? '...' : 'Anlegen'}
               </button>
@@ -242,7 +244,7 @@ export default function TablesPage() {
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${copiedId === qrModal.id ? '#10b98144' : 'var(--border)'}`, background: copiedId === qrModal.id ? '#10b98112' : 'transparent', color: copiedId === qrModal.id ? '#10b981' : 'var(--text)' }}>{copiedId === qrModal.id ? '✓ Kopiert!' : 'Link kopieren'}</button>
-              <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Schließen</button>
+              <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{t('common.close')}</button>
             </div>
           </div>
         </div>

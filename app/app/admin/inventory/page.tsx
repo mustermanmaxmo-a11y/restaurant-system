@@ -9,6 +9,7 @@ import type {
   PurchaseOrder, PurchaseOrderLine,
   WasteReason, PurchaseOrderStatus,
 } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 type Tab = 'bestand' | 'lieferanten' | 'bestellungen' | 'verluste'
 
@@ -57,6 +58,7 @@ function getISOWeek(date: Date): string {
 
 export default function InventoryPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('bestand')
@@ -424,7 +426,7 @@ export default function InventoryPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 
@@ -581,7 +583,7 @@ export default function InventoryPage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => openEditSup(s)} style={btnSmall}>✏ Bearbeiten</button>
-                      <button onClick={() => deleteSup(s.id)} style={{ ...btnSmall, color: '#f87171' }}>Löschen</button>
+                      <button onClick={() => deleteSup(s.id)} style={{ ...btnSmall, color: '#f87171' }}>{t('common.delete')}</button>
                     </div>
                   </div>
                 ))}
@@ -752,7 +754,7 @@ export default function InventoryPage() {
                 <input type="text" value={wasteNote} onChange={e => setWasteNote(e.target.value)} style={inputStyle} placeholder="z.B. zu lange gelagert" />
               </div>
               <button onClick={saveWaste} disabled={wasteSaving || !wasteIngredient || !wasteQty} style={{ ...btnPrimary, width: '100%', opacity: wasteSaving || !wasteIngredient || !wasteQty ? 0.5 : 1 }}>
-                {wasteSaving ? 'Speichert...' : 'Verlust buchen'}
+                {wasteSaving ? '...' : 'Verlust buchen'}
               </button>
             </div>
 
@@ -845,9 +847,9 @@ export default function InventoryPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setIngModal(null)} style={btnSecondary}>Abbrechen</button>
+              <button onClick={() => setIngModal(null)} style={btnSecondary}>{t('common.cancel')}</button>
               <button onClick={saveIng} disabled={ingSaving || !ingName.trim()} style={{ ...btnPrimary, opacity: ingSaving || !ingName.trim() ? 0.5 : 1 }}>
-                {ingSaving ? 'Speichert...' : 'Speichern'}
+                {ingSaving ? '...' : t('common.save')}
               </button>
             </div>
           </div>
@@ -869,9 +871,9 @@ export default function InventoryPage() {
               <input value={delivNote} onChange={e => setDelivNote(e.target.value)} style={inputStyle} placeholder="optional" />
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setDelivModal(null)} style={btnSecondary}>Abbrechen</button>
+              <button onClick={() => setDelivModal(null)} style={btnSecondary}>{t('common.cancel')}</button>
               <button onClick={saveDelivery} disabled={delivSaving || !delivQty} style={{ ...btnPrimary, opacity: delivSaving || !delivQty ? 0.5 : 1 }}>
-                {delivSaving ? 'Speichert...' : '+ Einbuchen'}
+                {delivSaving ? '...' : '+ Einbuchen'}
               </button>
             </div>
           </div>
@@ -893,9 +895,9 @@ export default function InventoryPage() {
               <input value={corrNote} onChange={e => setCorrNote(e.target.value)} style={inputStyle} placeholder="Grund der Korrektur" />
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setCorrModal(null)} style={btnSecondary}>Abbrechen</button>
+              <button onClick={() => setCorrModal(null)} style={btnSecondary}>{t('common.cancel')}</button>
               <button onClick={saveCorrection} disabled={corrSaving || !corrDelta} style={{ ...btnPrimary, opacity: corrSaving || !corrDelta ? 0.5 : 1 }}>
-                {corrSaving ? 'Speichert...' : 'Korrigieren'}
+                {corrSaving ? '...' : 'Korrigieren'}
               </button>
             </div>
           </div>
@@ -935,9 +937,9 @@ export default function InventoryPage() {
               ))}
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setLinkModal(null)} style={btnSecondary}>Abbrechen</button>
+              <button onClick={() => setLinkModal(null)} style={btnSecondary}>{t('common.cancel')}</button>
               <button onClick={saveLinks} disabled={linkSaving} style={{ ...btnPrimary, opacity: linkSaving ? 0.5 : 1 }}>
-                {linkSaving ? 'Speichert...' : 'Speichern'}
+                {linkSaving ? '...' : t('common.save')}
               </button>
             </div>
           </div>
@@ -974,9 +976,9 @@ export default function InventoryPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setSupModal(null)} style={btnSecondary}>Abbrechen</button>
+              <button onClick={() => setSupModal(null)} style={btnSecondary}>{t('common.cancel')}</button>
               <button onClick={saveSup} disabled={supSaving || !supName.trim()} style={{ ...btnPrimary, opacity: supSaving || !supName.trim() ? 0.5 : 1 }}>
-                {supSaving ? 'Speichert...' : 'Speichern'}
+                {supSaving ? '...' : t('common.save')}
               </button>
             </div>
           </div>

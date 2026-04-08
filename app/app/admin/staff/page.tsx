@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Staff, Restaurant } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 export default function StaffPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [staffList, setStaffList] = useState<Staff[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function StaffPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 
@@ -126,7 +128,7 @@ export default function StaffPage() {
                   >
                     {staff.active ? 'Aktiv' : 'Inaktiv'}
                   </button>
-                  <button onClick={() => openEdit(staff)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>Bearbeiten</button>
+                  <button onClick={() => openEdit(staff)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('common.edit')}</button>
                   <button onClick={() => deleteStaff(staff.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>🗑</button>
                 </div>
               </div>
@@ -175,9 +177,9 @@ export default function StaffPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
               <button onClick={save} disabled={saving || !name.trim() || !code.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
-                {saving ? '...' : 'Speichern'}
+                {saving ? '...' : t('common.save')}
               </button>
             </div>
           </div>
