@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { MenuCategory, MenuItem, Restaurant } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | null
 
@@ -23,6 +24,7 @@ const ALLERGEN_LIST = [
 
 export default function MenuPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [categories, setCategories] = useState<MenuCategory[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
@@ -160,7 +162,7 @@ export default function MenuPage() {
 
   async function deleteCategory(catId: string) {
     if (!restaurant) return
-    if (!confirm('Kategorie und alle darin enthaltenen Items löschen?')) return
+    if (!confirm(t('admin.deleteConfirmCategory'))) return
     await supabase.from('menu_items').delete().eq('category_id', catId)
     await supabase.from('menu_categories').delete().eq('id', catId)
     await loadData(restaurant.id)
@@ -216,14 +218,14 @@ export default function MenuPage() {
 
   async function deleteItem(itemId: string) {
     if (!restaurant) return
-    if (!confirm('Item löschen?')) return
+    if (!confirm(t('admin.deleteConfirmItem'))) return
     await supabase.from('menu_items').delete().eq('id', itemId)
     setItems(prev => prev.filter(i => i.id !== itemId))
   }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 
@@ -317,7 +319,7 @@ export default function MenuPage() {
                           <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</span>
                           {translatingId === item.id && (
                             <span style={{ fontSize: '0.65rem', color: 'var(--accent)', marginLeft: '6px' }}>
-                              🌐 wird übersetzt...
+                              🌐 {t('admin.translating')}
                             </span>
                           )}
                           {item.tags.map(tag => {
@@ -336,9 +338,9 @@ export default function MenuPage() {
                           onClick={() => toggleItemAvailable(item)}
                           style={{ background: item.available ? '#10b98122' : '#ef444422', border: 'none', borderRadius: '6px', padding: '5px 10px', color: item.available ? '#10b981' : '#ef4444', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                         >
-                          {item.available ? 'Verfügbar' : 'Aus'}
+                          {item.available ? t('admin.available') : 'Aus'}
                         </button>
-                        <button onClick={() => openEditItem(item)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>Bearbeiten</button>
+                        <button onClick={() => openEditItem(item)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('common.edit')}</button>
                         <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>🗑</button>
                       </div>
                     </div>
@@ -387,7 +389,7 @@ export default function MenuPage() {
             {(modal === 'add-category' || modal === 'edit-category') && (
               <>
                 <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>
-                  {modal === 'add-category' ? 'Kategorie anlegen' : 'Kategorie bearbeiten'}
+                  {modal === 'add-category' ? t('admin.newCategory') : t('admin.editCategory')}
                 </h3>
                 <input
                   value={catName}
@@ -402,9 +404,9 @@ export default function MenuPage() {
                   </button>
                 )}
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Abbrechen</button>
+                  <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
                   <button onClick={saveCategory} disabled={saving || !catName.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
-                    {saving ? '...' : 'Speichern'}
+                    {saving ? '...' : t('common.save')}
                   </button>
                 </div>
               </>
@@ -413,11 +415,11 @@ export default function MenuPage() {
             {(modal === 'add-item' || modal === 'edit-item') && (
               <>
                 <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>
-                  {modal === 'add-item' ? 'Item hinzufügen' : 'Item bearbeiten'}
+                  {modal === 'add-item' ? t('admin.newItem') : t('admin.editItem')}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                   <div>
-                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Kategorie</label>
+                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('common.category')}</label>
                     <select value={itemCategoryId} onChange={e => setItemCategoryId(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none' }}>
                       {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                     </select>
@@ -427,11 +429,11 @@ export default function MenuPage() {
                     <input value={itemName} onChange={e => setItemName(e.target.value)} placeholder="z.B. Currywurst" autoFocus style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Beschreibung</label>
+                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('common.description')}</label>
                     <textarea value={itemDesc} onChange={e => setItemDesc(e.target.value)} placeholder="Kurze Beschreibung..." rows={2} style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Preis (€) *</label>
+                    <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('common.price')} (€) *</label>
                     <input value={itemPrice} onChange={e => setItemPrice(e.target.value)} placeholder="4.90" type="text" inputMode="decimal" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
                   </div>
                   <div>
@@ -491,13 +493,13 @@ export default function MenuPage() {
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={itemAvailable} onChange={e => setItemAvailable(e.target.checked)} style={{ width: '16px', height: '16px' }} />
-                    <span style={{ color: 'var(--text)', fontSize: '0.875rem' }}>Verfügbar (im Menü sichtbar)</span>
+                    <span style={{ color: 'var(--text)', fontSize: '0.875rem' }}>{t('admin.available')} (im Menü sichtbar)</span>
                   </label>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>Abbrechen</button>
+                  <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
                   <button onClick={saveItem} disabled={saving || !itemName.trim() || !itemPrice} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
-                    {saving ? '...' : 'Speichern'}
+                    {saving ? '...' : t('common.save')}
                   </button>
                 </div>
               </>
