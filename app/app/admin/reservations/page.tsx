@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Reservation, Restaurant, Table } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 type Filter = 'today' | 'tomorrow' | 'week'
 
-const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  pending:   { bg: '#fffbeb', color: '#f59e0b', label: 'Ausstehend' },
-  confirmed: { bg: '#ecfdf5', color: '#10b981', label: 'Bestätigt' },
-  cancelled: { bg: '#fef2f2', color: '#ef4444', label: 'Abgesagt' },
-}
-
 export default function ReservationsPage() {
   const router = useRouter()
+  const { t } = useLanguage()
+
+  const STATUS_COLORS: Record<string, { bg: string; color: string; label: string }> = {
+    pending:   { bg: '#fffbeb', color: '#f59e0b', label: 'Ausstehend' },
+    confirmed: { bg: '#ecfdf5', color: '#10b981', label: 'Bestätigt' },
+    cancelled: { bg: '#fef2f2', color: '#ef4444', label: t('order.status.cancelled') },
+  }
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [tables, setTables] = useState<Table[]>([])
@@ -78,7 +80,7 @@ export default function ReservationsPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 

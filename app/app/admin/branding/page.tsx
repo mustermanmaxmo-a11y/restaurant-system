@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { BRANDING_PRESETS } from '@/lib/branding-presets'
 import { darken } from '@/lib/color-utils'
 import type { Restaurant } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 // ─── ShineBorder (inlined, no extra deps) ──────────────────────────────────
 function ShineBorder({
@@ -100,6 +101,7 @@ function ColorPickerInput({
 export default function BrandingPage() {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
+  const { t } = useLanguage()
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
@@ -189,7 +191,7 @@ export default function BrandingPage() {
   }
 
   if (loading) return (
-    <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Laden…</div>
+    <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('common.loading')}</div>
   )
 
   const activePreset = BRANDING_PRESETS.find(p => p.id === presetId)
@@ -466,7 +468,7 @@ export default function BrandingPage() {
           boxShadow: `0 4px 20px ${primaryColor}44`,
         }}
       >
-        {saving ? 'Speichern…' : saved ? '✓ Gespeichert' : 'Änderungen speichern'}
+        {saving ? '...' : saved ? '✓' : t('common.save')}
       </button>
     </div>
   )

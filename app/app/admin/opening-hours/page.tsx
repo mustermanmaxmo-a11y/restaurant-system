@@ -4,26 +4,29 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant } from '@/types/database'
-
-const DAYS = [
-  { key: '0', label: 'Montag' },
-  { key: '1', label: 'Dienstag' },
-  { key: '2', label: 'Mittwoch' },
-  { key: '3', label: 'Donnerstag' },
-  { key: '4', label: 'Freitag' },
-  { key: '5', label: 'Samstag' },
-  { key: '6', label: 'Sonntag' },
-]
+import { useLanguage } from '@/components/providers/language-provider'
 
 type DayHours = { open: string; close: string; closed: boolean }
 type Hours = Record<string, DayHours>
 
 const DEFAULT_HOURS: Hours = Object.fromEntries(
-  DAYS.map(d => [d.key, { open: '11:00', close: '22:00', closed: false }])
+  ['0','1','2','3','4','5','6'].map(k => [k, { open: '11:00', close: '22:00', closed: false }])
 )
 
 export default function OpeningHoursPage() {
   const router = useRouter()
+  const { t } = useLanguage()
+
+  const DAYS = [
+    { key: '0', label: t('days.mon') },
+    { key: '1', label: t('days.tue') },
+    { key: '2', label: t('days.wed') },
+    { key: '3', label: t('days.thu') },
+    { key: '4', label: t('days.fri') },
+    { key: '5', label: t('days.sat') },
+    { key: '6', label: t('days.sun') },
+  ]
+
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [hours, setHours] = useState<Hours>(DEFAULT_HOURS)
   const [loading, setLoading] = useState(true)
@@ -66,7 +69,7 @@ export default function OpeningHoursPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 
@@ -83,7 +86,7 @@ export default function OpeningHoursPage() {
           disabled={saving}
           style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >
-          {saving ? 'Speichert...' : saved ? '✓ Gespeichert' : 'Speichern'}
+          {saving ? '...' : saved ? '✓' : t('common.save')}
         </button>
       </div>
 

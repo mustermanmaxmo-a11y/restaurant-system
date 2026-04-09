@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Order, OrderStatus, ServiceCall, Table } from '@/types/database'
 import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X } from 'lucide-react'
+import { useLanguage } from '@/components/providers/language-provider'
 
 type OrderWithTable = Order & { table_label?: string }
 
@@ -188,6 +189,7 @@ function ServiceCallBanner({ calls, tables, onResolve }: {
 }
 
 export default function OrdersPage() {
+  const { t } = useLanguage()
   const [orders, setOrders]       = useState<OrderWithTable[]>([])
   const [tables, setTables]       = useState<Table[]>([])
   const tablesRef                 = useRef<Table[]>([])
@@ -279,7 +281,7 @@ export default function OrdersPage() {
   }, [])
 
   const cancelOrder = useCallback(async (id: string) => {
-    if (!confirm('Bestellung wirklich stornieren?')) return
+    if (!confirm(t('order.status.cancelled') + '?')) return
     await supabase.from('orders').update({ status: 'cancelled' }).eq('id', id)
   }, [])
 
@@ -290,7 +292,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-        <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+        <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
       </div>
     )
   }

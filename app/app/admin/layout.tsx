@@ -4,32 +4,35 @@ import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/components/providers/theme-provider'
+import { LanguageSelector } from '@/components/ui/language-selector'
+import { useLanguage } from '@/components/providers/language-provider'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
   Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag,
 } from 'lucide-react'
 
-const NAV = [
-  { icon: LayoutDashboard, label: 'Übersicht',     href: '/admin' },
-  { icon: ChefHat,         label: 'Bestellungen',  href: '/admin/orders' },
-  { icon: UtensilsCrossed, label: 'Menü',           href: '/admin/menu' },
-  { icon: Tag,             label: 'Tagesangebote', href: '/admin/specials' },
-  { icon: QrCode,          label: 'Tische & QR',   href: '/admin/tables' },
-  { icon: CalendarDays,    label: 'Reservierungen', href: '/admin/reservations' },
-  { icon: Users,           label: 'Staff',          href: '/admin/staff' },
-  { icon: Clock,           label: 'Öffnungszeiten', href: '/admin/opening-hours' },
-  { icon: Palette,         label: 'Branding',       href: '/admin/branding' },
-  { icon: Package,         label: 'Lagerbestand',   href: '/admin/inventory' },
-  { icon: BarChart2,       label: 'Statistik',      href: '/admin/stats' },
-  { icon: CreditCard,      label: 'Billing',        href: '/admin/billing' },
-]
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
+  const { t } = useLanguage()
   const [restaurantName, setRestaurantName] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const NAV = [
+    { icon: LayoutDashboard, label: t('nav.overview'),      href: '/admin' },
+    { icon: ChefHat,         label: t('nav.orders'),        href: '/admin/orders' },
+    { icon: UtensilsCrossed, label: t('nav.menu'),          href: '/admin/menu' },
+    { icon: Tag,             label: t('nav.specials'),      href: '/admin/specials' },
+    { icon: QrCode,          label: t('nav.tables'),        href: '/admin/tables' },
+    { icon: CalendarDays,    label: t('nav.reservations'),  href: '/admin/reservations' },
+    { icon: Users,           label: t('nav.staff'),         href: '/admin/staff' },
+    { icon: Clock,           label: t('nav.openingHours'),  href: '/admin/opening-hours' },
+    { icon: Palette,         label: t('nav.branding'),      href: '/admin/branding' },
+    { icon: Package,         label: t('nav.inventory'),     href: '/admin/inventory' },
+    { icon: BarChart2,       label: t('nav.stats'),         href: '/admin/stats' },
+    { icon: CreditCard,      label: t('nav.billing'),       href: '/admin/billing' },
+  ]
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -123,8 +126,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }}
         >
           {theme === 'dark' ? <Sun size={15} style={{ flexShrink: 0 }} /> : <Moon size={15} style={{ flexShrink: 0 }} />}
-          {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          {theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
         </button>
+        <div style={{ padding: '4px 12px 6px' }}>
+          <LanguageSelector />
+        </div>
         <button
           onClick={handleLogout}
           className="sidebar-nav-btn"
@@ -136,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }}
         >
           <LogOut size={15} style={{ flexShrink: 0 }} />
-          Abmelden
+          {t('common.logout')}
         </button>
       </div>
     </aside>

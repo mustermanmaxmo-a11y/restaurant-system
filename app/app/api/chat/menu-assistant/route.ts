@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   }).join('\n')
 
   const cartText = body.cart?.length
-    ? '\nAktueller Warenkorb des Gastes:\n' + body.cart.map(i => `• ${i.name} x${i.qty}`).join('\n')
+    ? '\nAktueller Warenkorb des Gastes:\n' + body.cart.map((i: { name: string; qty: number }) => `• ${i.name} x${i.qty}`).join('\n')
     : ''
 
   const systemPrompt = `Du bist der freundliche Menü-Assistent von "${restaurant.name}".

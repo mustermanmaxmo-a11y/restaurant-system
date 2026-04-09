@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { MenuItem, Restaurant } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 type DailySpecial = {
   id: string
@@ -21,6 +22,7 @@ const LABEL_OPTIONS = [
 
 export default function SpecialsPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [items, setItems] = useState<MenuItem[]>([])
   const [specials, setSpecials] = useState<DailySpecial[]>([])
@@ -51,7 +53,7 @@ export default function SpecialsPage() {
         supabase.from('menu_items').select('id, name, price, category_id').eq('restaurant_id', resto.id).eq('available', true).order('name'),
         supabase.from('daily_specials').select('*').eq('restaurant_id', resto.id).order('created_at', { ascending: false }),
       ])
-      setItems(menuItems || [])
+      setItems((menuItems || []) as unknown as MenuItem[])
       setSpecials(currentSpecials || [])
       setLoading(false)
     }
@@ -125,7 +127,7 @@ export default function SpecialsPage() {
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Lädt...</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('common.loading')}</div>
     </div>
   )
 
@@ -297,7 +299,7 @@ export default function SpecialsPage() {
                 onClick={() => setShowModal(false)}
                 disabled={saving}
                 style={{ flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer' }}
-              >Abbrechen</button>
+              >{t('common.cancel')}</button>
               <button
                 onClick={save}
                 disabled={saving || !selectedItemId}

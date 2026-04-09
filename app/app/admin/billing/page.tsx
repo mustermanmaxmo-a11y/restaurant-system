@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant } from '@/types/database'
+import { useLanguage } from '@/components/providers/language-provider'
 
 const PLAN_LABELS: Record<string, string> = {
   basic: 'Basic',
@@ -12,6 +13,7 @@ const PLAN_LABELS: Record<string, string> = {
 
 export default function BillingPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
   const [redirecting, setRedirecting] = useState(false)
@@ -63,7 +65,7 @@ export default function BillingPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Lädt...</p>
+      <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
 

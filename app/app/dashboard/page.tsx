@@ -418,8 +418,8 @@ export default function DashboardPage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.restaurant.name}</span>
             <span style={{ color: '#444', fontSize: '0.8rem', flexShrink: 0 }}>·</span>
             <span style={{ color: '#aaa', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{session.staff.name}</span>
-            <span style={{ background: session.staff.role === 'kitchen' ? '#ff6b3522' : session.staff.role === 'delivery' ? '#f59e0b22' : '#6c63ff22', color: session.staff.role === 'kitchen' ? '#ff6b35' : session.staff.role === 'delivery' ? '#f59e0b' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
-              {session.staff.role === 'kitchen' ? '👨‍🍳 Küche' : session.staff.role === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
+            <span style={{ background: (session.staff.role as string) === 'kitchen' ? '#ff6b3522' : (session.staff.role as string) === 'delivery' ? '#f59e0b22' : '#6c63ff22', color: (session.staff.role as string) === 'kitchen' ? '#ff6b35' : (session.staff.role as string) === 'delivery' ? '#f59e0b' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
+              {(session.staff.role as string) === 'kitchen' ? '👨‍🍳 Küche' : (session.staff.role as string) === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
             </span>
           </div>
           <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', flexShrink: 0, marginLeft: '8px' }}>
