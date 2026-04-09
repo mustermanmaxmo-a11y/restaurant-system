@@ -1113,7 +1113,7 @@ export default function OrderPage() {
             items={items}
             cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
             accentColor={restaurant.primary_color ?? undefined}
-            tableId={table.id}
+            tableId={table?.id}
             restaurantId={restaurant.id}
             onAddToCart={(itemId, _name, qty) => {
               const found = items.find(i => i.id === itemId)
