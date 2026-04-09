@@ -1,4 +1,5 @@
-import '@supabase/functions-js/edge-runtime.d.ts'
+// @ts-ignore
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
