@@ -53,7 +53,7 @@ export default function SpecialsPage() {
         supabase.from('menu_items').select('id, name, price, category_id').eq('restaurant_id', resto.id).eq('available', true).order('name'),
         supabase.from('daily_specials').select('*').eq('restaurant_id', resto.id).order('created_at', { ascending: false }),
       ])
-      setItems(menuItems || [])
+      setItems((menuItems || []) as unknown as MenuItem[])
       setSpecials(currentSpecials || [])
       setLoading(false)
     }
