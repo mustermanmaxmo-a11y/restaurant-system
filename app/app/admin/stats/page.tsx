@@ -301,7 +301,7 @@ export default function StatsPage() {
                   <Tooltip
                     contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}
                     labelStyle={{ color: 'var(--text)', fontWeight: 600 }}
-                    formatter={(v: number) => [`${v.toFixed(2)} €`, 'Umsatz']}
+                    formatter={(v: unknown) => [`${(v as number).toFixed(2)} €`, 'Umsatz']}
                   />
                   <Area type="monotone" dataKey="umsatz" stroke={ACCENT} strokeWidth={2.5} fill="url(#umsatzGrad)" dot={false} activeDot={{ r: 5 }} />
                 </AreaChart>
@@ -320,7 +320,7 @@ export default function StatsPage() {
                       <YAxis dataKey="name" type="category" width={90} tick={{ fill: 'var(--text)', fontSize: 11 }} axisLine={false} tickLine={false} />
                       <Tooltip
                         contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}
-                        formatter={(v: number, name: string) => [name === 'qty' ? `${v}×` : `${v.toFixed(2)} €`, name === 'qty' ? 'Verkauft' : 'Umsatz']}
+                        formatter={(v: unknown, name: unknown) => [(name as string) === 'qty' ? `${v}×` : `${(v as number).toFixed(2)} €`, (name as string) === 'qty' ? 'Verkauft' : 'Umsatz']}
                       />
                       <Bar dataKey="qty" fill={ACCENT} radius={[0, 4, 4, 0]} />
                     </BarChart>
@@ -349,7 +349,7 @@ export default function StatsPage() {
                       </Pie>
                       <Tooltip
                         contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}
-                        formatter={(v: number) => [`${v} Bestellungen`]}
+                        formatter={(v: unknown) => [`${v} Bestellungen`]}
                       />
                       <Legend
                         iconType="circle"
