@@ -4,7 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { buildColors } from '@/lib/color-utils'
+import { buildColors, buildColorsFromRestaurant } from '@/lib/color-utils'
+import { getDesignPackage } from '@/lib/design-packages'
+import { FONT_PAIRS } from '@/lib/font-pairs'
+import { MenuItemCard } from '@/components/menu/MenuItemCard'
+import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
 import ChatWidget from '@/components/ChatWidget'
@@ -37,130 +41,7 @@ function SkeletonBlock({ w = '100%', h = '18px', r = '8px' }: { w?: string; h?: 
   )
 }
 
-function ItemCard({
-  item, qty, isFav, index, C, special, lang,
-  onOpen, onAdd, onRemove, onFav,
-}: {
-  item: MenuItem; qty: number; isFav: boolean; index: number; C: Record<string, string>
-  special?: { label: string; special_price: number | null }
-  lang?: string
-  onOpen: () => void; onAdd: () => void; onRemove: () => void; onFav: () => void
-}) {
-  const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
-  const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
-  const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
-  const inCart = qty > 0
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ ...spring, delay: index * 0.04 }}
-      whileHover={{ y: -2, transition: { duration: 0.18 } }}
-      onClick={onOpen}
-      style={{
-        background: C.surface,
-        borderRadius: '16px',
-        padding: '14px 14px 14px 14px',
-        display: 'flex',
-        gap: '13px',
-        alignItems: 'center',
-        border: `1px solid ${inCart ? C.accentGlow : C.border}`,
-        cursor: 'pointer',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-        boxShadow: inCart ? `0 0 0 1px ${C.accent}22, 0 4px 20px rgba(255,107,53,0.08)` : 'none',
-      }}
-    >
-      {/* In-cart warm glow */}
-      {inCart && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'radial-gradient(ellipse at 80% 50%, rgba(255,107,53,0.04) 0%, transparent 70%)', pointerEvents: 'none' }}
-        />
-      )}
 
-      {item.image_url ? (
-        <img
-          src={item.image_url}
-          alt={item.name}
-          style={{ width: '68px', height: '68px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
-        />
-      ) : (
-        <div style={{ width: '68px', height: '68px', borderRadius: '10px', background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: '1.8rem', opacity: 0.3 }}>🍽</span>
-        </div>
-      )}
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {special && (
-          <span style={{ display: 'inline-block', background: '#f59e0b18', color: '#f59e0b', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', marginBottom: '4px', letterSpacing: '0.02em' }}>
-            🔥 {special.label}
-          </span>
-        )}
-        <p style={{ color: C.text, fontWeight: 600, fontSize: '0.92rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
-        {displayDesc && (
-          <p style={{ color: C.muted, fontSize: '0.78rem', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{displayDesc}</p>
-        )}
-        {item.tags.length > 0 && (
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '5px' }}>
-            {item.tags.slice(0, 3).map(tag => (
-              <span key={tag} style={{ background: C.surface2, color: C.muted, fontSize: '0.62rem', padding: '2px 7px', borderRadius: '5px', fontWeight: 600, letterSpacing: '0.02em' }}>{tag}</span>
-            ))}
-          </div>
-        )}
-        {special?.special_price != null ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <p style={{ color: C.accent, fontWeight: 700, fontSize: '0.95rem' }}>{Number(special.special_price).toFixed(2)} €</p>
-            <p style={{ color: C.muted, fontWeight: 500, fontSize: '0.8rem', textDecoration: 'line-through' }}>{item.price.toFixed(2)} €</p>
-          </div>
-        ) : (
-          <p style={{ color: C.accent, fontWeight: 700, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
-        )}
-      </div>
-
-      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-        {/* Fav */}
-        <motion.button
-          onClick={onFav}
-          whileTap={{ scale: 0.78 }}
-          transition={springBouncy}
-          style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isFav ? C.accent : C.muted2 }}
-        >{isFav ? '♥' : '♡'}</motion.button>
-
-        <AnimatePresence mode="popLayout">
-          {qty > 0 && (
-            <motion.button
-              key="minus"
-              initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
-              transition={springBouncy}
-              onClick={onRemove}
-              style={{ width: '30px', height: '30px', borderRadius: '50%', background: C.surface2, border: `1px solid ${C.border}`, color: C.text, cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
-            >−</motion.button>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence mode="popLayout">
-          {qty > 0 && (
-            <motion.span
-              key={qty}
-              initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.4, opacity: 0 }}
-              transition={springBouncy}
-              style={{ color: C.text, fontWeight: 800, minWidth: '18px', textAlign: 'center', fontSize: '0.9rem' }}
-            >{qty}</motion.span>
-          )}
-        </AnimatePresence>
-
-        <motion.button
-          onClick={onAdd}
-          whileTap={{ scale: 0.78 }}
-          transition={springBouncy}
-          style={{ width: '32px', height: '32px', borderRadius: '50%', background: C.accent, border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, boxShadow: qty > 0 ? `0 2px 12px ${C.accentGlow}` : 'none' }}
-        >+</motion.button>
-      </div>
-    </motion.div>
-  )
-}
 
 export default function OrderPage() {
   const params = useParams()
@@ -549,7 +430,8 @@ export default function OrderPage() {
   const filterCount = activeDietary.length + excludedAllergens.length
 
   // Derived colors — updates automatically when restaurant branding loads
-  const C = buildColors(restaurant?.primary_color, restaurant?.surface_color)
+  const C = restaurant ? buildColorsFromRestaurant(restaurant) : buildColors()
+  const layoutVariant = (restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant
 
   // ─── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
@@ -901,6 +783,7 @@ export default function OrderPage() {
         @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
         * { box-sizing: border-box; }
         html, body { overflow-x: hidden; max-width: 100vw; }
+        ${restaurant ? `:root { --font-heading: ${(FONT_PAIRS[restaurant.font_pair ?? getDesignPackage(restaurant.design_package).fontPair] ?? FONT_PAIRS['syne-dmsans']).heading}; --font-body: ${(FONT_PAIRS[restaurant.font_pair ?? getDesignPackage(restaurant.design_package).fontPair] ?? FONT_PAIRS['syne-dmsans']).body}; }` : ''}
       `}</style>
 
       <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: '110px', overflowX: 'hidden' }}>
@@ -1065,12 +948,15 @@ export default function OrderPage() {
                   <p style={{ color: C.muted2, fontSize: '0.8rem', marginTop: '6px' }}>Tippe auf das Herz bei einem Gericht.</p>
                 </motion.div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <MenuItemGrid layout={layoutVariant}>
                   {filterItems(items.filter(i => favorites.has(i.id))).map((item, idx) => {
                     const qty = getItemQty(item.id)
-                    return <ItemCard key={item.id} item={item} qty={qty} isFav index={idx} C={C} lang={lang} special={specials[item.id]} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
+                    const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
+                    const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
+                    const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
+                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} special={specials[item.id]} displayName={displayName} displayDesc={displayDesc} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite onToggleFavorite={() => toggleFavorite(item.id)} />
                   })}
-                </div>
+                </MenuItemGrid>
               )}
             </div>
           )}
@@ -1086,12 +972,15 @@ export default function OrderPage() {
                 >
                   {cat.name}
                 </motion.h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <MenuItemGrid layout={layoutVariant}>
                   {catItems.map((item, idx) => {
                     const qty = getItemQty(item.id)
-                    return <ItemCard key={item.id} item={item} qty={qty} isFav={favorites.has(item.id)} index={idx} C={C} lang={lang} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} onFav={() => toggleFavorite(item.id)} />
+                    const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
+                    const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
+                    const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
+                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} displayName={displayName} displayDesc={displayDesc} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />
                   })}
-                </div>
+                </MenuItemGrid>
               </div>
             )
           })}

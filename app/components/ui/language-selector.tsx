@@ -38,7 +38,7 @@ export function LanguageSelector() {
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 100,
+          position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 100,
           background: 'var(--surface-2)', border: '1px solid var(--border)',
           borderRadius: '12px', padding: '6px', minWidth: '160px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.3)',

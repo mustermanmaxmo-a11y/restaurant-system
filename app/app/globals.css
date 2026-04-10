@@ -2,6 +2,8 @@
 
 /* Light Mode (Default) */
 :root {
+  --font-heading: var(--font-syne);
+  --font-body: var(--font-dm-sans);
   --bg: #F7F6F3;
   --surface: #FFFFFF;
   --surface-2: #F2F1EE;

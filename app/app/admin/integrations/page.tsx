@@ -57,6 +57,7 @@ function IntegrationsContent() {
   const [aiKeyEditing, setAiKeyEditing] = useState(false)
   const [aiKeySaving, setAiKeySaving] = useState(false)
   const [aiGuideOpen, setAiGuideOpen] = useState(false)
+  const [autoTranslate, setAutoTranslate] = useState(true)
 
   useEffect(() => {
     async function load() {
@@ -76,6 +77,7 @@ function IntegrationsContent() {
       if (resto.anthropic_api_key) {
         setAiKeyMasked(resto.anthropic_api_key.slice(0, 10) + '••••••••••••••')
       }
+      setAutoTranslate(resto.auto_translate_enabled !== false)
       setLoading(false)
     }
     load()
@@ -108,6 +110,13 @@ function IntegrationsContent() {
     setAiKeyMasked(null)
     setAiKeyEditing(false)
     setAiKey('')
+  }
+
+  async function toggleAutoTranslate() {
+    if (!restaurant) return
+    const next = !autoTranslate
+    setAutoTranslate(next)
+    await supabase.from('restaurants').update({ auto_translate_enabled: next }).eq('id', restaurant.id)
   }
 
   async function disconnect(provider: string) {
@@ -315,6 +324,41 @@ function IntegrationsContent() {
                     )}
                   </div>
                 )}
+
+                {/* Auto-Übersetzung Toggle */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 16px', borderRadius: '12px',
+                  background: 'var(--bg)', border: '1px solid var(--border)',
+                  marginBottom: '16px',
+                }}>
+                  <div>
+                    <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.88rem', marginBottom: '2px' }}>
+                      🌐 Menü-Übersetzung
+                    </p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      Namen & Beschreibungen automatisch übersetzen beim Speichern
+                    </p>
+                  </div>
+                  <button
+                    onClick={toggleAutoTranslate}
+                    style={{
+                      width: '44px', height: '24px', borderRadius: '12px',
+                      border: 'none', cursor: 'pointer', flexShrink: 0,
+                      background: autoTranslate ? 'var(--accent)' : 'var(--border)',
+                      position: 'relative', transition: 'background 0.2s',
+                    }}
+                    aria-label="Auto-Übersetzung umschalten"
+                  >
+                    <span style={{
+                      position: 'absolute', top: '3px',
+                      left: autoTranslate ? '23px' : '3px',
+                      width: '18px', height: '18px', borderRadius: '50%',
+                      background: '#fff', transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }} />
+                  </button>
+                </div>
 
                 {/* Anleitung */}
                 <button

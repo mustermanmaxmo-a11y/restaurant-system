@@ -1,11 +1,25 @@
 import type { Metadata } from 'next'
-import { Syne, DM_Sans } from 'next/font/google'
+import { Syne, DM_Sans, Playfair_Display, Lato, Inter, Space_Grotesk, Merriweather, Source_Sans_3, Noto_Serif_Display, Noto_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
 import './globals.css'
 
-const syne = Syne({ subsets: ['latin'], variable: '--font-heading', weight: ['700', '800'] })
-const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-body', weight: ['400', '500', '600'] })
+// Font families for design packages — each gets its own CSS variable
+const syne = Syne({ subsets: ['latin'], variable: '--font-syne', weight: ['700', '800'] })
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', weight: ['400', '500', '600'] })
+const playfairDisplay = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', weight: ['400', '700'] })
+const lato = Lato({ subsets: ['latin'], variable: '--font-lato', weight: ['400', '700'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', weight: ['400', '500', '600', '700'] })
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk', weight: ['500', '700'] })
+const merriweather = Merriweather({ subsets: ['latin'], variable: '--font-merriweather', weight: ['400', '700'] })
+const sourceSans3 = Source_Sans_3({ subsets: ['latin'], variable: '--font-source-sans', weight: ['400', '600'] })
+const notoSerifDisplay = Noto_Serif_Display({ subsets: ['latin'], variable: '--font-noto-serif', weight: ['400', '700'] })
+const notoSans = Noto_Sans({ subsets: ['latin'], variable: '--font-noto-sans', weight: ['400', '500', '600'] })
+
+const allFontVars = [
+  syne, dmSans, playfairDisplay, lato, inter, spaceGrotesk,
+  merriweather, sourceSans3, notoSerifDisplay, notoSans,
+].map(f => f.variable).join(' ')
 
 export const metadata: Metadata = {
   title: 'RestaurantOS',
@@ -26,7 +40,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${syne.variable} ${dmSans.variable}`} style={{ fontFamily: 'var(--font-body), system-ui, sans-serif' }}>
+      <body className={allFontVars} style={{ fontFamily: 'var(--font-body, var(--font-dm-sans)), system-ui, sans-serif' }}>
         <ThemeProvider>
           <LanguageProvider>
             {children}

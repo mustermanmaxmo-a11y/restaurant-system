@@ -26,6 +26,16 @@ export interface Restaurant {
   contact_address: string | null
   description:     string | null
   anthropic_api_key: string | null
+  auto_translate_enabled: boolean | null
+  // Design customization
+  design_package:  string | null
+  layout_variant:  string | null
+  font_pair:       string | null
+  header_color:    string | null
+  button_color:    string | null
+  card_color:      string | null
+  text_color:      string | null
+  bg_color:        string | null
 }
 
 export interface Staff {

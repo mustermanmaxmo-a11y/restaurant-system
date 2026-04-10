@@ -5,6 +5,10 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { darken } from '@/lib/color-utils'
+import { getDesignPackage } from '@/lib/design-packages'
+import { FONT_PAIRS } from '@/lib/font-pairs'
+import { MenuItemCard } from '@/components/menu/MenuItemCard'
+import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import GroupPayView from './GroupPayView'
@@ -912,17 +916,36 @@ export default function HomeOrderPage() {
   // Menu view (light mode for home ordering)
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: pageTab === 'order' ? '100px' : '0', width: '100%', overflowX: 'hidden' }}>
-      {/* Per-restaurant brand colors */}
-      {restaurant?.primary_color && (
-        <style>{`
-          :root, .dark {
-            --accent: ${restaurant.primary_color};
-            --accent-hover: ${darken(restaurant.primary_color, 15)};
-            --accent-subtle: ${restaurant.primary_color}18;
-            --border-accent: ${restaurant.primary_color}33;
-          }
-        `}</style>
-      )}
+      {/* Per-restaurant brand colors + fonts */}
+      {restaurant && (() => {
+        const pkg = getDesignPackage(restaurant.design_package)
+        const accent = restaurant.primary_color ?? pkg.preview.primaryColor
+        const bg = restaurant.bg_color ?? pkg.preview.bgColor
+        const surface = restaurant.surface_color ?? pkg.preview.surfaceColor
+        const card = restaurant.card_color ?? pkg.preview.cardColor
+        const header = restaurant.header_color ?? pkg.preview.headerColor
+        const btn = restaurant.button_color ?? pkg.preview.buttonColor
+        const text = restaurant.text_color ?? pkg.preview.textColor
+        const fp = FONT_PAIRS[restaurant.font_pair ?? pkg.fontPair] ?? FONT_PAIRS['syne-dmsans']
+        return (
+          <style>{`
+            :root, .dark {
+              --accent: ${accent};
+              --accent-hover: ${darken(accent, 15)};
+              --accent-subtle: ${accent}18;
+              --border-accent: ${accent}33;
+              --bg: ${bg};
+              --surface: ${surface};
+              --surface-2: ${card};
+              --header-bg: ${header};
+              --btn-bg: ${btn};
+              --text: ${text};
+              --font-heading: ${fp.heading};
+              --font-body: ${fp.body};
+            }
+          `}</style>
+        )
+      })()}
       {/* Header */}
       <div style={{ background: 'var(--header-bg)', padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '12px' }}>
@@ -1347,88 +1370,28 @@ export default function HomeOrderPage() {
               <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1rem', marginBottom: '14px', paddingTop: '4px', letterSpacing: '-0.01em' }}>
                 {cat.name}
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <MenuItemGrid layout={(restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant}>
                 {catItems.map((item, idx) => {
                   const qty = getQty(item.id)
                   const displayName = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.name ?? item.name
                   const displayDesc = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.description ?? item.description
                   return (
-                    <motion.div
+                    <MenuItemCard
                       key={item.id}
-                      initial={{ opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.04, type: 'spring', stiffness: 300, damping: 26 }}
-                      whileHover={{ y: -4, scale: 1.01, rotate: 0.4 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setSelectedItem(item)}
-                      style={{
-                        background: 'var(--surface)', borderRadius: '16px', padding: '14px',
-                        display: 'flex', gap: '14px', alignItems: 'center',
-                        border: qty > 0 ? '1.5px solid var(--accent)' : '1.5px solid transparent',
-                        boxShadow: qty > 0 ? '0 2px 12px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.06)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {item.image_url && (
-                        <img src={item.image_url} alt={displayName} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {specials[item.id] && (
-                          <span style={{ display: 'inline-block', background: '#f59e0b18', color: '#f59e0b', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', marginBottom: '4px', letterSpacing: '0.02em' }}>
-                            🔥 {specials[item.id].label}
-                          </span>
-                        )}
-                        <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '3px', fontSize: '0.95rem' }}>{displayName}</p>
-                        {displayDesc && <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayDesc}</p>}
-                        {item.tags.length > 0 && (
-                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                            {item.tags.map(tag => (
-                              <span key={tag} style={{ background: 'var(--surface-2)', color: 'var(--text-muted)', fontSize: '0.65rem', padding: '2px 7px', borderRadius: '6px', fontWeight: 600 }}>{tag}</span>
-                            ))}
-                          </div>
-                        )}
-                        {specials[item.id]?.special_price != null ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                            <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.95rem' }}>{Number(specials[item.id].special_price).toFixed(2)} €</p>
-                            <p style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.8rem', textDecoration: 'line-through' }}>{item.price.toFixed(2)} €</p>
-                          </div>
-                        ) : (
-                          <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.95rem' }}>{item.price.toFixed(2)} €</p>
-                        )}
-                      </div>
-                      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                        {qty > 0 && (
-                          <>
-                            <motion.button
-                              onClick={() => orderMode === 'group-active' ? removeFromGroupCart(item) : removeFromCart(item.id)}
-                              whileTap={{ scale: 0.8 }}
-                              transition={{ type: 'spring', stiffness: 600, damping: 15 }}
-                              style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface-2)', border: 'none', color: 'var(--text)', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
-                            >−</motion.button>
-                            <AnimatePresence mode="popLayout">
-                              <motion.span
-                                key={qty}
-                                initial={{ scale: 0.5, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.5, opacity: 0 }}
-                                transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-                                style={{ color: 'var(--text)', fontWeight: 800, minWidth: '18px', textAlign: 'center', fontSize: '0.95rem', display: 'inline-block' }}
-                              >{qty}</motion.span>
-                            </AnimatePresence>
-                          </>
-                        )}
-                        <motion.button
-                          onClick={() => orderMode === 'group-active' ? addToGroupCart(item) : addToCart(item)}
-                          whileTap={{ scale: 0.78 }}
-                          whileHover={{ scale: 1.15 }}
-                          transition={{ type: 'spring', stiffness: 600, damping: 14 }}
-                          style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
-                        >+</motion.button>
-                      </div>
-                    </motion.div>
+                      item={item}
+                      qty={qty}
+                      layout={(restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant}
+                      displayName={displayName}
+                      displayDesc={displayDesc}
+                      index={idx}
+                      special={specials[item.id]}
+                      onOpen={() => setSelectedItem(item)}
+                      onAdd={() => orderMode === 'group-active' ? addToGroupCart(item) : addToCart(item)}
+                      onRemove={() => orderMode === 'group-active' ? removeFromGroupCart(item) : removeFromCart(item.id)}
+                    />
                   )
                 })}
-              </div>
+              </MenuItemGrid>
             </div>
           )
         })}

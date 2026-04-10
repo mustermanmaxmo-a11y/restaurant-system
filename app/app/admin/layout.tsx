@@ -182,7 +182,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Content */}
-      <main style={{ flex: 1, minHeight: '100vh' }} className="admin-main">
+      <main style={{ flex: 1, height: '100vh', overflowY: 'auto' }} className="admin-main">
         {children}
       </main>
 

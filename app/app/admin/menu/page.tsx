@@ -193,7 +193,7 @@ export default function MenuPage() {
     await loadData(restaurant.id)
     // Trigger auto-translation in background
     if (editingItem) {
-      triggerTranslation(editingItem.id, itemName.trim(), itemDesc.trim() || null)
+      if (restaurant?.auto_translate_enabled !== false) triggerTranslation(editingItem.id, itemName.trim(), itemDesc.trim() || null)
     } else {
       // For new items, find the just-inserted item by name
       const { data: newItems } = await supabase
@@ -204,7 +204,7 @@ export default function MenuPage() {
         .order('created_at', { ascending: false })
         .limit(1)
       if (newItems && newItems[0]) {
-        triggerTranslation(newItems[0].id, itemName.trim(), itemDesc.trim() || null)
+        if (restaurant?.auto_translate_enabled !== false) triggerTranslation(newItems[0].id, itemName.trim(), itemDesc.trim() || null)
       }
     }
     setModal(null)
