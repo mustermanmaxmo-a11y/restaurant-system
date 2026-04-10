@@ -21,7 +21,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Übersicht', orders: 'Bestellungen', menu: 'Menü',
       specials: 'Tagesangebote', tables: 'Tische & QR', reservations: 'Reservierungen',
       staff: 'Staff', openingHours: 'Öffnungszeiten', branding: 'Branding',
-      inventory: 'Lagerbestand', stats: 'Statistik', billing: 'Billing',
+      inventory: 'Lagerbestand', stats: 'Bestellanalyse', billing: 'Billing',
       integrations: 'Integrationen',
     },
     common: {
@@ -100,7 +100,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Overview', orders: 'Orders', menu: 'Menu',
       specials: 'Daily Specials', tables: 'Tables & QR', reservations: 'Reservations',
       staff: 'Staff', openingHours: 'Opening Hours', branding: 'Branding',
-      inventory: 'Inventory', stats: 'Statistics', billing: 'Billing',
+      inventory: 'Inventory', stats: 'Order Analytics', billing: 'Billing',
       integrations: 'Integrations',
     },
     common: {
@@ -179,7 +179,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Resumen', orders: 'Pedidos', menu: 'Menú',
       specials: 'Especiales del día', tables: 'Mesas & QR', reservations: 'Reservas',
       staff: 'Personal', openingHours: 'Horario', branding: 'Marca',
-      inventory: 'Inventario', stats: 'Estadísticas', billing: 'Facturación',
+      inventory: 'Inventario', stats: 'Análisis de pedidos', billing: 'Facturación',
       integrations: 'Integraciones',
     },
     common: {
@@ -258,7 +258,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Panoramica', orders: 'Ordini', menu: 'Menu',
       specials: 'Piatti del giorno', tables: 'Tavoli & QR', reservations: 'Prenotazioni',
       staff: 'Personale', openingHours: 'Orari', branding: 'Brand',
-      inventory: 'Magazzino', stats: 'Statistiche', billing: 'Fatturazione',
+      inventory: 'Magazzino', stats: 'Analisi ordini', billing: 'Fatturazione',
       integrations: 'Integrazioni',
     },
     common: {
@@ -337,7 +337,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Genel Bakış', orders: 'Siparişler', menu: 'Menü',
       specials: 'Günün Önerileri', tables: 'Masalar & QR', reservations: 'Rezervasyonlar',
       staff: 'Personel', openingHours: 'Çalışma Saatleri', branding: 'Marka',
-      inventory: 'Envanter', stats: 'İstatistikler', billing: 'Faturalama',
+      inventory: 'Envanter', stats: 'Sipariş analizi', billing: 'Faturalama',
       integrations: 'Entegrasyonlar',
     },
     common: {
@@ -416,7 +416,7 @@ const translations: Record<Lang, DeepString> = {
       overview: "Vue d'ensemble", orders: 'Commandes', menu: 'Menu',
       specials: 'Plats du jour', tables: 'Tables & QR', reservations: 'Réservations',
       staff: 'Personnel', openingHours: 'Horaires', branding: 'Marque',
-      inventory: 'Inventaire', stats: 'Statistiques', billing: 'Facturation',
+      inventory: 'Inventaire', stats: 'Analyse des commandes', billing: 'Facturation',
       integrations: 'Intégrations',
     },
     common: {
@@ -495,7 +495,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Przegląd', orders: 'Zamówienia', menu: 'Menu',
       specials: 'Dania dnia', tables: 'Stoły & QR', reservations: 'Rezerwacje',
       staff: 'Personel', openingHours: 'Godziny otwarcia', branding: 'Marka',
-      inventory: 'Magazyn', stats: 'Statystyki', billing: 'Rozliczenia',
+      inventory: 'Magazyn', stats: 'Analiza zamówień', billing: 'Rozliczenia',
       integrations: 'Integracje',
     },
     common: {
@@ -574,7 +574,7 @@ const translations: Record<Lang, DeepString> = {
       overview: 'Обзор', orders: 'Заказы', menu: 'Меню',
       specials: 'Блюда дня', tables: 'Столы & QR', reservations: 'Бронирования',
       staff: 'Персонал', openingHours: 'Часы работы', branding: 'Брендинг',
-      inventory: 'Склад', stats: 'Статистика', billing: 'Счета',
+      inventory: 'Склад', stats: 'Аналитика заказов', billing: 'Счета',
       integrations: 'Интеграции',
     },
     common: {
