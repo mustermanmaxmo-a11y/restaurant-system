@@ -1,24 +1,40 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { isRestaurantActive } from '@/lib/plan-limits'
+import type { RestaurantPlan } from '@/types/database'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
   const { slug } = await params
-  const { data, error } = await supabaseAdmin
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: restaurant } = await supabase
     .from('restaurants')
     .select('*')
     .eq('slug', slug)
-    .eq('active', true)
+    .limit(1)
     .single()
 
-  if (error || !data) {
-    console.error('Restaurant lookup failed:', { slug, error: error?.message, code: error?.code })
-    return NextResponse.json({ slug, error: error?.message }, { status: 404 })
+  if (!restaurant) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  return NextResponse.json(data)
+  const active = isRestaurantActive(
+    restaurant.plan as RestaurantPlan,
+    restaurant.trial_ends_at
+  )
+
+  if (!active) {
+    return NextResponse.json(
+      { error: 'Restaurant ist aktuell offline' },
+      { status: 403 }
+    )
+  }
+
+  return NextResponse.json(restaurant)
 }

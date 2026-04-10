@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
  * Resolves the correct Anthropic API key for a restaurant based on their plan:
  * - enterprise → platform key (ANTHROPIC_API_KEY in .env)
  * - pro        → restaurant's own key (BYOK, stored in restaurants.anthropic_api_key)
- * - basic/other → null (AI not available)
+ * - starter/other → null (AI not available)
  *
  * SECURITY: Uses service role to read the key server-side only.
  * Never expose this function or its result to the client.
