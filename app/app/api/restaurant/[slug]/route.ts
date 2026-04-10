@@ -16,7 +16,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     .single()
 
   if (error || !data) {
-    return NextResponse.json(null, { status: 404 })
+    console.error('Restaurant lookup failed:', { slug, error: error?.message, code: error?.code })
+    return NextResponse.json({ slug, error: error?.message }, { status: 404 })
   }
 
   return NextResponse.json(data)
