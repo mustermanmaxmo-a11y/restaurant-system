@@ -11,7 +11,6 @@ import { MenuItemCard } from '@/components/menu/MenuItemCard'
 import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
-import GroupPayView from './GroupPayView'
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
@@ -20,7 +19,7 @@ type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'delivery' | 'pickup'
 type View = 'menu' | 'checkout' | 'status'
 type PageTab = 'order' | 'reserve'
-type OrderMode = 'solo' | 'group-create' | 'group-join' | 'group-active' | 'confirmed-solo' | 'group-pay'
+type OrderMode = 'solo' | 'group-create' | 'group-join' | 'group-active' | 'confirmed-solo'
 type TableStatus = 'available' | 'tight' | 'taken' | 'no-position'
 
 type ResInfo = { id: string; table_id: string | null; date: string; time_from: string; guests: number; status: string }
@@ -95,7 +94,6 @@ export default function HomeOrderPage() {
   const [isGroupCreator, setIsGroupCreator] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showCart, setShowCart] = useState(false)
-  const [showGroupPay, setShowGroupPay] = useState(false)
 
   // Filters
   const [activeDietary, setActiveDietary] = useState<string[]>([])
@@ -134,25 +132,8 @@ export default function HomeOrderPage() {
     load()
   }, [slug])
 
-  // After Stripe payment redirect: load order by ID from URL param
   useEffect(() => {
-    const orderId = searchParams.get('order_id')
-    if (orderId) {
-      supabase.from('orders').select('*').eq('id', orderId).single().then(({ data }) => {
-        if (data) { setOrder(data as Order); setView('status') }
-      })
-    }
-
-    const groupPaid = searchParams.get('group_paid')
-    const paidMember = searchParams.get('member')
-    if (groupPaid && paidMember) {
-      setGroupId(groupPaid)
-      setMemberName(decodeURIComponent(paidMember))
-      setOrderMode('group-pay')
-      supabase.from('group_items').select('*').eq('group_id', groupPaid).then(({ data }) => {
-        if (data) setGroupItems(data as GroupItem[])
-      })
-    }
+    // no-op: payment redirects removed
   }, [searchParams])
 
   // Auto-join group from URL param ?group=XXXX
@@ -318,29 +299,46 @@ export default function HomeOrderPage() {
   }
 
   async function submitGroupOrder() {
-    if (!groupId || !restaurant) return
+    if (!groupId || !restaurant || groupItems.length === 0) return
 
-    const members = [...new Set(groupItems.map(gi => gi.added_by))]
+    const aggregated: Record<string, { item_id: string; name: string; price: number; qty: number }> = {}
+    const byPerson: Record<string, string[]> = {}
 
-    const payments = members.map(member => {
-      const memberItems = groupItems.filter(gi => gi.added_by === member)
-      const amount = memberItems.reduce((s, i) => s + i.price * i.qty, 0)
-      return {
-        group_id: groupId,
-        member_name: member,
-        amount: Math.round(amount * 100) / 100,
-        status: 'pending' as const,
+    groupItems.forEach(gi => {
+      if (aggregated[gi.item_id]) {
+        aggregated[gi.item_id].qty += gi.qty
+      } else {
+        aggregated[gi.item_id] = { item_id: gi.item_id, name: gi.name, price: gi.price, qty: gi.qty }
       }
+      if (!byPerson[gi.added_by]) byPerson[gi.added_by] = []
+      byPerson[gi.added_by].push(`${gi.qty}× ${gi.name}`)
     })
 
-    const { error: insertError } = await supabase.from('group_payments').insert(payments)
-    if (insertError) {
-      console.error('Failed to create group payments:', insertError)
+    const groupNote = Object.entries(byPerson)
+      .map(([name, items]) => `${name}: ${items.join(', ')}`)
+      .join(' | ')
+
+    const totalAmount = groupItems.reduce((s, i) => s + i.price * i.qty, 0)
+
+    const { data, error: orderError } = await supabase.from('orders').insert({
+      restaurant_id: restaurant.id,
+      order_type: 'dine_in',
+      table_id: null,
+      status: 'new',
+      items: Object.values(aggregated),
+      note: `[Gruppenbestellung] ${groupNote}`,
+      total: Math.round(totalAmount * 100) / 100,
+      customer_name: memberName,
+    }).select().single()
+
+    if (orderError || !data) {
+      console.error('Failed to create group order:', orderError)
       return
     }
 
-    await supabase.from('order_groups').update({ status: 'submitted' }).eq('id', groupId)
-    setOrderMode('group-pay')
+    await supabase.from('order_groups').update({ status: 'ordering' }).eq('id', groupId)
+    setOrder(data as Order)
+    setView('status')
   }
 
   function scrollToCategory(catId: string) {
@@ -410,54 +408,6 @@ export default function HomeOrderPage() {
 
     // Fire-and-forget order confirmation email (delivery + pickup only, requires email)
     // Orders currently don't collect email — skipping for now
-  }
-
-  async function submitOrderWithStripe() {
-    if (!restaurant) return
-    setSubmitting(true)
-    setError('')
-
-    // 1. Create order in Supabase first
-    const { data, error: err } = await supabase
-      .from('orders')
-      .insert({
-        restaurant_id: restaurant.id,
-        order_type: orderType,
-        table_id: null,
-        status: 'pending_payment',
-        items: cart.map(c => ({ item_id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty })),
-        note: note || null,
-        total,
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        delivery_address: orderType === 'delivery' ? { street, city, zip } : null,
-      })
-      .select()
-      .single()
-
-    if (err || !data) {
-      setError('Fehler beim Bestellen. Bitte versuche es erneut.')
-      setSubmitting(false)
-      return
-    }
-
-    // 2. Create Stripe Checkout session
-    const res = await fetch('/api/stripe/order-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        order_id: data.id,
-        guest_token: data.guest_token,
-        slug,
-      }),
-    })
-    const json = await res.json()
-    if (json.url) {
-      window.location.href = json.url
-    } else {
-      setError('Zahlung konnte nicht gestartet werden.')
-      setSubmitting(false)
-    }
   }
 
   async function submitReservation() {
@@ -828,54 +778,20 @@ export default function HomeOrderPage() {
 
           {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
 
-          {isDelivery ? (
-            // Delivery: always pay online
-            <button
-              onClick={submitOrderWithStripe}
-              disabled={submitting || !customerName || !customerPhone || !street || !city || !zip}
-              style={{
-                width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
-                background: submitting || !customerName || !customerPhone ? 'var(--border)' : 'var(--btn-bg)',
-                color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--btn-text)',
-                fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em',
-                cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
-                boxShadow: submitting || !customerName || !customerPhone ? 'none' : '0 4px 16px rgba(0,0,0,0.2)',
-              }}
-            >
-              {submitting ? 'Bitte warten...' : `Jetzt bezahlen · ${total.toFixed(2)} €`}
-            </button>
-          ) : (
-            // Pickup: choose payment method
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                onClick={submitOrderWithStripe}
-                disabled={submitting || !customerName || !customerPhone}
-                style={{
-                  width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
-                  background: submitting || !customerName || !customerPhone ? 'var(--border)' : 'var(--btn-bg)',
-                  color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--btn-text)',
-                  fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em',
-                  cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
-                  boxShadow: submitting || !customerName || !customerPhone ? 'none' : '0 4px 16px rgba(0,0,0,0.2)',
-                }}
-              >
-                {submitting ? 'Bitte warten...' : `Jetzt bezahlen · ${total.toFixed(2)} €`}
-              </button>
-              <button
-                onClick={submitOrder}
-                disabled={submitting || !customerName || !customerPhone}
-                style={{
-                  width: '100%', padding: '17px', borderRadius: '14px', border: '1px solid var(--border)',
-                  background: 'transparent',
-                  color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--text)',
-                  fontSize: '1rem', fontWeight: 700,
-                  cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Bar bei Abholung
-              </button>
-            </div>
-          )}
+          <button
+            onClick={submitOrder}
+            disabled={submitting || !customerName || !customerPhone || (isDelivery && (!street || !city || !zip))}
+            style={{
+              width: '100%', padding: '17px', borderRadius: '14px', border: 'none',
+              background: submitting || !customerName || !customerPhone ? 'var(--border)' : 'var(--btn-bg)',
+              color: submitting || !customerName || !customerPhone ? 'var(--text-muted)' : 'var(--btn-text)',
+              fontSize: '1rem', fontWeight: 800, letterSpacing: '-0.01em',
+              cursor: submitting || !customerName || !customerPhone ? 'not-allowed' : 'pointer',
+              boxShadow: submitting || !customerName || !customerPhone ? 'none' : '0 4px 16px rgba(0,0,0,0.2)',
+            }}
+          >
+            {submitting ? 'Bitte warten...' : `Jetzt bestellen · ${total.toFixed(2)} €`}
+          </button>
         </div>
       </div>
     )
@@ -1459,85 +1375,6 @@ export default function HomeOrderPage() {
               <span style={{ fontWeight: 800 }}>{total.toFixed(2)} €</span>
             </motion.button>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Group Pay Button */}
-      <AnimatePresence>
-        {orderMode === 'group-pay' && groupId && (
-          <motion.div
-            initial={{ y: 80, opacity: 0, scale: 0.8 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 80, opacity: 0, scale: 0.8 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            style={{ position: 'fixed', bottom: '24px', left: '16px', right: '16px', zIndex: 100 }}
-          >
-            <motion.button
-              onClick={() => setShowGroupPay(true)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              style={{
-                background: 'var(--accent)', border: 'none', borderRadius: '50px',
-                padding: '16px 22px', color: '#fff', fontWeight: 700,
-                cursor: 'pointer', fontSize: '0.95rem',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-                display: 'flex', alignItems: 'center', gap: '14px', width: '100%',
-                justifyContent: 'center',
-              }}
-            >
-              <span>💳 Gruppenkorb & Zahlung</span>
-              <span style={{ opacity: 0.6 }}>·</span>
-              <span style={{ fontWeight: 800 }}>
-                {groupItems.filter(gi => gi.added_by === memberName).reduce((s, gi) => s + gi.price * gi.qty, 0).toFixed(2)} €
-              </span>
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Group Pay Overlay */}
-      <AnimatePresence>
-        {showGroupPay && groupId && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowGroupPay(false)}
-              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200 }}
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-              drag="y"
-              dragConstraints={{ top: 0 }}
-              dragElastic={{ top: 0, bottom: 0.3 }}
-              onDragEnd={(_, info) => { if (info.offset.y > 80) setShowGroupPay(false) }}
-              style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 201,
-                background: 'var(--bg)', borderRadius: '20px 20px 0 0',
-                maxHeight: '90vh', overflowY: 'auto',
-                cursor: 'grab',
-              }}
-            >
-              <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', padding: '14px 20px 0', zIndex: 1 }}>
-                <div
-                  style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '0 auto 14px', cursor: 'grab' }}
-                />
-              </div>
-              <div style={{ cursor: 'default' }} onPointerDown={e => e.stopPropagation()}>
-                <GroupPayView
-                  groupId={groupId}
-                  memberName={memberName}
-                  groupItems={groupItems}
-                  accent={restaurant?.primary_color ?? '#6c63ff'}
-                />
-              </div>
-            </motion.div>
-          </>
         )}
       </AnimatePresence>
 
