@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Table, Restaurant } from '@/types/database'
+import type { Table, Restaurant, RestaurantPlan } from '@/types/database'
+import { getPlanLimits } from '@/lib/plan-limits'
 import FloorPlanEditor from '@/components/FloorPlanEditor'
 import { useLanguage } from '@/components/providers/language-provider'
 
@@ -42,6 +43,12 @@ export default function TablesPage() {
   async function addTable() {
     if (!restaurant || !tableNum) return
     setSaving(true)
+    const limits = getPlanLimits((restaurant.plan ?? 'starter') as RestaurantPlan)
+    if (tables.length >= limits.maxTables) {
+      alert(`Dein Plan erlaubt maximal ${limits.maxTables} Tische. Upgrade auf Professional für unbegrenzte Tische.`)
+      setSaving(false)
+      return
+    }
     const num = parseInt(tableNum)
     await supabase.from('tables').insert({
       restaurant_id: restaurant.id,

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Reservation, Restaurant, Table } from '@/types/database'
+import type { Reservation, Restaurant, Table, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { getPlanLimits } from '@/lib/plan-limits'
+import { UpgradeHint } from '@/components/UpgradeHint'
 
 type Filter = 'today' | 'tomorrow' | 'week'
 
@@ -83,6 +85,18 @@ export default function ReservationsPage() {
       <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
     </div>
   )
+
+  const limits = getPlanLimits((restaurant?.plan ?? 'starter') as RestaurantPlan)
+
+  if (!limits.hasReservations) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '24px' }}>
+        <div style={{ maxWidth: '600px', margin: '80px auto' }}>
+          <UpgradeHint feature="Reservierungen" />
+        </div>
+      </div>
+    )
+  }
 
   const grouped: Record<string, Reservation[]> = {}
   reservations.forEach(r => {

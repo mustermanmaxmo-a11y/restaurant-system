@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Restaurant } from '@/types/database'
+import type { RestaurantPlan } from '@/types/database'
+import { TrialBanner } from '@/components/TrialBanner'
 
 function AdminContent() {
   const router = useRouter()
@@ -68,6 +70,8 @@ function AdminContent() {
             </p>
           </div>
         </div>
+
+        <TrialBanner plan={restaurant.plan as RestaurantPlan} trialEndsAt={restaurant.trial_ends_at} />
 
         {/* Welcome Banner */}
         {welcome && (

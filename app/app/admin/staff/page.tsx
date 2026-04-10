@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { Staff, Restaurant } from '@/types/database'
+import type { Staff, Restaurant, RestaurantPlan } from '@/types/database'
+import { getPlanLimits } from '@/lib/plan-limits'
 import { useLanguage } from '@/components/providers/language-provider'
 
 export default function StaffPage() {
@@ -53,6 +54,12 @@ export default function StaffPage() {
     if (editingStaff) {
       await supabase.from('staff').update({ name: name.trim(), code: code.trim(), role }).eq('id', editingStaff.id)
     } else {
+      const limits = getPlanLimits((restaurant.plan ?? 'starter') as RestaurantPlan)
+      if (staffList.length >= limits.maxStaff) {
+        alert(`Dein Plan erlaubt maximal ${limits.maxStaff} Mitarbeiter. Upgrade auf Professional für unbegrenzte Mitarbeiter.`)
+        setSaving(false)
+        return
+      }
       await supabase.from('staff').insert({ restaurant_id: restaurant.id, name: name.trim(), code: code.trim(), role, active: true })
     }
     await loadStaff(restaurant.id)

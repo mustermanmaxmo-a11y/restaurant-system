@@ -7,8 +7,10 @@ import { darken } from '@/lib/color-utils'
 import { DESIGN_PACKAGES, getDesignPackage } from '@/lib/design-packages'
 import type { DesignPackage, LayoutVariant } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
-import type { Restaurant } from '@/types/database'
+import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { getPlanLimits } from '@/lib/plan-limits'
+import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
 function ShineBorder({ color = '#FF6B2C', children, style }: {
@@ -240,6 +242,18 @@ export default function BrandingPage() {
   if (loading) return (
     <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('common.loading')}</div>
   )
+
+  const limits = getPlanLimits((restaurant?.plan ?? 'starter') as RestaurantPlan)
+
+  if (!limits.hasBranding) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '24px' }}>
+        <div style={{ maxWidth: '600px', margin: '80px auto' }}>
+          <UpgradeHint feature="Branding & Design" />
+        </div>
+      </div>
+    )
+  }
 
   const pkg = getDesignPackage(designPackage)
   const pAccent = primaryColor ?? pkg.preview.primaryColor
