@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (session.mode === 'subscription') {
       // Subscription checkout — update restaurant plan
       const userId = session.metadata?.user_id
-      const plan = (session.metadata?.plan as 'basic' | 'pro') || 'basic'
+      const plan = (session.metadata?.plan as 'starter' | 'pro') || 'starter'
       const customerId = session.customer as string
       const subscriptionId = session.subscription as string
 
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
 
     await supabaseAdmin
       .from('restaurants')
-      .update({ active: false })
+      .update({ active: false, plan: 'expired' })
       .eq('stripe_customer_id', customerId)
   }
 
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
     const customerId = subscription.customer as string
     const priceId = subscription.items.data[0]?.price.id
 
-    const plan = priceId === process.env.STRIPE_PRICE_PRO ? 'pro' : 'basic'
+    const plan = priceId === process.env.STRIPE_PRICE_PRO ? 'pro' : 'starter'
     const active = subscription.status === 'active'
 
     await supabaseAdmin

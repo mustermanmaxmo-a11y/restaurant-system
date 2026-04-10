@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
 const BodySchema = z.object({
-  plan: z.enum(['basic', 'pro']),
+  plan: z.enum(['starter', 'pro']),
 })
 
 export async function POST(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const { plan } = parsed.data
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const priceId = plan === 'pro' ? process.env.STRIPE_PRICE_PRO! : process.env.STRIPE_PRICE_BASIC!
+  const priceId = plan === 'pro' ? process.env.STRIPE_PRICE_PRO! : process.env.STRIPE_PRICE_STARTER!
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!
 
   const checkoutSession = await stripe.checkout.sessions.create({
