@@ -1,7 +1,7 @@
 export type OrderType = 'dine_in' | 'delivery' | 'pickup'
 export type OrderStatus = 'pending_payment' | 'new' | 'cooking' | 'out_for_delivery' | 'served' | 'cancelled'
 export type StaffRole = 'kitchen' | 'waiter' | 'delivery'
-export type RestaurantPlan = 'basic' | 'pro' | 'enterprise'
+export type RestaurantPlan = 'trial' | 'starter' | 'pro' | 'enterprise' | 'expired'
 export type ServiceCallType = 'waiter' | 'bill'
 
 export interface Restaurant {
@@ -13,6 +13,7 @@ export interface Restaurant {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   active: boolean
+  trial_ends_at: string | null
   floor_plan_url: string | null
   opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null
   created_at: string
