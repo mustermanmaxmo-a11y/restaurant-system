@@ -104,12 +104,9 @@ export default function HomeOrderPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: resto } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('slug', slug)
-        .eq('active', true)
-        .single()
+      const { data: restoArr } = await supabase
+        .rpc('get_restaurant_by_slug', { p_slug: slug })
+      const resto = restoArr?.[0] ?? null
 
       if (!resto) {
         setError('Restaurant nicht gefunden.')
