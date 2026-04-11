@@ -39,6 +39,11 @@ export default function RootLayout({
             __html: `(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.classList.toggle('dark',t==='dark');})();`,
           }}
         />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#6c63ff" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className={allFontVars} style={{ fontFamily: 'var(--font-body, var(--font-dm-sans)), system-ui, sans-serif' }}>
         <ThemeProvider>
@@ -46,6 +51,11 @@ export default function RootLayout({
             {children}
           </LanguageProvider>
         </ThemeProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function() {}); }`,
+          }}
+        />
       </body>
     </html>
   )
