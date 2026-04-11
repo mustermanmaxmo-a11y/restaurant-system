@@ -600,7 +600,7 @@ export default function InventoryPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
                   <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px' }}>✨ KI-Analyse</p>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Claude analysiert deinen Bestand und gibt konkrete Empfehlungen</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Unsere KI analysiert deinen Bestand und gibt konkrete Empfehlungen</p>
                 </div>
                 <button onClick={runAiAnalysis} disabled={aiLoading} style={{ ...btnPrimary, opacity: aiLoading ? 0.6 : 1 }}>
                   {aiLoading ? 'Analysiere...' : '✨ Analyse starten'}

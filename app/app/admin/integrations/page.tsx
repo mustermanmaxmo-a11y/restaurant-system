@@ -284,7 +284,7 @@ function IntegrationsContent() {
             ) : (
               <>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '16px' }}>
-                  Im Pro-Plan benötigst du einen eigenen Anthropic API Key. Du zahlst direkt bei Anthropic —
+                  Im Pro-Plan benötigst du einen eigenen KI-API Key. Du zahlst direkt beim Anbieter —
                   ca. <strong style={{ color: 'var(--text)' }}>0,001€ pro Chat-Anfrage</strong> (5€ Guthaben ≈ 5.000 Gäste-Chats).
                 </p>
 
@@ -365,7 +365,7 @@ function IntegrationsContent() {
                   onClick={() => setAiGuideOpen(o => !o)}
                   style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  📖 Anleitung: Anthropic API Key einrichten {aiGuideOpen ? '▲' : '▼'}
+                  📖 Anleitung: KI-API Key einrichten {aiGuideOpen ? '▲' : '▼'}
                 </button>
 
                 {aiGuideOpen && (
@@ -400,7 +400,7 @@ function IntegrationsContent() {
                       </div>
                       <div style={{ background: '#45091422', border: '1px solid #45091444', borderRadius: '8px', padding: '10px 14px' }}>
                         <p style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>⚠️ Sicherheit</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Teile deinen Key mit niemandem — er gibt Zugriff auf dein Anthropic-Konto.</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Teile deinen Key mit niemandem — er gibt Zugriff auf deinen KI-Account.</p>
                       </div>
                     </div>
                   </div>
