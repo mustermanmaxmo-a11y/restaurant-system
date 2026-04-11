@@ -706,7 +706,7 @@ export default function OrderPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <LanguageSelector />
+            <LanguageSelector direction="down" />
             <motion.button onClick={() => setShowFilters(f => !f)} whileTap={{ scale: 0.88 }} transition={springBouncy}
               style={{ position: 'relative', background: filterCount > 0 ? C.accentDim : C.surface2, border: `1px solid ${filterCount > 0 ? C.accent : C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
               🔍

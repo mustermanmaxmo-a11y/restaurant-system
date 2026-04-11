@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LANGUAGES } from '@/lib/translations'
 
-export function LanguageSelector() {
+export function LanguageSelector({ direction = 'up' }: { direction?: 'up' | 'down' }) {
   const { lang, setLang } = useLanguage()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -38,7 +38,11 @@ export function LanguageSelector() {
 
       {open && (
         <div style={{
-          position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 100,
+          position: 'absolute',
+          ...(direction === 'down'
+            ? { top: 'calc(100% + 6px)' }
+            : { bottom: 'calc(100% + 6px)' }),
+          left: 0, zIndex: 100,
           background: 'var(--surface-2)', border: '1px solid var(--border)',
           borderRadius: '12px', padding: '6px', minWidth: '160px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.3)',

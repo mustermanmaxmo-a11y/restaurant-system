@@ -874,7 +874,7 @@ export default function HomeOrderPage() {
           </div>
           </div>{/* end logo+text wrapper */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginTop: '4px' }}>
-            <LanguageSelector />
+            <LanguageSelector direction="down" />
             <button
               onClick={toggleTheme}
               style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}
