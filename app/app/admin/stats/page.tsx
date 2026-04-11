@@ -11,6 +11,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+import { BarChart2 } from 'lucide-react'
 
 interface Reservation { id: string }
 interface Bestseller { name: string; qty: number }
@@ -177,7 +178,7 @@ export default function StatsPage() {
       <div style={{ padding: '24px', maxWidth: '960px', margin: '0 auto' }}>
         {!hasData ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><BarChart size={48} color="var(--text-muted)" /></div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><BarChart2 size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)' }}>Noch keine Daten im gewählten Zeitraum.</p>
           </div>
         ) : (
