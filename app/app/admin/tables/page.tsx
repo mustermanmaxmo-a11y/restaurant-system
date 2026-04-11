@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { generateQrPdf } from '@/lib/qr-pdf'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Table, Restaurant, RestaurantPlan } from '@/types/database'
@@ -21,6 +22,7 @@ export default function TablesPage() {
   const [saving, setSaving] = useState(false)
   const [qrModal, setQrModal] = useState<Table | null>(null)
   const [adminTab, setAdminTab] = useState<'tables' | 'floorplan'>('tables')
+  const [generatingPdf, setGeneratingPdf] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -74,6 +76,22 @@ export default function TablesPage() {
     setTables(prev => prev.filter(t => t.id !== tableId))
   }
 
+  async function downloadAllQrCodes() {
+    if (!restaurant || tables.length === 0) return
+    setGeneratingPdf(true)
+    try {
+      await generateQrPdf({
+        restaurantName: restaurant.name,
+        logoUrl: restaurant.logo_url,
+        tables: tables.filter(t => t.active),
+        baseUrl: window.location.origin,
+      })
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+    }
+    setGeneratingPdf(false)
+  }
+
   function getQrUrl(table: Table) {
     return `${window.location.origin}/order/${table.qr_token}`
   }
@@ -98,14 +116,35 @@ export default function TablesPage() {
           <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
           <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Tische & QR-Codes</h1>
         </div>
-        {adminTab === 'tables' && (
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-          >
-            + Tisch anlegen
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {tables.length > 0 && adminTab === 'tables' && (
+            <button
+              onClick={downloadAllQrCodes}
+              disabled={generatingPdf}
+              style={{
+                background: 'transparent',
+                border: '1.5px solid var(--accent)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                color: 'var(--accent)',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                cursor: generatingPdf ? 'wait' : 'pointer',
+                opacity: generatingPdf ? 0.6 : 1,
+              }}
+            >
+              {generatingPdf ? 'Generiere PDF...' : 'QR-Codes PDF'}
+            </button>
+          )}
+          {adminTab === 'tables' && (
+            <button
+              onClick={() => setShowModal(true)}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+            >
+              + Tisch anlegen
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab bar */}
