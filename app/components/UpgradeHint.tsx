@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Lock } from 'lucide-react'
 
 interface UpgradeHintProps {
   feature: string
@@ -19,7 +20,7 @@ export function UpgradeHint({ feature, requiredPlan = 'pro' }: UpgradeHintProps)
       padding: '40px 24px',
       textAlign: 'center',
     }}>
-      <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔒</div>
+      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Lock size={32} color="var(--accent)" /></div>
       <p style={{
         color: 'var(--text)',
         fontWeight: 700,

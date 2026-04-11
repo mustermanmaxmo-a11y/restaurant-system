@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant, Table } from '@/types/database'
+import { Map, X, UploadCloud, RefreshCw } from 'lucide-react'
 
 interface Props {
   restaurant: Restaurant
@@ -193,7 +194,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
           padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem',
           cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.7 : 1,
         }}>
-          {uploading ? 'Wird hochgeladen...' : floorPlanUrl ? '🔄 Grundriss ersetzen' : '📤 Grundriss hochladen'}
+          {uploading ? 'Wird hochgeladen...' : floorPlanUrl ? <><RefreshCw size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />Grundriss ersetzen</> : <><UploadCloud size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />Grundriss hochladen</>}
           <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" style={{ display: 'none' }}
             disabled={uploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadFloorPlan(f) }} />
         </label>
@@ -202,7 +203,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
 
       {!floorPlanUrl ? (
         <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '12px', padding: '60px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🗺️</div>
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Map size={48} color="var(--text-muted)" /></div>
           <p style={{ color: 'var(--text-muted)' }}>Noch kein Grundriss hochgeladen.</p>
         </div>
       ) : (
@@ -332,7 +333,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
 
           {placedTables.length > 0 && (
             <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: '14px' }}>
-              Tisch ziehen = verschieben · Tisch anklicken = Kapazität bearbeiten · ✕ = entfernen
+              Tisch ziehen = verschieben · Tisch anklicken = Kapazität bearbeiten · X = entfernen
             </p>
           )}
         </>
@@ -381,9 +382,9 @@ function TableMarker({ table, pos, isDragging, onPointerDown, onRemove }: {
             width: '18px', height: '18px', borderRadius: '50%',
             background: '#ef4444', border: '1.5px solid #fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.55rem', cursor: 'pointer', zIndex: 40, color: '#fff', fontWeight: 900,
+            cursor: 'pointer', zIndex: 40, color: '#fff',
           }}
-        >✕</div>
+        ><X size={10} /></div>
       )}
     </div>
   )

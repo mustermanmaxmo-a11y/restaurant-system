@@ -7,6 +7,7 @@ import type { Reservation, Restaurant, Table, RestaurantPlan } from '@/types/dat
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
 import { UpgradeHint } from '@/components/UpgradeHint'
+import { CalendarDays, Users, Phone, Armchair, Check, X } from 'lucide-react'
 
 type Filter = 'today' | 'tomorrow' | 'week'
 
@@ -135,7 +136,7 @@ export default function ReservationsPage() {
       <div style={{ padding: '24px', maxWidth: '700px', margin: '0 auto' }}>
         {reservations.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📅</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><CalendarDays size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)' }}>Keine Reservierungen im gewählten Zeitraum.</p>
           </div>
         ) : (
@@ -169,10 +170,10 @@ export default function ReservationsPage() {
                           <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.95rem' }}>{res.customer_name}</p>
                           <span style={{ background: st.bg, color: st.color, fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>{st.label}</span>
                         </div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          👥 {res.guests} Personen · 📞 {res.customer_phone}
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                          <Users size={12} /> {res.guests} Personen · <Phone size={12} /> {res.customer_phone}
                           {res.customer_email && ` · ${res.customer_email}`}
-                          {res.table_id && ` · 🪑 ${tables.find(t => t.id === res.table_id)?.label ?? 'Tisch'}`}
+                          {res.table_id && <><Armchair size={12} /> {tables.find(t => t.id === res.table_id)?.label ?? 'Tisch'}</>}
                         </p>
                         {res.note && (
                           <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px', fontStyle: 'italic' }}>
@@ -187,16 +188,16 @@ export default function ReservationsPage() {
                           <button
                             onClick={() => updateStatus(res.id, 'confirmed')}
                             disabled={updating === res.id}
-                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#10b981', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: updating === res.id ? 0.6 : 1 }}
+                            style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#10b981', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: updating === res.id ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '5px' }}
                           >
-                            ✓ Bestätigen
+                            <Check size={13} /> Bestätigen
                           </button>
                           <button
                             onClick={() => updateStatus(res.id, 'cancelled')}
                             disabled={updating === res.id}
-                            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: '#ef4444', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: updating === res.id ? 0.6 : 1 }}
+                            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: '#ef4444', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: updating === res.id ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: '5px' }}
                           >
-                            ✕ Absagen
+                            <X size={13} /> Absagen
                           </button>
                         </div>
                       )}

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { MenuItem } from '@/types/database'
+import { MessageSquare, X, ShoppingCart, Check, Send } from 'lucide-react'
 
 interface CartItem {
   name: string
@@ -170,7 +171,7 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
             e.currentTarget.style.boxShadow = `0 4px 20px ${accent}66`
           }}
         >
-          💬
+          <MessageSquare size={22} />
         </button>
       )}
 
@@ -215,9 +216,9 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
             <button
               onClick={() => setOpen(false)}
               aria-label="Chat schließen"
-              style={{ background: 'none', border: 'none', color: 'var(--text-muted, #64748b)', cursor: 'pointer', fontSize: '1.1rem', padding: '2px 6px', borderRadius: '6px' }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted, #64748b)', cursor: 'pointer', padding: '4px 6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
 
@@ -310,8 +311,8 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
                     }}
                   >
                     {addedIndices.has(i)
-                      ? '✓ Hinzugefügt'
-                      : `🛒 ${msg.cartSuggestion.name}${msg.cartSuggestion.qty > 1 ? ` (${msg.cartSuggestion.qty}x)` : ''} hinzufügen`
+                      ? <><Check size={12} /> Hinzugefügt</>
+                      : <><ShoppingCart size={12} /> {msg.cartSuggestion.name}{msg.cartSuggestion.qty > 1 ? ` (${msg.cartSuggestion.qty}x)` : ''} hinzufügen</>
                     }
                   </button>
                 )}
@@ -399,7 +400,7 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
               }}
               aria-label="Senden"
             >
-              ➤
+              <Send size={16} />
             </button>
           </form>
         </div>

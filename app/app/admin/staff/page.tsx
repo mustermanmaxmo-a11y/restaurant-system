@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import type { Staff, Restaurant, RestaurantPlan } from '@/types/database'
 import { getPlanLimits } from '@/lib/plan-limits'
 import { useLanguage } from '@/components/providers/language-provider'
+import { ChefHat, Car, BellRing, Trash2, Lightbulb } from 'lucide-react'
 
 export default function StaffPage() {
   const router = useRouter()
@@ -103,7 +104,7 @@ export default function StaffPage() {
       <div style={{ padding: '24px', maxWidth: '700px', margin: '0 auto' }}>
         {staffList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>👨‍🍳</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><ChefHat size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch kein Staff angelegt</p>
             <button onClick={openAdd} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
               Ersten Mitarbeiter anlegen
@@ -114,8 +115,8 @@ export default function StaffPage() {
             {staffList.map(staff => (
               <div key={staff.id} style={{ background: 'var(--surface)', borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border)', opacity: staff.active ? 1 : 0.5, flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: staff.role === 'kitchen' ? '#ff6b3522' : staff.role === 'delivery' ? '#f59e0b22' : '#6c63ff22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-                    {staff.role === 'kitchen' ? '👨‍🍳' : staff.role === 'delivery' ? '🚗' : '🛎️'}
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: staff.role === 'kitchen' ? '#ff6b3522' : staff.role === 'delivery' ? '#f59e0b22' : '#6c63ff22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {staff.role === 'kitchen' ? <ChefHat size={20} color="#ff6b35" /> : staff.role === 'delivery' ? <Car size={20} color="#f59e0b" /> : <BellRing size={20} color="#6c63ff" />}
                   </div>
                   <div>
                     <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px' }}>{staff.name}</p>
@@ -136,7 +137,7 @@ export default function StaffPage() {
                     {staff.active ? 'Aktiv' : 'Inaktiv'}
                   </button>
                   <button onClick={() => openEdit(staff)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('common.edit')}</button>
-                  <button onClick={() => deleteStaff(staff.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>🗑</button>
+                  <button onClick={() => deleteStaff(staff.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}><Trash2 size={15} /></button>
                 </div>
               </div>
             ))}
@@ -146,7 +147,7 @@ export default function StaffPage() {
         {/* Info Box */}
         {staffList.length > 0 && (
           <div style={{ marginTop: '24px', background: 'var(--surface)', borderRadius: '10px', padding: '16px 18px', border: '1px solid var(--border)' }}>
-            <p style={{ color: 'var(--text)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px' }}>💡 So loggt sich dein Team ein</p>
+            <p style={{ color: 'var(--text)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}><Lightbulb size={15} color="var(--accent)" /> So loggt sich dein Team ein</p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.6 }}>
               Gerät öffnet: <strong style={{ color: 'var(--accent)' }}>/dashboard</strong><br />
               Restaurant-ID: <strong style={{ color: 'var(--text)' }}>{restaurant?.slug}</strong><br />
@@ -177,7 +178,7 @@ export default function StaffPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                   {(['kitchen', 'waiter', 'delivery'] as const).map(r => (
                     <button key={r} onClick={() => setRole(r)} style={{ padding: '12px', borderRadius: '8px', border: '2px solid', borderColor: role === r ? 'var(--accent)' : 'var(--border)', background: role === r ? 'var(--accent-subtle)' : 'transparent', color: role === r ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>
-                      {r === 'kitchen' ? '👨‍🍳 Küche' : r === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
+                      {r === 'kitchen' ? <><ChefHat size={13} /> Küche</> : r === 'delivery' ? <><Car size={13} /> Lieferant</> : <><BellRing size={13} /> Service</>}
                     </button>
                   ))}
                 </div>

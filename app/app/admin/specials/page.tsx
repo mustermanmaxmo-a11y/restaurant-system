@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { MenuItem, Restaurant } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { Flame, MessageSquare, X } from 'lucide-react'
 
 type DailySpecial = {
   id: string
@@ -164,7 +165,7 @@ export default function SpecialsPage() {
           background: 'var(--surface)', borderRadius: '16px', padding: '40px',
           textAlign: 'center', border: '1px dashed var(--border)',
         }}>
-          <div style={{ fontSize: '2rem', marginBottom: '12px' }}>🔥</div>
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Flame size={32} color="#f59e0b" /></div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Noch keine Tagesangebote. Klicke auf "+ Angebot hinzufügen".</p>
         </div>
       ) : (
@@ -335,7 +336,8 @@ function SpecialCard({ s, itemMap, onEdit, onToggle, onDelete }: {
           <span style={{
             background: '#f59e0b18', color: '#f59e0b', fontSize: '0.72rem', fontWeight: 700,
             padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.02em',
-          }}>🔥 {s.label}</span>
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+          }}><Flame size={11} /> {s.label}</span>
           <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.95rem' }}>{item.name}</span>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -347,7 +349,7 @@ function SpecialCard({ s, itemMap, onEdit, onToggle, onDelete }: {
           ) : (
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{Number(item.price).toFixed(2)} €</span>
           )}
-          {s.note && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>💬 {s.note}</span>}
+          {s.note && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}><MessageSquare size={11} /> {s.note}</span>}
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
@@ -357,8 +359,8 @@ function SpecialCard({ s, itemMap, onEdit, onToggle, onDelete }: {
         <button onClick={onEdit} style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
           Bearbeiten
         </button>
-        <button onClick={onDelete} style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', background: '#ef444418', color: '#ef4444', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
-          ✕
+        <button onClick={onDelete} style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', background: '#ef444418', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <X size={14} />
         </button>
       </div>
     </div>

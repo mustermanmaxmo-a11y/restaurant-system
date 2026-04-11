@@ -10,6 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
+import { ImageIcon, Check } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -290,7 +291,7 @@ export default function BrandingPage() {
                 position: 'relative', transition: 'border-color 0.15s, background 0.15s',
               }}>
                 {isActive && (
-                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', background: p.preview.primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#fff', fontWeight: 700 }}>✓</div>
+                  <div style={{ position: 'absolute', top: '8px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', background: p.preview.primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Check size={11} /></div>
                 )}
                 {/* Mini preview stripe */}
                 <div style={{ display: 'flex', gap: '3px', marginBottom: '10px' }}>
@@ -406,7 +407,7 @@ export default function BrandingPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <img src={logoUrl} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff', padding: '4px' }} />
               <div>
-                <p style={{ color: 'var(--text)', fontSize: '0.875rem', marginBottom: '8px' }}>Logo hochgeladen ✓</p>
+                <p style={{ color: 'var(--text)', fontSize: '0.875rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>Logo hochgeladen <Check size={14} color="#10b981" /></p>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => fileRef.current?.click()} style={btnSecondary}>Ersetzen</button>
                   <button onClick={() => { setLogoUrl(null); setSaved(false) }} style={{ ...btnSecondary, color: '#ef4444', borderColor: '#ef444444' }}>Entfernen</button>
@@ -418,7 +419,7 @@ export default function BrandingPage() {
               border: '2px dashed var(--border)', borderRadius: '10px', padding: '32px',
               textAlign: 'center', cursor: 'pointer',
             }}>
-              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🖼️</div>
+              <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}><ImageIcon size={32} color="var(--text-muted)" /></div>
               <p style={{ color: 'var(--text)', fontSize: '0.875rem', fontWeight: 600, margin: 0 }}>
                 {logoUploading ? 'Wird hochgeladen...' : 'Logo hochladen'}
               </p>
@@ -562,7 +563,7 @@ export default function BrandingPage() {
         cursor: saving ? 'wait' : 'pointer', transition: 'background 0.3s',
         boxShadow: `0 4px 20px ${pAccent}44`,
       }}>
-        {saving ? '...' : saved ? '✓ Gespeichert' : t('common.save')}
+        {saving ? '...' : saved ? <><Check size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />Gespeichert</> : t('common.save')}
       </button>
     </div>
   )

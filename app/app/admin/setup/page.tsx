@@ -4,16 +4,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { generateQrPdf } from '@/lib/qr-pdf'
+import type { LucideIcon } from 'lucide-react'
+import { Store, ClipboardList, Armchair, QrCode, Rocket } from 'lucide-react'
 
 type Step = 'info' | 'menu' | 'tables' | 'qr' | 'golive'
 
 const STEPS: Step[] = ['info', 'menu', 'tables', 'qr', 'golive']
-const STEP_ICONS: Record<Step, string> = {
-  info: '🏪',
-  menu: '📋',
-  tables: '🪑',
-  qr: '📱',
-  golive: '🚀',
+const STEP_ICONS: Record<Step, LucideIcon> = {
+  info: Store,
+  menu: ClipboardList,
+  tables: Armchair,
+  qr: QrCode,
+  golive: Rocket,
 }
 
 interface Category {
@@ -498,7 +500,7 @@ export default function SetupPage() {
 
         {/* Step Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>{STEP_ICONS[step]}</div>
+          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>{(() => { const StepIcon = STEP_ICONS[step]; return <StepIcon size={40} color="var(--accent)" /> })()}</div>
 
           {step === 'info' && (
             <>

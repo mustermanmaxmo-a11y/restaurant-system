@@ -5,16 +5,17 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { MenuCategory, MenuItem, Restaurant } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2 } from 'lucide-react'
 
 type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | null
 
 const DIETARY_LABELS = [
-  { key: 'vegetarisch', label: '🌱 Vegetarisch' },
-  { key: 'vegan', label: '🌿 Vegan' },
-  { key: 'glutenfrei', label: '🌾 Glutenfrei' },
-  { key: 'laktosefrei', label: '🥛 Laktosefrei' },
-  { key: 'scharf', label: '🌶️ Scharf' },
-  { key: 'neu', label: '🆕 Neu' },
+  { key: 'vegetarisch', label: 'Vegetarisch' },
+  { key: 'vegan', label: 'Vegan' },
+  { key: 'glutenfrei', label: 'Glutenfrei' },
+  { key: 'laktosefrei', label: 'Laktosefrei' },
+  { key: 'scharf', label: 'Scharf' },
+  { key: 'neu', label: 'Neu' },
 ]
 
 const ALLERGEN_LIST = [
@@ -274,9 +275,9 @@ export default function MenuPage() {
                 </span>
                 <button
                   onClick={e => { e.stopPropagation(); openEditCategory(cat) }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', padding: '2px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
                 >
-                  ✏️
+                  <Pencil size={13} />
                 </button>
               </div>
             ))
@@ -301,7 +302,7 @@ export default function MenuPage() {
 
               {activeCatItems.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🍽️</div>
+                  <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><UtensilsCrossed size={40} color="var(--text-muted)" /></div>
                   <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch keine Items in dieser Kategorie</p>
                   <button onClick={() => openAddItem(activeCategory)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
                     Erstes Item anlegen
@@ -318,8 +319,8 @@ export default function MenuPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px', flexWrap: 'wrap' }}>
                           <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</span>
                           {translatingId === item.id && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', marginLeft: '6px' }}>
-                              🌐 {t('admin.translating')}
+                            <span style={{ fontSize: '0.65rem', color: 'var(--accent)', marginLeft: '6px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <Globe size={10} /> {t('admin.translating')}
                             </span>
                           )}
                           {item.tags.map(tag => {
@@ -327,7 +328,7 @@ export default function MenuPage() {
                             return <span key={tag} style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 700 }}>{dl ? dl.label : tag}</span>
                           })}
                           {item.allergens?.length > 0 && (
-                            <span style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 600 }}>⚠️ {item.allergens.join(', ')}</span>
+                            <span style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: '0.65rem', padding: '2px 7px', borderRadius: '20px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}><AlertTriangle size={10} /> {item.allergens.join(', ')}</span>
                           )}
                         </div>
                         {item.description && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '2px' }}>{item.description}</p>}
@@ -341,7 +342,7 @@ export default function MenuPage() {
                           {item.available ? t('admin.available') : 'Aus'}
                         </button>
                         <button onClick={() => openEditItem(item)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 10px', color: 'var(--text-muted)', fontSize: '0.75rem', cursor: 'pointer' }}>{t('common.edit')}</button>
-                        <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '1rem', cursor: 'pointer', padding: '4px' }}>🗑</button>
+                        <button onClick={() => deleteItem(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}><Trash2 size={15} /></button>
                       </div>
                     </div>
                   ))}
@@ -350,7 +351,7 @@ export default function MenuPage() {
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📂</div>
+              <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><FolderOpen size={40} color="var(--text-muted)" /></div>
               <p style={{ color: 'var(--text-muted)' }}>Erstelle zuerst eine Kategorie</p>
             </div>
           )}
@@ -399,8 +400,8 @@ export default function MenuPage() {
                   style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem', outline: 'none', boxSizing: 'border-box', marginBottom: '16px' }}
                 />
                 {modal === 'edit-category' && editingCat && (
-                  <button onClick={() => deleteCategory(editingCat.id)} style={{ color: '#ef4444', background: 'none', border: 'none', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '16px', display: 'block' }}>
-                    🗑 Kategorie löschen
+                  <button onClick={() => deleteCategory(editingCat.id)} style={{ color: '#ef4444', background: 'none', border: 'none', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Trash2 size={14} /> Kategorie löschen
                   </button>
                 )}
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -448,7 +449,7 @@ export default function MenuPage() {
                       </div>
                     ) : (
                       <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '2px dashed var(--border)', borderRadius: '8px', padding: '20px', cursor: imageUploading ? 'not-allowed' : 'pointer', background: 'var(--bg)' }}>
-                        <span style={{ fontSize: '1.5rem' }}>{imageUploading ? '⏳' : '📷'}</span>
+                        {imageUploading ? <Loader2 size={24} color="var(--text-muted)" /> : <Camera size={24} color="var(--text-muted)" />}
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{imageUploading ? 'Wird hochgeladen...' : 'Foto auswählen'}</span>
                         <input type="file" accept="image/*" style={{ display: 'none' }} disabled={imageUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f) }} />
                       </label>
@@ -487,7 +488,7 @@ export default function MenuPage() {
                     </div>
                     {itemAllergens.length > 0 && (
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: '6px' }}>
-                        ⚠️ Enthält: {itemAllergens.join(', ')}
+                        <AlertTriangle size={11} style={{ verticalAlign: 'middle', marginRight: '4px' }} />Enthält: {itemAllergens.join(', ')}
                       </p>
                     )}
                   </div>

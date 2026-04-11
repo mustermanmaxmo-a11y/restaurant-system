@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Order, OrderStatus, ServiceCall, Table } from '@/types/database'
-import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X } from 'lucide-react'
+import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X, User, FileText } from 'lucide-react'
 import { useLanguage } from '@/components/providers/language-provider'
 
 type OrderWithTable = Order & { table_label?: string }
@@ -75,8 +75,8 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
 
       {/* Customer */}
       {order.customer_name && (
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-          👤 {order.customer_name}
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <User size={11} /> {order.customer_name}
         </p>
       )}
 
@@ -97,9 +97,9 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
         <div style={{
           background: '#FF950015', border: '1px solid #FF950030',
           borderRadius: '6px', padding: '6px 10px', marginBottom: '10px', fontSize: '0.78rem',
-          color: '#FF9500',
+          color: '#FF9500', display: 'flex', alignItems: 'center', gap: '5px',
         }}>
-          📝 {order.note}
+          <FileText size={11} style={{ flexShrink: 0 }} /> {order.note}
         </div>
       )}
 

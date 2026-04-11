@@ -13,6 +13,12 @@ import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, Order
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ClipboardList, ChefHat, CheckCircle2, XCircle, Bell, Receipt,
+  ShoppingCart, Search, User, Users, Link, Bike, PersonStanding,
+  Sun, Moon, PartyPopper, Heart, X, UtensilsCrossed,
+} from 'lucide-react'
 
 type CartItem = { item: MenuItem; qty: number; note: string }
 type View = 'menu' | 'cart' | 'status'
@@ -49,8 +55,8 @@ export default function OrderPage() {
 
   const { lang, t } = useLanguage()
 
-  const STATUS_ICONS: Record<string, string> = {
-    new: '📋', cooking: '👨‍🍳', served: '✅', cancelled: '❌',
+  const STATUS_ICONS: Record<string, LucideIcon> = {
+    new: ClipboardList, cooking: ChefHat, served: CheckCircle2, cancelled: XCircle,
   }
 
   const DIETARY_FILTERS = [
@@ -440,7 +446,7 @@ export default function OrderPage() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg, padding: '24px' }}>
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={spring} style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>❌</div>
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><XCircle size={48} color="#ef4444" /></div>
           <p style={{ color: C.text, fontWeight: 700, marginBottom: '8px', fontSize: '1.1rem' }}>QR-Code ungültig</p>
           <p style={{ color: C.muted, fontSize: '0.875rem' }}>{error}</p>
         </motion.div>
@@ -450,7 +456,7 @@ export default function OrderPage() {
 
   // ─── Status View ───────────────────────────────────────────────────────────
   if (view === 'status' && order) {
-    const statusIcon = STATUS_ICONS[order.status] ?? STATUS_ICONS.new
+    const StatusIcon = STATUS_ICONS[order.status] ?? STATUS_ICONS.new
     const statusLabel = t(`order.status.${order.status}`) || t('order.status.new')
     const statusIdx = ['new', 'cooking', 'served'].indexOf(order.status)
     const isServed = order.status === 'served'
@@ -478,8 +484,8 @@ export default function OrderPage() {
             <motion.div key={order.status}
               initial={{ scale: 0.4, opacity: 0, rotate: -15 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.4, opacity: 0 }}
               transition={springBouncy}
-              style={{ fontSize: '4.5rem', marginBottom: '18px', display: 'inline-block' }}
-            >{statusIcon}</motion.div>
+              style={{ marginBottom: '18px', display: 'flex', justifyContent: 'center' }}
+            ><StatusIcon size={72} color={C.accent} /></motion.div>
           </AnimatePresence>
           <AnimatePresence mode="wait">
             <motion.h1 key={order.status + 'l'}
@@ -550,10 +556,10 @@ export default function OrderPage() {
 
           {/* Service buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-            {[{ icon: '🔔', label: 'Kellner rufen', type: 'waiter' as const }, { icon: '🧾', label: 'Rechnung', type: 'bill' as const }].map(s => (
+            {([{ icon: Bell, label: 'Kellner rufen', type: 'waiter' as const }, { icon: Receipt, label: 'Rechnung', type: 'bill' as const }] as { icon: LucideIcon; label: string; type: 'waiter' | 'bill' }[]).map(s => (
               <motion.button key={s.type} onClick={() => callWaiter(s.type)} whileTap={{ scale: 0.95 }} transition={spring}
                 style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '18px 12px', color: C.text, cursor: 'pointer', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.6rem', marginBottom: '5px' }}>{s.icon}</div>
+                <div style={{ marginBottom: '5px', display: 'flex', justifyContent: 'center' }}><s.icon size={26} color={C.accent} /></div>
                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: C.muted }}>{s.label}</div>
               </motion.button>
             ))}
@@ -589,7 +595,7 @@ export default function OrderPage() {
           {cart.length === 0 ? (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={spring}
               style={{ textAlign: 'center', padding: '80px 0' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '14px', opacity: 0.4 }}>🛒</div>
+              <div style={{ marginBottom: '14px', opacity: 0.4, display: 'flex', justifyContent: 'center' }}><ShoppingCart size={56} color={C.muted} /></div>
               <p style={{ color: C.muted, fontWeight: 600 }}>{t('order.emptyCart')}</p>
             </motion.div>
           ) : (
@@ -601,7 +607,7 @@ export default function OrderPage() {
                     <div style={{ flex: 1 }}>
                       <p style={{ color: C.text, fontWeight: 600, marginBottom: '2px', fontSize: '0.9rem' }}>{c.item.name}</p>
                       <p style={{ color: C.muted, fontSize: '0.82rem' }}>{c.item.price.toFixed(2)} €</p>
-                      {c.note && <p style={{ color: C.accent, fontSize: '0.78rem', marginTop: '4px' }}>✎ {c.note}</p>}
+                      {c.note && <p style={{ color: C.accent, fontSize: '0.78rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '3px' }}><PersonStanding size={11} /> {c.note}</p>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <motion.button onClick={() => removeFromCart(c.item.id)} whileTap={{ scale: 0.82 }} transition={springBouncy}
@@ -698,8 +704,8 @@ export default function OrderPage() {
               </span>
               {groupMode === 'active' && (
                 <motion.span initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={springBouncy}
-                  style={{ background: C.accentDim, border: `1px solid ${C.accent}44`, borderRadius: '20px', padding: '2px 10px', fontSize: '0.72rem', color: C.accent, fontWeight: 800, letterSpacing: '0.08em' }}>
-                  👥 {groupCode}
+                  style={{ background: C.accentDim, border: `1px solid ${C.accent}44`, borderRadius: '20px', padding: '2px 10px', fontSize: '0.72rem', color: C.accent, fontWeight: 800, letterSpacing: '0.08em', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Users size={11} /> {groupCode}
                 </motion.span>
               )}
             </div>
@@ -708,8 +714,8 @@ export default function OrderPage() {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <LanguageSelector direction="down" />
             <motion.button onClick={() => setShowFilters(f => !f)} whileTap={{ scale: 0.88 }} transition={springBouncy}
-              style={{ position: 'relative', background: filterCount > 0 ? C.accentDim : C.surface2, border: `1px solid ${filterCount > 0 ? C.accent : C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1.1rem' }}>
-              🔍
+              style={{ position: 'relative', background: filterCount > 0 ? C.accentDim : C.surface2, border: `1px solid ${filterCount > 0 ? C.accent : C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Search size={18} color={filterCount > 0 ? C.accent : C.text} />
               {filterCount > 0 && (
                 <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: C.accent, color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{filterCount}</span>
               )}
@@ -744,7 +750,7 @@ export default function OrderPage() {
                     transition={spring}
                   />
                 )}
-                <span style={{ position: 'relative', zIndex: 1 }}>♥ Favoriten{favorites.size > 0 ? ` (${favorites.size})` : ''}</span>
+                <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '4px' }}><Heart size={13} fill={favorites.size > 0 ? 'currentColor' : 'none'} /> Favoriten{favorites.size > 0 ? ` (${favorites.size})` : ''}</span>
               </button>
 
               {categories.map(cat => {
@@ -815,7 +821,7 @@ export default function OrderPage() {
                 {filterCount > 0 && (
                   <button onClick={() => { setActiveDietary([]); setExcludedAllergens([]) }}
                     style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: C.muted, fontSize: '0.78rem', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
-                    ✕ Filter zurücksetzen
+                    <X size={12} style={{ verticalAlign: 'middle', marginRight: '3px' }} />Filter zurücksetzen
                   </button>
                 )}
               </div>
@@ -831,7 +837,7 @@ export default function OrderPage() {
               {favorites.size === 0 ? (
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={spring}
                   style={{ textAlign: 'center', padding: '64px 0' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '12px', opacity: 0.25 }}>♡</div>
+                  <div style={{ marginBottom: '12px', opacity: 0.25, display: 'flex', justifyContent: 'center' }}><Heart size={48} color={C.muted} /></div>
                   <p style={{ color: C.muted, fontWeight: 600 }}>Noch keine Favoriten gespeichert.</p>
                   <p style={{ color: C.muted2, fontSize: '0.8rem', marginTop: '6px' }}>Tippe auf das Herz bei einem Gericht.</p>
                 </motion.div>
@@ -876,7 +882,7 @@ export default function OrderPage() {
           {!showFavorites && items.length === 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
               style={{ textAlign: 'center', padding: '64px 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px', opacity: 0.25 }}>🍽️</div>
+              <div style={{ marginBottom: '12px', opacity: 0.25, display: 'flex', justifyContent: 'center' }}><UtensilsCrossed size={48} color={C.muted} /></div>
               <p style={{ color: C.muted }}>Noch keine Menüpunkte vorhanden.</p>
             </motion.div>
           )}
@@ -938,8 +944,8 @@ export default function OrderPage() {
                 </AnimatePresence>
                 <span>
                   {groupMode === 'active'
-                    ? (isGroupCreator ? 'Gruppe bestellen' : `Deine Auswahl: ${groupItems.filter(gi => gi.added_by === memberName).reduce((s, gi) => s + gi.qty, 0)} Items ✓`)
-                    : '🛒 Warenkorb anzeigen'}
+                    ? (isGroupCreator ? 'Gruppe bestellen' : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Deine Auswahl: {groupItems.filter(gi => gi.added_by === memberName).reduce((s, gi) => s + gi.qty, 0)} Items <CheckCircle2 size={14} /></span>)
+                    : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><ShoppingCart size={16} /> Warenkorb anzeigen</span>}
                 </span>
                 {(groupMode !== 'active' || isGroupCreator) && (
                   <>
@@ -977,8 +983,8 @@ export default function OrderPage() {
                 {categories.find(c => c.id === selectedItem.category_id)?.name}
               </span>
               <motion.button onClick={() => toggleFavorite(selectedItem.id)} whileTap={{ scale: 0.75 }} transition={springBouncy}
-                style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: favorites.has(selectedItem.id) ? C.accent : C.muted2, padding: '4px' }}>
-                {favorites.has(selectedItem.id) ? '♥' : '♡'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: favorites.has(selectedItem.id) ? C.accent : C.muted2, padding: '4px', display: 'flex', alignItems: 'center' }}>
+                <Heart size={22} fill={favorites.has(selectedItem.id) ? 'currentColor' : 'none'} />
               </motion.button>
             </div>
 
@@ -990,7 +996,7 @@ export default function OrderPage() {
                     style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: '280px', maxHeight: '480px' }} />
                 ) : (
                   <div style={{ width: '100%', minHeight: '280px', background: C.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '4rem', opacity: 0.2 }}>🍽️</span>
+                    <Bell size={64} color={C.border} />
                   </div>
                 )}
               </div>
@@ -1091,11 +1097,11 @@ export default function OrderPage() {
                 {/* Service */}
                 <p style={{ color: C.muted2, fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>Service</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '28px' }}>
-                  {[{ icon: '🔔', label: 'Kellner rufen', type: 'waiter' as const }, { icon: '🧾', label: 'Rechnung', type: 'bill' as const }].map(s => (
+                  {([{ icon: Bell, label: 'Kellner rufen', type: 'waiter' as const }, { icon: Receipt, label: 'Rechnung', type: 'bill' as const }] as { icon: LucideIcon; label: string; type: 'waiter' | 'bill' }[]).map(s => (
                     <motion.button key={s.type} onClick={() => { callWaiter(s.type); setShowMenu(false) }}
                       whileTap={{ scale: 0.94 }} transition={spring}
                       style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '18px 12px', color: C.text, cursor: 'pointer', textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.7rem', marginBottom: '6px' }}>{s.icon}</div>
+                      <div style={{ marginBottom: '6px', display: 'flex', justifyContent: 'center' }}><s.icon size={27} color={C.accent} /></div>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: C.muted }}>{s.label}</div>
                     </motion.button>
                   ))}
@@ -1107,12 +1113,12 @@ export default function OrderPage() {
                 {groupMode === 'none' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
                     <motion.button onClick={() => setGroupMode('create')} whileTap={{ scale: 0.97 }} transition={spring}
-                      style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.accent}66`, background: C.accentDim, color: C.accent, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left' }}>
-                      👥 {t('order.createGroup')} — Code teilen, alle bestellen gemeinsam
+                      style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.accent}66`, background: C.accentDim, color: C.accent, fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={16} /> {t('order.createGroup')} — Code teilen, alle bestellen gemeinsam
                     </motion.button>
                     <motion.button onClick={() => setGroupMode('join')} whileTap={{ scale: 0.97 }} transition={spring}
-                      style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left' }}>
-                      🔗 {t('order.joinGroup')} (Code eingeben)
+                      style={{ padding: '14px 16px', borderRadius: '14px', border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Link size={16} /> {t('order.joinGroup')} (Code eingeben)
                     </motion.button>
                   </div>
                 )}
@@ -1166,7 +1172,7 @@ export default function OrderPage() {
                             setCopiedGroup(true); setTimeout(() => setCopiedGroup(false), 2000)
                           }}
                           style={{ padding: '8px 16px', borderRadius: '10px', border: `1.5px solid ${copiedGroup ? '#10b981' : C.accent}`, background: copiedGroup ? 'rgba(16,185,129,0.1)' : C.accentDim, color: copiedGroup ? '#10b981' : C.accent, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
-                          {copiedGroup ? `✓ ${t('order.copied')}` : t('order.copyCode')}
+                          {copiedGroup ? <><CheckCircle2 size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />{t('order.copied')}</> : t('order.copyCode')}
                         </motion.button>
                       </div>
                       <p style={{ color: C.muted, fontSize: '0.78rem', lineHeight: 1.5, marginBottom: groupItems.length > 0 ? '14px' : '0' }}>
@@ -1202,7 +1208,7 @@ export default function OrderPage() {
                           fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
                           boxShadow: groupItems.length > 0 ? `0 4px 20px ${C.accentGlow}` : 'none',
                         }}>
-                        {submitting ? 'Wird bestellt...' : '✓ Gruppe bestellen'}
+                        {submitting ? 'Wird bestellt...' : <><CheckCircle2 size={15} style={{ verticalAlign: 'middle', marginRight: '5px' }} />Gruppe bestellen</>}
                       </motion.button>
                     )}
                   </div>

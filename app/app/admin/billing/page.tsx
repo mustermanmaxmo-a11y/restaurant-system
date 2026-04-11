@@ -8,6 +8,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits, PLAN_DISPLAY_NAMES, getTrialDaysLeft, isTrialExpired } from '@/lib/plan-limits'
 import { TrialBanner } from '@/components/TrialBanner'
 import type { RestaurantPlan } from '@/types/database'
+import { CreditCard, Check, X } from 'lucide-react'
 
 export default function BillingPage() {
   const router = useRouter()
@@ -131,7 +132,7 @@ export default function BillingPage() {
                   cursor: redirecting ? 'not-allowed' : 'pointer', opacity: redirecting ? 0.7 : 1,
                 }}
               >
-                {redirecting ? 'Öffne Portal...' : '💳 Abo verwalten'}
+                {redirecting ? 'Öffne Portal...' : <><CreditCard size={15} style={{ verticalAlign: 'middle', marginRight: '6px' }} />Abo verwalten</>}
               </button>
             </>
           )}
@@ -148,17 +149,14 @@ export default function BillingPage() {
             <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '4px' }}>Starter</p>
             <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '1.8rem', marginBottom: '4px' }}>29€<span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/Monat</span></p>
             <ul style={{ color: 'var(--text-muted)', fontSize: '0.8rem', listStyle: 'none', padding: 0, marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li>✓ Bis 15 Tische</li>
-              <li>✓ Speisekarte + QR-Bestellung</li>
-              <li>✓ Realtime Bestellstatus</li>
-              <li>✓ 3 Mitarbeiter</li>
-              <li>✓ Bestellanalyse (7 Tage)</li>
-              <li style={{ color: 'var(--border)' }}>✗ KI-Assistent</li>
-              <li style={{ color: 'var(--border)' }}>✗ Reservierungen</li>
-              <li style={{ color: 'var(--border)' }}>✗ Branding</li>
+              {[['Bis 15 Tische','check'],['Speisekarte + QR-Bestellung','check'],['Realtime Bestellstatus','check'],['3 Mitarbeiter','check'],['Bestellanalyse (7 Tage)','check'],['KI-Assistent','x'],['Reservierungen','x'],['Branding','x']].map(([label,type]) => (
+                <li key={label} style={{ display:'flex',alignItems:'center',gap:'6px', color: type==='x' ? 'var(--border)' : undefined }}>
+                  {type==='check' ? <CreditCard size={12} color="var(--accent)" style={{flexShrink:0}} /> : <X size={12} style={{flexShrink:0}} />}{label}
+                </li>
+              ))}
             </ul>
             {restaurant?.plan === 'starter' ? (
-              <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>✓ Aktueller Plan</div>
+              <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem', display:'flex',alignItems:'center',justifyContent:'center',gap:'5px' }}><Check size={14} />Aktueller Plan</div>
             ) : (
               <button onClick={() => handleSelectPlan('starter')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
                 {planLoading ? '...' : 'Starter wählen'}
@@ -177,16 +175,12 @@ export default function BillingPage() {
             <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '4px' }}>Professional</p>
             <p style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '1.8rem', marginBottom: '4px' }}>59€<span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/Monat</span></p>
             <ul style={{ color: 'var(--text-muted)', fontSize: '0.8rem', listStyle: 'none', padding: 0, marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li>✓ Unbegrenzte Tische</li>
-              <li>✓ Unbegrenzte Mitarbeiter</li>
-              <li>✓ KI-Menüassistent</li>
-              <li>✓ Reservierungen</li>
-              <li>✓ Branding (Logo + Farben)</li>
-              <li>✓ Vollständige Bestellanalyse</li>
-              <li>✓ Tagesgerichte & Specials</li>
+              {['Unbegrenzte Tische','Unbegrenzte Mitarbeiter','KI-Menüassistent','Reservierungen','Branding (Logo + Farben)','Vollständige Bestellanalyse','Tagesgerichte & Specials'].map(label => (
+                <li key={label} style={{ display:'flex',alignItems:'center',gap:'6px' }}><Check size={12} color="var(--accent)" style={{flexShrink:0}} />{label}</li>
+              ))}
             </ul>
             {restaurant?.plan === 'pro' ? (
-              <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>✓ Aktueller Plan</div>
+              <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem', display:'flex',alignItems:'center',justifyContent:'center',gap:'5px' }}><Check size={14} />Aktueller Plan</div>
             ) : (
               <button onClick={() => handleSelectPlan('pro')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
                 {planLoading ? '...' : 'Professional wählen'}
@@ -202,11 +196,9 @@ export default function BillingPage() {
             <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '4px' }}>Enterprise</p>
             <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.8rem', marginBottom: '4px' }}>Individuell</p>
             <ul style={{ color: 'var(--text-muted)', fontSize: '0.8rem', listStyle: 'none', padding: 0, marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li>✓ Alles aus Professional</li>
-              <li>✓ Mehrere Standorte</li>
-              <li>✓ POS-Integration</li>
-              <li>✓ API-Zugang</li>
-              <li>✓ Persönlicher Support</li>
+              {['Alles aus Professional','Mehrere Standorte','POS-Integration','API-Zugang','Persönlicher Support'].map(label => (
+                <li key={label} style={{ display:'flex',alignItems:'center',gap:'6px' }}><Check size={12} color="var(--accent)" style={{flexShrink:0}} />{label}</li>
+              ))}
             </ul>
             <a href="mailto:hello@restaurantos.de" style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: '10px', border: '1.5px solid var(--border)', color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>
               Kontakt aufnehmen

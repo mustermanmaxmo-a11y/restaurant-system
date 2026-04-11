@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { GroupItem, GroupPayment } from '@/types/database'
+import { Check, Banknote, CreditCard } from 'lucide-react'
 
 interface Props {
   groupId: string
@@ -11,11 +12,11 @@ interface Props {
   accent: string
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  paid: '✓ Online bezahlt',
-  cash: '💵 Zahlt bar',
-  terminal: '🃏 Karte – Kellner kommt',
-  covered: '✓ Übernommen',
+const STATUS_LABEL: Record<string, React.ReactNode> = {
+  paid: <><Check size={11} /> Online bezahlt</>,
+  cash: <><Banknote size={11} /> Zahlt bar</>,
+  terminal: <><CreditCard size={11} /> Karte – Kellner kommt</>,
+  covered: <><Check size={11} /> Übernommen</>,
   pending: 'Ausstehend',
 }
 
@@ -225,7 +226,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
                   textAlign: 'left',
                 }}
               >
-                💳 Online zahlen — {myTotal.toFixed(2)} €
+                <CreditCard size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />Online zahlen — {myTotal.toFixed(2)} €
               </button>
               <button
                 onClick={() => payOffline('cash')}
@@ -236,7 +237,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
                   textAlign: 'left',
                 }}
               >
-                💵 Bar zahlen
+                <Banknote size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />Bar zahlen
               </button>
               <button
                 onClick={() => payOffline('terminal')}
@@ -247,7 +248,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
                   textAlign: 'left',
                 }}
               >
-                🃏 Mit Karte – Kellner kommt
+                <CreditCard size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />Mit Karte – Kellner kommt
               </button>
             </div>
             <button

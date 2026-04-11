@@ -177,7 +177,7 @@ export default function StatsPage() {
       <div style={{ padding: '24px', maxWidth: '960px', margin: '0 auto' }}>
         {!hasData ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📊</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><BarChart size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)' }}>Noch keine Daten im gewählten Zeitraum.</p>
           </div>
         ) : (

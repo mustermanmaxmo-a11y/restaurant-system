@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { UtensilsCrossed } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -7,7 +8,7 @@ export default function HomePage() {
       {/* Navbar */}
       <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 32px', borderBottom: '1px solid var(--border)' }}>
         <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>
-          🍽️ RestaurantOS
+          <UtensilsCrossed size={20} style={{ verticalAlign: 'middle', marginRight: '6px' }} />RestaurantOS
         </span>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <ThemeToggle />
@@ -36,7 +37,7 @@ export default function HomePage() {
 
       {/* Hero */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', textAlign: 'center' }}>
-        <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🍽️</div>
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}><UtensilsCrossed size={64} color="var(--accent)" /></div>
         <h1 style={{ color: 'var(--text)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, lineHeight: 1.1, maxWidth: '700px', marginBottom: '20px' }}>
           Digitale Bestellungen für dein Restaurant
         </h1>

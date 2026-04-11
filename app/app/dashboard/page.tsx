@@ -4,14 +4,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import type { Order, ServiceCall, Staff, Restaurant, Table, Reservation } from '@/types/database'
+import type { LucideIcon } from 'lucide-react'
+import {
+  ClipboardList, ChefHat, CheckCircle2, Car, User, Phone, MapPin,
+  AlertTriangle, Bell, BellRing, Receipt, CalendarDays, Users, Bike, X,
+} from 'lucide-react'
 
 type Session = { staff: Staff; restaurant: Restaurant }
 type Column = 'new' | 'cooking' | 'served'
 
-const COLUMNS: { key: Column; label: string; icon: string; color: string; next?: Column; nextLabel?: string }[] = [
-  { key: 'new',     label: 'Neu',           icon: '📋', color: '#f59e0b', next: 'cooking', nextLabel: 'In Küche →' },
-  { key: 'cooking', label: 'In Zubereitung', icon: '👨‍🍳', color: '#ff6b35', next: 'served',  nextLabel: 'Serviert ✓' },
-  { key: 'served',  label: 'Serviert',       icon: '✅', color: '#10b981' },
+const COLUMNS: { key: Column; label: string; icon: LucideIcon; color: string; next?: Column; nextLabel?: string }[] = [
+  { key: 'new',     label: 'Neu',           icon: ClipboardList, color: '#f59e0b', next: 'cooking', nextLabel: 'In Küche →' },
+  { key: 'cooking', label: 'In Zubereitung', icon: ChefHat,       color: '#ff6b35', next: 'served',  nextLabel: 'Serviert' },
+  { key: 'served',  label: 'Serviert',       icon: CheckCircle2,  color: '#10b981' },
 ]
 
 function timeAgo(dateStr: string) {
@@ -177,7 +182,7 @@ export default function DashboardPage() {
       <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div style={{ width: '100%', maxWidth: '360px' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>👨‍🍳</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><ChefHat size={40} color="#ff6b35" /></div>
             <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700 }}>Staff Login</h1>
             <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '6px' }}>RestaurantOS Dashboard</p>
           </div>
@@ -253,7 +258,7 @@ export default function DashboardPage() {
                   disabled={loginLoading || !pin.trim()}
                   style={{ padding: '18px', borderRadius: '12px', border: 'none', background: pin.trim() ? '#ff6b35' : '#2a2a2a', color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: pin.trim() ? 'pointer' : 'not-allowed' }}
                 >
-                  {loginLoading ? '...' : '✓'}
+                  {loginLoading ? '...' : <CheckCircle2 size={20} />}
                 </button>
               </div>
             </div>
@@ -265,10 +270,10 @@ export default function DashboardPage() {
 
   // ── LIEFERANTEN VIEW ────────────────────────────────────────────────────────
   if (session?.staff.role === 'delivery') {
-    const DELIVERY_COLS = [
-      { key: 'new' as const,              label: 'Neu',          icon: '📋', color: '#f59e0b', nextStatus: 'cooking' as const,          nextLabel: 'In Zubereitung →' },
-      { key: 'cooking' as const,          label: 'Wird zubereitet', icon: '👨‍🍳', color: '#ff6b35', nextStatus: 'out_for_delivery' as const, nextLabel: 'Abgeholt 🚗' },
-      { key: 'out_for_delivery' as const, label: 'Unterwegs',    icon: '🚗', color: '#8b5cf6', nextStatus: 'served' as const,           nextLabel: 'Ausgeliefert ✓' },
+    const DELIVERY_COLS: { key: 'new' | 'cooking' | 'out_for_delivery'; label: string; icon: LucideIcon; color: string; nextStatus: 'cooking' | 'out_for_delivery' | 'served'; nextLabel: string }[] = [
+      { key: 'new',              label: 'Neu',             icon: ClipboardList, color: '#f59e0b', nextStatus: 'cooking',          nextLabel: 'In Zubereitung →' },
+      { key: 'cooking',          label: 'Wird zubereitet', icon: ChefHat,       color: '#ff6b35', nextStatus: 'out_for_delivery', nextLabel: 'Abgeholt →' },
+      { key: 'out_for_delivery', label: 'Unterwegs',       icon: Car,           color: '#8b5cf6', nextStatus: 'served',           nextLabel: 'Ausgeliefert' },
     ]
     const deliveryOrders = orders.filter(o => o.order_type === 'delivery')
 
@@ -280,12 +285,12 @@ export default function DashboardPage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.restaurant.name}</span>
             <span style={{ color: '#444', fontSize: '0.8rem', flexShrink: 0 }}>·</span>
             <span style={{ color: '#aaa', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{session.staff.name}</span>
-            <span style={{ background: '#f59e0b22', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
-              🚗 Lieferant
+            <span style={{ background: '#f59e0b22', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Car size={11} /> Lieferant
             </span>
           </div>
-          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', flexShrink: 0, marginLeft: '8px' }}>
-            ✕
+          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 8px', cursor: 'pointer', flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center' }}>
+            <X size={13} />
           </button>
         </div>
 
@@ -298,7 +303,7 @@ export default function DashboardPage() {
                 {/* Column Header */}
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1rem' }}>{col.icon}</span>
+                    <col.icon size={15} color={col.color} />
                     <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>{col.label}</span>
                   </div>
                   {colOrders.length > 0 && (
@@ -336,20 +341,20 @@ export default function DashboardPage() {
 
                       {/* Customer */}
                       {order.customer_name && (
-                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>
-                          👤 {order.customer_name}
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <User size={13} color="#888" /> {order.customer_name}
                         </p>
                       )}
                       {order.customer_phone && (
-                        <a href={`tel:${order.customer_phone}`} style={{ color: '#f59e0b', fontSize: '0.8rem', textDecoration: 'none', display: 'block', marginBottom: '8px' }}>
-                          📞 {order.customer_phone}
+                        <a href={`tel:${order.customer_phone}`} style={{ color: '#f59e0b', fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                          <Phone size={12} /> {order.customer_phone}
                         </a>
                       )}
 
                       {/* Delivery address */}
                       {order.delivery_address && (
                         <div style={{ background: '#8b5cf611', border: '1px solid #8b5cf633', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px' }}>
-                          <p style={{ color: '#8b5cf6', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px' }}>📍 Lieferadresse</p>
+                          <p style={{ color: '#8b5cf6', fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={11} /> Lieferadresse</p>
                           <p style={{ color: '#ccc', fontSize: '0.82rem' }}>{order.delivery_address.street}</p>
                           <p style={{ color: '#aaa', fontSize: '0.78rem' }}>{order.delivery_address.zip} {order.delivery_address.city}</p>
                         </div>
@@ -370,7 +375,7 @@ export default function DashboardPage() {
                       {/* Note */}
                       {order.note && (
                         <div style={{ background: '#f59e0b11', border: '1px solid #f59e0b33', borderRadius: '6px', padding: '6px 8px', marginBottom: '8px' }}>
-                          <p style={{ color: '#f59e0b', fontSize: '0.75rem' }}>⚠ {order.note}</p>
+                          <p style={{ color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={11} /> {order.note}</p>
                         </div>
                       )}
 
@@ -418,12 +423,12 @@ export default function DashboardPage() {
             <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.restaurant.name}</span>
             <span style={{ color: '#444', fontSize: '0.8rem', flexShrink: 0 }}>·</span>
             <span style={{ color: '#aaa', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{session.staff.name}</span>
-            <span style={{ background: (session.staff.role as string) === 'kitchen' ? '#ff6b3522' : (session.staff.role as string) === 'delivery' ? '#f59e0b22' : '#6c63ff22', color: (session.staff.role as string) === 'kitchen' ? '#ff6b35' : (session.staff.role as string) === 'delivery' ? '#f59e0b' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0 }}>
-              {(session.staff.role as string) === 'kitchen' ? '👨‍🍳 Küche' : (session.staff.role as string) === 'delivery' ? '🚗 Lieferant' : '🛎️ Service'}
+            <span style={{ background: (session.staff.role as string) === 'kitchen' ? '#ff6b3522' : (session.staff.role as string) === 'delivery' ? '#f59e0b22' : '#6c63ff22', color: (session.staff.role as string) === 'kitchen' ? '#ff6b35' : (session.staff.role as string) === 'delivery' ? '#f59e0b' : '#6c63ff', fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {(session.staff.role as string) === 'kitchen' ? <><ChefHat size={11} /> Küche</> : (session.staff.role as string) === 'delivery' ? <><Car size={11} /> Lieferant</> : <><BellRing size={11} /> Service</>}
             </span>
           </div>
-          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 10px', fontSize: '0.75rem', cursor: 'pointer', flexShrink: 0, marginLeft: '8px' }}>
-            ✕
+          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 8px', cursor: 'pointer', flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center' }}>
+            <X size={13} />
           </button>
         </div>
         {/* Nav tabs row — scrollable */}
@@ -463,7 +468,7 @@ export default function DashboardPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 }}
               >
-                {col.icon} {col.label}
+                <col.icon size={13} /> {col.label}
                 {count > 0 && <span style={{ background: col.color, color: '#fff', borderRadius: '10px', padding: '0 6px', fontSize: '0.7rem' }}>{count}</span>}
               </button>
             )
@@ -478,7 +483,7 @@ export default function DashboardPage() {
                 {/* Column Header */}
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1rem' }}>{col.icon}</span>
+                    <col.icon size={15} color={col.color} />
                     <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>{col.label}</span>
                   </div>
                   {colOrders.length > 0 && (
@@ -518,7 +523,7 @@ export default function DashboardPage() {
                             <span className="pulse-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color, flexShrink: 0, color: col.color }} />
                           )}
                           <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>
-                            {order.order_type === 'dine_in' ? `Tisch ${order.table_id ? tableMap[order.table_id] ?? '?' : '?'}` : order.order_type === 'delivery' ? '🛵 Lieferung' : '🏃 Abholung'}
+                            {order.order_type === 'dine_in' ? `Tisch ${order.table_id ? tableMap[order.table_id] ?? '?' : '?'}` : order.order_type === 'delivery' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Bike size={13} /> Lieferung</span> : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><User size={13} /> Abholung</span>}
                           </span>
                           {order.customer_name && (
                             <span style={{ color: '#666', fontSize: '0.75rem' }}>{order.customer_name}</span>
@@ -541,7 +546,7 @@ export default function DashboardPage() {
                       {/* Note */}
                       {order.note && (
                         <div style={{ background: '#f59e0b11', border: '1px solid #f59e0b33', borderRadius: '6px', padding: '6px 8px', marginBottom: '10px' }}>
-                          <p style={{ color: '#f59e0b', fontSize: '0.75rem' }}>⚠ {order.note}</p>
+                          <p style={{ color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={11} /> {order.note}</p>
                         </div>
                       )}
 
@@ -580,7 +585,7 @@ export default function DashboardPage() {
         <div style={{ flex: 1, padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
           {unresolvedCalls.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>✅</div>
+              <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={48} color="#10b981" /></div>
               <p style={{ color: '#555' }}>Keine offenen Service-Anfragen</p>
             </div>
           ) : (
@@ -588,8 +593,8 @@ export default function DashboardPage() {
               {unresolvedCalls.map(call => (
                 <div key={call.id} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${call.type === 'bill' ? '#6c63ff33' : '#ff6b3533'}` }}>
                   <div>
-                    <p style={{ color: '#fff', fontWeight: 700, marginBottom: '2px' }}>
-                      {call.type === 'waiter' ? '🔔 Kellner gerufen' : '🧾 Rechnung gewünscht'}
+                    <p style={{ color: '#fff', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {call.type === 'waiter' ? <><Bell size={14} /> Kellner gerufen</> : <><Receipt size={14} /> Rechnung gewünscht</>}
                     </p>
                     <p style={{ color: '#555', fontSize: '0.8rem' }}>{timeAgo(call.created_at)} ago</p>
                   </div>
@@ -597,7 +602,7 @@ export default function DashboardPage() {
                     onClick={() => resolveCall(call.id)}
                     style={{ background: '#2a2a2a', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                   >
-                    Erledigt ✓
+                    <span style={{ display:'flex',alignItems:'center',gap:'4px' }}><CheckCircle2 size={13} /> Erledigt</span>
                   </button>
                 </div>
               ))}
@@ -690,7 +695,7 @@ export default function DashboardPage() {
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto', maxWidth: '700px', width: '100%', margin: '0 auto' }}>
             {reservations.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📅</div>
+                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><CalendarDays size={40} color="#555" /></div>
                 <p style={{ color: '#555' }}>Keine Reservierungen heute oder morgen.</p>
               </div>
             ) : (
@@ -745,8 +750,8 @@ function ReservationCard({ res }: { res: Reservation }) {
           <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem' }}>{res.customer_name}</p>
           <span style={{ background: st.bg, color: st.color, fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', border: `1px solid ${st.color}44` }}>{st.label}</span>
         </div>
-        <p style={{ color: '#555', fontSize: '0.78rem' }}>
-          👥 {res.guests} · 📞 {res.customer_phone}
+        <p style={{ color: '#555', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Users size={12} /> {res.guests} · <Phone size={12} /> {res.customer_phone}
         </p>
         {res.note && <p style={{ color: '#444', fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic' }}>„{res.note}"</p>}
       </div>

@@ -8,6 +8,7 @@ import type { Table, Restaurant, RestaurantPlan } from '@/types/database'
 import { getPlanLimits } from '@/lib/plan-limits'
 import FloorPlanEditor from '@/components/FloorPlanEditor'
 import { useLanguage } from '@/components/providers/language-provider'
+import { Armchair, Map, Check } from 'lucide-react'
 
 export default function TablesPage() {
   const router = useRouter()
@@ -149,7 +150,7 @@ export default function TablesPage() {
 
       {/* Tab bar */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', padding: '0 24px' }}>
-        {([['tables', '🪑 Tische'], ['floorplan', '🗺️ Grundriss']] as const).map(([tab, label]) => (
+        {([['tables', <><Armchair size={14} /> Tische</>], ['floorplan', <><Map size={14} /> Grundriss</>]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setAdminTab(tab)}
@@ -159,6 +160,7 @@ export default function TablesPage() {
               fontWeight: adminTab === tab ? 700 : 400,
               cursor: 'pointer', fontSize: '0.875rem',
               borderBottom: adminTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+              display: 'flex', alignItems: 'center', gap: '6px',
             }}
           >{label}</button>
         ))}
@@ -175,7 +177,7 @@ export default function TablesPage() {
       <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', display: adminTab === 'floorplan' ? 'none' : undefined }}>
         {tables.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🪑</div>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Armchair size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch keine Tische angelegt</p>
             <button onClick={() => setShowModal(true)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
               Ersten Tisch anlegen
@@ -215,7 +217,7 @@ export default function TablesPage() {
                       transition: 'all 0.2s',
                     }}
                   >
-                    {copiedId === table.id ? '✓ Kopiert!' : 'Link kopieren'}
+                    {copiedId === table.id ? <><Check size={12} style={{ verticalAlign: 'middle', marginRight: '3px' }} />Kopiert!</> : 'Link kopieren'}
                   </button>
                   <button
                     onClick={() => deleteTable(table.id)}
@@ -289,7 +291,7 @@ export default function TablesPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${copiedId === qrModal.id ? '#10b98144' : 'var(--border)'}`, background: copiedId === qrModal.id ? '#10b98112' : 'transparent', color: copiedId === qrModal.id ? '#10b981' : 'var(--text)' }}>{copiedId === qrModal.id ? '✓ Kopiert!' : 'Link kopieren'}</button>
+              <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${copiedId === qrModal.id ? '#10b98144' : 'var(--border)'}`, background: copiedId === qrModal.id ? '#10b98112' : 'transparent', color: copiedId === qrModal.id ? '#10b981' : 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>{copiedId === qrModal.id ? <><Check size={13} />Kopiert!</> : 'Link kopieren'}</button>
               <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{t('common.close')}</button>
             </div>
           </div>

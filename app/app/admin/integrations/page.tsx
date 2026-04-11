@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant } from '@/types/database'
 import { Suspense } from 'react'
+import { Bot, Globe, BookOpen, ChevronUp, ChevronDown, Lightbulb, AlertTriangle } from 'lucide-react'
 
 interface PosConnection {
   provider: string
@@ -260,7 +261,7 @@ function IntegrationsContent() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#6c63ff' }} />
-              <h3 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem' }}>🤖 KI-Assistent</h3>
+              <h3 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Bot size={16} /> KI-Assistent</h3>
               {restaurant.plan === 'enterprise' ? (
                 <span style={{ background: '#6c63ff20', color: '#a78bfa', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
                   Enterprise — aktiv
@@ -333,8 +334,8 @@ function IntegrationsContent() {
                   marginBottom: '16px',
                 }}>
                   <div>
-                    <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.88rem', marginBottom: '2px' }}>
-                      🌐 Menü-Übersetzung
+                    <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.88rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Globe size={14} /> Menü-Übersetzung
                     </p>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                       Namen & Beschreibungen automatisch übersetzen beim Speichern
@@ -365,7 +366,7 @@ function IntegrationsContent() {
                   onClick={() => setAiGuideOpen(o => !o)}
                   style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  📖 Anleitung: KI-API Key einrichten {aiGuideOpen ? '▲' : '▼'}
+                  <BookOpen size={14} /> Anleitung: KI-API Key einrichten {aiGuideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </button>
 
                 {aiGuideOpen && (
@@ -395,11 +396,11 @@ function IntegrationsContent() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '16px' }}>
                       <div style={{ background: '#14532d22', border: '1px solid #14532d44', borderRadius: '8px', padding: '10px 14px' }}>
-                        <p style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>💡 Kosten</p>
+                        <p style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Kosten</p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>~0,001€ pro Anfrage · 5€ ≈ 5.000 Chats</p>
                       </div>
                       <div style={{ background: '#45091422', border: '1px solid #45091444', borderRadius: '8px', padding: '10px 14px' }}>
-                        <p style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px' }}>⚠️ Sicherheit</p>
+                        <p style={{ color: '#f87171', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={12} /> Sicherheit</p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Teile deinen Key mit niemandem — er gibt Zugriff auf deinen KI-Account.</p>
                       </div>
                     </div>

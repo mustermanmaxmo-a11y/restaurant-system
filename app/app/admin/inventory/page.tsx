@@ -10,6 +10,7 @@ import type {
   WasteReason, PurchaseOrderStatus,
 } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { Package, AlertTriangle, Truck, Sparkles, Link2, Pencil, X, CheckCircle2, BarChart2, Lightbulb, Siren } from 'lucide-react'
 
 type Tab = 'bestand' | 'lieferanten' | 'bestellungen' | 'verluste'
 
@@ -456,7 +457,7 @@ export default function InventoryPage() {
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div>
-              <h1 style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2px' }}>📦 Lagerbestand</h1>
+              <h1 style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}><Package size={22} /> Lagerbestand</h1>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{ingredients.length} Zutaten · {suppliers.length} Lieferanten</p>
             </div>
             {tab === 'bestand' && (
@@ -470,7 +471,7 @@ export default function InventoryPage() {
           {/* Low stock banner */}
           {lowStockCount > 0 && (
             <div style={{ background: '#431407', border: '1px solid #fb923c44', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1rem' }}>⚠️</span>
+              <AlertTriangle size={16} color="#fb923c" />
               <span style={{ color: '#fdba74', fontSize: '0.875rem', fontWeight: 500 }}>
                 {lowStockCount} {lowStockCount === 1 ? 'Zutat hat' : 'Zutaten haben'} niedrigen Bestand
                 {' — '}
@@ -484,10 +485,10 @@ export default function InventoryPage() {
           {/* Tabs */}
           <div style={{ display: 'flex', gap: '4px' }}>
             {([
-              { id: 'bestand', label: '📦 Bestand' },
-              { id: 'lieferanten', label: '🚛 Lieferanten' },
-              { id: 'bestellungen', label: `✨ Bestellvorschläge${lowStockCount > 0 ? ` (${lowStockCount})` : ''}` },
-              { id: 'verluste', label: '♻️ Verluste' },
+              { id: 'bestand', label: 'Bestand' },
+              { id: 'lieferanten', label: 'Lieferanten' },
+              { id: 'bestellungen', label: `Bestellvorschläge${lowStockCount > 0 ? ` (${lowStockCount})` : ''}` },
+              { id: 'verluste', label: 'Verluste' },
             ] as { id: Tab; label: string }[]).map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 padding: '8px 16px', borderRadius: '8px 8px 0 0', border: 'none',
@@ -518,7 +519,7 @@ export default function InventoryPage() {
 
             {ingredients.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📦</div>
+                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Package size={48} color="var(--text-muted)" /></div>
                 <p style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text)' }}>Noch keine Zutaten</p>
                 <p style={{ fontSize: '0.875rem' }}>Füge deine erste Zutat hinzu und verknüpfe sie mit Menü-Items.</p>
               </div>
@@ -539,7 +540,7 @@ export default function InventoryPage() {
                         {ing.supplier_name && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'block' }}>{ing.supplier_name}</span>}
                       </div>
                       <span style={{ color: isLow ? '#f87171' : 'var(--text)', fontWeight: isLow ? 700 : 400, fontSize: '0.875rem' }}>
-                        {isLow ? '⚠ ' : ''}{Number(ing.current_stock).toFixed(2)}
+                        {isLow && <AlertTriangle size={12} style={{ marginRight: '3px', verticalAlign: 'middle' }} />}{Number(ing.current_stock).toFixed(2)}
                       </span>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{ing.unit}</span>
                       <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{Number(ing.min_stock).toFixed(2)}</span>
@@ -549,9 +550,9 @@ export default function InventoryPage() {
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         <button onClick={() => { setDelivModal(ing); setDelivQty(''); setDelivNote('') }} style={btnSmall}>+ Lieferung</button>
                         <button onClick={() => { setCorrModal(ing); setCorrDelta(''); setCorrNote('') }} style={btnSmall}>± Korrektur</button>
-                        <button onClick={() => openLinkModal(ing)} style={btnSmall}>🔗 Verknüpfen</button>
-                        <button onClick={() => openEditIng(ing)} style={btnSmall}>✏</button>
-                        <button onClick={() => deleteIng(ing.id)} style={{ ...btnSmall, color: '#f87171' }}>✕</button>
+                        <button onClick={() => openLinkModal(ing)} style={btnSmall}><Link2 size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />Verknüpfen</button>
+                        <button onClick={() => openEditIng(ing)} style={{ ...btnSmall, display: 'flex', alignItems: 'center' }}><Pencil size={11} /></button>
+                        <button onClick={() => deleteIng(ing.id)} style={{ ...btnSmall, color: '#f87171', display: 'flex', alignItems: 'center' }}><X size={11} /></button>
                       </div>
                     </div>
                   )
@@ -566,7 +567,7 @@ export default function InventoryPage() {
           <div>
             {suppliers.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🚛</div>
+                <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Truck size={48} color="var(--text-muted)" /></div>
                 <p style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text)' }}>Noch keine Lieferanten</p>
                 <p style={{ fontSize: '0.875rem' }}>Füge Lieferanten hinzu und verknüpfe sie mit deinen Zutaten.</p>
               </div>
@@ -582,7 +583,7 @@ export default function InventoryPage() {
                       {s.notes && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px', fontStyle: 'italic' }}>{s.notes}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => openEditSup(s)} style={btnSmall}>✏ Bearbeiten</button>
+                      <button onClick={() => openEditSup(s)} style={{ ...btnSmall, display: 'flex', alignItems: 'center', gap: '4px' }}><Pencil size={11} /> Bearbeiten</button>
                       <button onClick={() => deleteSup(s.id)} style={{ ...btnSmall, color: '#f87171' }}>{t('common.delete')}</button>
                     </div>
                   </div>
@@ -599,11 +600,11 @@ export default function InventoryPage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div>
-                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px' }}>✨ KI-Analyse</p>
+                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={15} /> KI-Analyse</p>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Unsere KI analysiert deinen Bestand und gibt konkrete Empfehlungen</p>
                 </div>
                 <button onClick={runAiAnalysis} disabled={aiLoading} style={{ ...btnPrimary, opacity: aiLoading ? 0.6 : 1 }}>
-                  {aiLoading ? 'Analysiere...' : '✨ Analyse starten'}
+                  {aiLoading ? 'Analysiere...' : <><Sparkles size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />Analyse starten</>}
                 </button>
               </div>
 
@@ -613,7 +614,7 @@ export default function InventoryPage() {
                 <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '16px', borderLeft: '3px solid var(--accent)' }}>
                   {aiResult.urgent_orders.length > 0 && (
                     <div style={{ marginBottom: '12px' }}>
-                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '8px', fontSize: '0.875rem' }}>🚨 Dringende Bestellungen</p>
+                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '8px', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '5px' }}><AlertTriangle size={14} color="#f87171" /> Dringende Bestellungen</p>
                       {aiResult.urgent_orders.map((o, i) => (
                         <div key={i} style={{ marginBottom: '6px' }}>
                           <span style={{ color: '#f87171', fontWeight: 600, fontSize: '0.875rem' }}>{o.ingredient} — {o.suggested_qty}</span>
@@ -624,7 +625,7 @@ export default function InventoryPage() {
                   )}
                   {aiResult.anomalies.length > 0 && (
                     <div style={{ marginBottom: '12px' }}>
-                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '6px', fontSize: '0.875rem' }}>📊 Auffälligkeiten</p>
+                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '6px', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '5px' }}><BarChart2 size={14} /> Auffälligkeiten</p>
                       {aiResult.anomalies.map((a, i) => (
                         <p key={i} style={{ color: '#fbbf24', fontSize: '0.875rem', marginBottom: '4px' }}>• {a}</p>
                       ))}
@@ -632,7 +633,7 @@ export default function InventoryPage() {
                   )}
                   {aiResult.savings_tip && (
                     <div>
-                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '4px', fontSize: '0.875rem' }}>💡 Einspartipp</p>
+                      <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '4px', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '5px' }}><Lightbulb size={14} color="#4ade80" /> Einspartipp</p>
                       <p style={{ color: '#4ade80', fontSize: '0.875rem' }}>{aiResult.savings_tip}</p>
                     </div>
                   )}
@@ -646,7 +647,7 @@ export default function InventoryPage() {
             {/* Manual suggestions */}
             {lowStockIngredients.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: '12px' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>✅</div>
+                <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}><CheckCircle2 size={40} color="#4ade80" /></div>
                 <p style={{ fontWeight: 600, color: 'var(--text)' }}>Alle Bestände ausreichend</p>
                 <p style={{ fontSize: '0.875rem' }}>Kein Artikel ist unter dem Mindestbestand.</p>
               </div>
@@ -658,7 +659,7 @@ export default function InventoryPage() {
                   return (
                     <div key={supplierId} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <p style={{ color: 'var(--text)', fontWeight: 600 }}>🚛 {supplierName}</p>
+                        <p style={{ color: 'var(--text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}><Truck size={14} /> {supplierName}</p>
                         {supplierId !== '__none__' && (
                           <button
                             onClick={() => createPurchaseOrder(supplierId, ings)}
@@ -705,7 +706,7 @@ export default function InventoryPage() {
                         </span>
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: '8px' }}>{new Date(po.created_at).toLocaleDateString('de')}</span>
                       </div>
-                      <button onClick={() => markPoReceived(po)} style={{ ...btnSmall, color: '#4ade80', borderColor: '#4ade8044' }}>✓ Als erhalten markieren</button>
+                      <button onClick={() => markPoReceived(po)} style={{ ...btnSmall, color: '#4ade80', borderColor: '#4ade8044', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={11} /> Als erhalten markieren</button>
                     </div>
                     {po.lines.map(l => (
                       <div key={l.id} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '3px 0' }}>

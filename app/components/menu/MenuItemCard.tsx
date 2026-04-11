@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { MenuItem } from '@/types/database'
 import type { LayoutVariant } from '@/lib/design-packages'
 import type { ColorSet } from '@/lib/color-utils'
+import { Flame, UtensilsCrossed, Heart } from 'lucide-react'
 
 const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
 const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
@@ -93,7 +94,7 @@ function ListLayout(props: MenuItemCardProps) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: displayDesc ? '2px' : 0 }}>
           {special && (
-            <span style={{ background: '#f59e0b18', color: '#f59e0b', fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>🔥</span>
+            <span style={{ background: '#f59e0b18', color: '#f59e0b', fontSize: '0.62rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', display: 'flex', alignItems: 'center' }}><Flame size={10} /></span>
           )}
           <p style={{ color: c(colors, 'text', '--text'), fontWeight: 600, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{displayName}</p>
           {special?.special_price != null ? (
@@ -144,12 +145,12 @@ function LargeCardsLayout(props: MenuItemCardProps) {
               position: 'absolute', top: '10px', left: '10px',
               background: '#f59e0b', color: '#fff', fontSize: '0.7rem', fontWeight: 700,
               padding: '3px 8px', borderRadius: '6px', letterSpacing: '0.02em',
-            }}>🔥 {special.label}</span>
+            }}><Flame size={11} style={{ marginRight: '3px', verticalAlign: 'middle' }} />{special.label}</span>
           )}
         </div>
       ) : (
         <div style={{ width: '100%', height: '100px', background: c(colors, 'surface2', '--surface-2'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '2.5rem', opacity: 0.2 }}>🍽</span>
+          <UtensilsCrossed size={40} color={c(colors, 'border', '--border')} style={{ opacity: 0.4 }} />
         </div>
       )}
       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
@@ -211,12 +212,12 @@ function GridLayout(props: MenuItemCardProps) {
               position: 'absolute', top: '6px', left: '6px',
               background: '#f59e0b', color: '#fff', fontSize: '0.6rem', fontWeight: 700,
               padding: '2px 6px', borderRadius: '5px',
-            }}>🔥</span>
+            }}><Flame size={11} /></span>
           )}
         </div>
       ) : (
         <div style={{ width: '100%', aspectRatio: '1', background: c(colors, 'surface2', '--surface-2'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '2rem', opacity: 0.2 }}>🍽</span>
+          <UtensilsCrossed size={32} color={c(colors, 'border', '--border')} style={{ opacity: 0.3 }} />
         </div>
       )}
       <div style={{ padding: '10px 10px 12px' }}>
@@ -271,7 +272,7 @@ function ItemTextBlock({ colors, displayName, displayDesc, item, special }: {
     <div style={{ flex: 1, minWidth: 0 }}>
       {special && (
         <span style={{ display: 'inline-block', background: '#f59e0b18', color: '#f59e0b', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '6px', marginBottom: '4px', letterSpacing: '0.02em' }}>
-          🔥 {special.label}
+          <Flame size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />{special.label}
         </span>
       )}
       <p style={{ color: c(colors, 'text', '--text'), fontWeight: 700, marginBottom: '3px', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</p>
@@ -312,7 +313,7 @@ function ItemActions({ colors, qty, onAdd, onRemove, compact, isFavorite, onTogg
           whileTap={{ scale: 0.78 }}
           transition={springBouncy}
           style={{ width: size, height: size, borderRadius: '50%', background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isFavorite ? c(colors, 'accent', '--accent') : c(colors, 'muted2', '--text-muted') }}
-        >{isFavorite ? '♥' : '♡'}</motion.button>
+        ><Heart size={14} fill={isFavorite ? 'currentColor' : 'none'} /></motion.button>
       )}
       <AnimatePresence mode="popLayout">
         {qty > 0 && (

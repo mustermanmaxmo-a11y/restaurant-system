@@ -8,7 +8,7 @@ import { LanguageSelector } from '@/components/ui/language-selector'
 import { useLanguage } from '@/components/providers/language-provider'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
-  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag,
+  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu,
 } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -167,7 +167,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.85rem' }}>RestaurantOS</span>
         </div>
         <button onClick={() => setMobileOpen(o => !o)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}>
-          {mobileOpen ? '✕' : '☰'}
+          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 

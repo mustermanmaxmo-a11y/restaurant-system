@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { Restaurant } from '@/types/database'
 import type { RestaurantPlan } from '@/types/database'
 import { TrialBanner } from '@/components/TrialBanner'
+import type { LucideIcon } from 'lucide-react'
+import { ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays, Clock, BarChart2, Package, Plug, CreditCard, PartyPopper, AlertTriangle } from 'lucide-react'
 
 function AdminContent() {
   const router = useRouter()
@@ -85,7 +87,7 @@ function AdminContent() {
             alignItems: 'center',
             gap: '16px',
           }}>
-            <span style={{ fontSize: '2rem' }}>🎉</span>
+            <PartyPopper size={32} color="var(--accent)" />
             <div>
               <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '4px' }}>
                 Willkommen bei RestaurantOS!
@@ -106,8 +108,8 @@ function AdminContent() {
             padding: '20px 24px',
             marginBottom: '24px',
           }}>
-            <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: '4px' }}>
-              ⚠️ Abo noch nicht aktiv
+            <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AlertTriangle size={16} /> Abo noch nicht aktiv
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '12px' }}>
               Bitte schließe den Zahlungsvorgang ab um dein Restaurant zu aktivieren.
@@ -132,18 +134,18 @@ function AdminContent() {
 
         {/* Navigation Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
-          {[
-            { icon: '🍽', label: 'Bestellungen', href: '/admin/orders', available: true },
-            { icon: '🍔', label: 'Menü verwalten', href: '/admin/menu', available: true },
-            { icon: '🪑', label: 'Tische & QR-Codes', href: '/admin/tables', available: true },
-            { icon: '👨‍🍳', label: 'Staff verwalten', href: '/admin/staff', available: true },
-            { icon: '📅', label: 'Reservierungen', href: '/admin/reservations', available: true },
-            { icon: '🕐', label: 'Öffnungszeiten', href: '/admin/opening-hours', available: true },
-            { icon: '📊', label: 'Statistik', href: '/admin/stats', available: true },
-            { icon: '📦', label: 'Lagerbestand', href: '/admin/inventory', available: true },
-            { icon: '🔌', label: 'Integrationen', href: '/admin/integrations', available: true },
-            { icon: '💳', label: 'Billing', href: '/admin/billing', available: true },
-          ].map(card => (
+          {([
+            { icon: ClipboardList, label: 'Bestellungen', href: '/admin/orders', available: true },
+            { icon: UtensilsCrossed, label: 'Menü verwalten', href: '/admin/menu', available: true },
+            { icon: Armchair, label: 'Tische & QR-Codes', href: '/admin/tables', available: true },
+            { icon: Users, label: 'Staff verwalten', href: '/admin/staff', available: true },
+            { icon: CalendarDays, label: 'Reservierungen', href: '/admin/reservations', available: true },
+            { icon: Clock, label: 'Öffnungszeiten', href: '/admin/opening-hours', available: true },
+            { icon: BarChart2, label: 'Statistik', href: '/admin/stats', available: true },
+            { icon: Package, label: 'Lagerbestand', href: '/admin/inventory', available: true },
+            { icon: Plug, label: 'Integrationen', href: '/admin/integrations', available: true },
+            { icon: CreditCard, label: 'Billing', href: '/admin/billing', available: true },
+          ] as { icon: LucideIcon; label: string; href: string; available: boolean }[]).map(card => (
             <button
               key={card.label}
               onClick={() => card.available && router.push(card.href)}
@@ -160,7 +162,7 @@ function AdminContent() {
               onMouseEnter={e => card.available && (e.currentTarget.style.borderColor = 'var(--accent)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
-              <div style={{ fontSize: '1.75rem', marginBottom: '10px' }}>{card.icon}</div>
+              <div style={{ marginBottom: '10px' }}><card.icon size={28} color="var(--accent)" /></div>
               <div style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem' }}>{card.label}</div>
               {!card.available && (
                 <div style={{ color: 'var(--accent)', fontSize: '0.7rem', marginTop: '4px', fontWeight: 600 }}>PRO</div>

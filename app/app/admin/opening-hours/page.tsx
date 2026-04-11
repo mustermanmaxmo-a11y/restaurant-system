@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
+import { Check } from 'lucide-react'
 
 type DayHours = { open: string; close: string; closed: boolean }
 type Hours = Record<string, DayHours>
@@ -86,7 +87,7 @@ export default function OpeningHoursPage() {
           disabled={saving}
           style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >
-          {saving ? '...' : saved ? '✓' : t('common.save')}
+          {saving ? '...' : saved ? <Check size={16} /> : t('common.save')}
         </button>
       </div>
 
