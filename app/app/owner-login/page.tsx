@@ -8,6 +8,7 @@ import { BackgroundPaths } from '@/components/ui/background-paths'
 import { Utensils, Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
+import { GoogleAuthButton } from '@/components/ui/google-auth-button'
 
 export default function OwnerLoginPage() {
   const router = useRouter()
@@ -149,6 +150,15 @@ export default function OwnerLoginPage() {
             >
               {loading ? '...' : t('auth.login')}
             </button>
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>oder</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            </div>
+            <GoogleAuthButton
+              callbackPath="/auth/callback?next=/admin"
+            />
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
