@@ -158,15 +158,17 @@ export default function PlatformLoginPage() {
             {loading ? 'Prüfe…' : 'Anmelden'}
           </button>
 
-            {/* Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
-              <div style={{ flex: 1, height: '1px', background: '#2a2a3e' }} />
-              <span style={{ color: '#555', fontSize: '0.75rem' }}>oder</span>
-              <div style={{ flex: 1, height: '1px', background: '#2a2a3e' }} />
+            <div style={{ '--border': '#2a2a3e', '--surface': '#1a1a2e', '--text': '#ffffff', '--accent': '#ef4444' } as React.CSSProperties}>
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+                <div style={{ flex: 1, height: '1px', background: '#2a2a3e' }} />
+                <span style={{ color: '#555', fontSize: '0.75rem' }}>oder</span>
+                <div style={{ flex: 1, height: '1px', background: '#2a2a3e' }} />
+              </div>
+              <GoogleAuthButton
+                callbackPath="/auth/callback?next=/platform"
+              />
             </div>
-            <GoogleAuthButton
-              callbackPath="/auth/callback?next=/platform"
-            />
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '32px', color: '#444', fontSize: '0.8rem' }}>
