@@ -4,21 +4,22 @@ import { createMiddlewareClient } from '@/lib/supabase-middleware'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // /platform/* und /api/platform/* — nur platform_owner
-  if (pathname.startsWith('/platform') || pathname.startsWith('/api/platform')) {
+  // /platform/* und /api/platform/* — nur platform_owner (login-Seite selbst ist offen)
+  const isPlatformRoute = (pathname.startsWith('/platform/') || pathname === '/platform') || pathname.startsWith('/api/platform')
+  if (isPlatformRoute) {
     const response = NextResponse.next({ request })
     const supabase = createMiddlewareClient(request, response)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      const loginUrl = new URL('/owner-login', request.url)
+      const loginUrl = new URL('/platform-login', request.url)
       loginUrl.searchParams.set('next', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
     const { data: isOwner } = await supabase.rpc('is_platform_owner')
     if (isOwner !== true) {
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/platform-login', request.url))
     }
 
     return response
@@ -44,5 +45,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/platform/:path*', '/api/platform/:path*'],
+  matcher: ['/admin/:path*', '/platform', '/platform/:path*', '/api/platform/:path*'],
 }

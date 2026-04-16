@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, LogOut, Menu, X, Shield } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield } from 'lucide-react'
 
 const NAV = [
   { icon: LayoutDashboard, label: 'Überblick',    href: '/platform' },
   { icon: Building2,       label: 'Restaurants',  href: '/platform/restaurants' },
   { icon: CreditCard,      label: 'Billing',      href: '/platform/billing' },
   { icon: FileText,        label: 'Rechtstexte',  href: '/platform/legal' },
+  { icon: Users,           label: 'Team',         href: '/platform/team' },
 ]
 
 const ACCENT = '#ef4444' // Platform-Rot — bewusst abgesetzt von /admin
@@ -21,7 +22,7 @@ export function PlatformSidebar({ userEmail }: { userEmail: string }) {
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push('/owner-login')
+    router.push('/platform-login')
   }
 
   const Sidebar = () => (
