@@ -72,9 +72,7 @@ export function GoogleAuthButton({
           border: `1px solid ${highlighted ? 'var(--accent)' : 'var(--border)'}`,
           outline: isFocused ? '2px solid var(--accent)' : 'none',
           outlineOffset: '2px',
-          background: highlighted
-            ? 'color-mix(in srgb, var(--surface) 94%, var(--accent) 6%)'
-            : 'var(--surface)',
+          background: highlighted ? 'var(--surface-hover, var(--surface))' : 'var(--surface)',
           color: 'var(--text)',
           fontSize: '1rem',
           fontWeight: 600,
@@ -91,7 +89,7 @@ export function GoogleAuthButton({
         {loading ? '…' : label}
       </button>
       {error && (
-        <p style={{ color: '#ef4444', fontSize: '0.8rem', textAlign: 'center' }}>
+        <p role="alert" style={{ color: '#ef4444', fontSize: '0.8rem', textAlign: 'center' }}>
           {error}
         </p>
       )}
