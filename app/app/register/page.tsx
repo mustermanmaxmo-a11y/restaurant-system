@@ -9,6 +9,7 @@ import { Utensils, Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { LegalFooter } from '@/components/LegalFooter'
+import { GoogleAuthButton } from '@/components/ui/google-auth-button'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -214,6 +215,24 @@ export default function RegisterPage() {
             >
               {loading ? '...' : t('auth.register')}
             </button>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>oder</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            </div>
+            <GoogleAuthButton
+              callbackPath="/auth/callback?next=/admin/setup"
+              label="Mit Google registrieren"
+            />
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', lineHeight: 1.5 }}>
+              Mit Google fortfahren bedeutet, dass du unsere{' '}
+              <a href="/agb" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>AGB</a>
+              {' '}und{' '}
+              <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>Datenschutzerklärung</a>
+              {' '}akzeptierst.
+            </p>
           </form>
 
           <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
