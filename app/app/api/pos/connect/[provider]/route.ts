@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { randomBytes } from 'crypto'
 
 // OAuth-Konfiguration pro Anbieter
@@ -42,13 +44,24 @@ export async function GET(
   }
 
   // Session prüfen: Nur eingeloggte Owner können verbinden
+  const cookieStore = await cookies()
+  const supabaseUser = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll() } }
+  )
+  const { data: { user } } = await supabaseUser.auth.getUser()
+  if (!user) {
+    return NextResponse.redirect(new URL('/owner-login', request.url))
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  // state = zufälliger Token gegen CSRF, wird in DB kurzzeitig gespeichert
+  // state = zufälliger Token gegen CSRF, enthält user_id zur Bindung an den initiierenden User
   const state = randomBytes(16).toString('hex')
-  const statePayload = Buffer.from(JSON.stringify({ provider, state })).toString('base64url')
+  const statePayload = Buffer.from(JSON.stringify({ provider, state, user_id: user.id })).toString('base64url')
 
   // state in DB als kurzlebiges Token speichern (expires in 10 min)
   await supabase.from('pos_oauth_states').upsert({

@@ -67,6 +67,13 @@ export async function GET(
   // State verbraucht → löschen
   await supabaseAdmin.from('pos_oauth_states').delete().eq('state', state)
 
+  // user_id aus State-Payload extrahieren
+  let stateUserId: string | null = null
+  try {
+    const decoded = JSON.parse(Buffer.from(state, 'base64url').toString())
+    stateUserId = decoded.user_id ?? null
+  } catch { /* state ohne user_id (Altformat) — weiter zulassen */ }
+
   // Eingeloggten Restaurant-Owner ermitteln
   const cookieStore = await cookies()
   const supabaseUser = createServerClient(
@@ -76,6 +83,12 @@ export async function GET(
   )
   const { data: { session } } = await supabaseUser.auth.getSession()
   if (!session) {
+    redirectBase.searchParams.set('status', 'error')
+    return NextResponse.redirect(redirectBase)
+  }
+
+  // User-ID Bindung prüfen: Callback-User muss derselbe sein wie Connect-User
+  if (stateUserId && session.user.id !== stateUserId) {
     redirectBase.searchParams.set('status', 'error')
     return NextResponse.redirect(redirectBase)
   }

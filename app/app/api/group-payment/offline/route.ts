@@ -13,7 +13,7 @@ const BodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  if (!rateLimit(`group-offline:${ip}`, 20, 10 * 60 * 1000)) {
+  if (!await rateLimit(`group-offline:${ip}`, 20, 10 * 60 * 1000)) {
     return NextResponse.json({ error: 'Zu viele Anfragen. Bitte warte kurz.' }, { status: 429 })
   }
 

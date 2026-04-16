@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { UtensilsCrossed } from 'lucide-react'
+import { LegalFooter } from '@/components/LegalFooter'
 
 export default function HomePage() {
   return (
@@ -76,6 +77,7 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+      <LegalFooter />
     </main>
   )
 }

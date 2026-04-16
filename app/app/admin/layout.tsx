@@ -8,7 +8,7 @@ import { LanguageSelector } from '@/components/ui/language-selector'
 import { useLanguage } from '@/components/providers/language-provider'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
-  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu,
+  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu, Settings,
 } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,15 +32,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: Package,         label: t('nav.inventory'),     href: '/admin/inventory' },
     { icon: BarChart2,       label: t('nav.stats'),         href: '/admin/stats' },
     { icon: CreditCard,      label: t('nav.billing'),       href: '/admin/billing' },
+    { icon: Settings,        label: 'Einstellungen',        href: '/admin/settings' },
   ]
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return
+      if (!session) { router.push('/owner-login'); return }
       supabase.from('restaurants').select('name').eq('owner_id', session.user.id).limit(1).maybeSingle()
         .then(({ data }) => { if (data) setRestaurantName(data.name) })
     })
-  }, [])
+  }, [router])
 
   async function handleLogout() {
     await supabase.auth.signOut()

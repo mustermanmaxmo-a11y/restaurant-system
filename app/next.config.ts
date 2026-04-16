@@ -12,6 +12,27 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
   // Force HTTPS for 1 year (enable once you have a custom domain + SSL)
   { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+  // Content Security Policy — allowlist known trusted origins
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      // Next.js needs inline scripts for hydration; __webpack_nonce__ can be added later for stricter mode
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      // Supabase realtime + storage
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ingest.de.sentry.io",
+      // Stripe.js
+      "script-src-elem 'self' 'unsafe-inline' https://js.stripe.com",
+      "frame-src https://js.stripe.com https://hooks.stripe.com",
+      // Images from Supabase storage, Stripe, and data URIs
+      "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
+      "font-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  },
 ]
 
 const nextConfig: NextConfig = {

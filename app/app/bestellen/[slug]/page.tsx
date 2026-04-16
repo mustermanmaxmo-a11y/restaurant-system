@@ -79,6 +79,7 @@ export default function HomeOrderPage() {
   const [resDone, setResDone] = useState<Reservation | null>(null)
   const [resSubmitting, setResSubmitting] = useState(false)
   const [resError, setResError] = useState('')
+  const [resConsent, setResConsent] = useState(false)
 
   // Checkout form
   const [customerName, setCustomerName] = useState('')
@@ -1088,12 +1089,26 @@ export default function HomeOrderPage() {
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
               </div>
 
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={resConsent}
+                  onChange={e => setResConsent(e.target.checked)}
+                  style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+                />
+                <span style={{ color: '#888', fontSize: '0.78rem', lineHeight: 1.5 }}>
+                  Ich habe die{' '}
+                  <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>Datenschutzerklärung</a>
+                  {' '}gelesen und stimme der Verarbeitung meiner Daten zur Bearbeitung der Reservierungsanfrage zu.
+                </span>
+              </label>
+
               {resError && <p style={{ color: '#ef4444', fontSize: '0.875rem', textAlign: 'center' }}>{resError}</p>}
 
               <button
                 onClick={submitReservation}
-                disabled={resSubmitting || !resName.trim() || !resPhone.trim() || !resDate}
-                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: (!resName.trim() || !resPhone.trim() || !resDate) ? 'var(--border)' : 'var(--btn-bg)', color: (!resName.trim() || !resPhone.trim() || !resDate) ? 'var(--text-muted)' : 'var(--btn-text)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', boxShadow: (!resName.trim() || !resPhone.trim() || !resDate) ? 'none' : '0 4px 16px rgba(0,0,0,0.2)' }}
+                disabled={resSubmitting || !resName.trim() || !resPhone.trim() || !resDate || !resConsent}
+                style={{ width: '100%', padding: '16px', borderRadius: '14px', border: 'none', background: (!resName.trim() || !resPhone.trim() || !resDate || !resConsent) ? 'var(--border)' : 'var(--btn-bg)', color: (!resName.trim() || !resPhone.trim() || !resDate || !resConsent) ? 'var(--text-muted)' : 'var(--btn-text)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', boxShadow: (!resName.trim() || !resPhone.trim() || !resDate || !resConsent) ? 'none' : '0 4px 16px rgba(0,0,0,0.2)' }}
               >
                 {resSubmitting ? 'Wird gesendet...' : 'Reservierung anfragen'}
               </button>

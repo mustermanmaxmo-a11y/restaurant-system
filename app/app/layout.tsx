@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Syne, DM_Sans, Playfair_Display, Lato, Inter, Space_Grotesk, Merriweather, Source_Sans_3, Noto_Serif_Display, Noto_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
+import { CookieBanner } from '@/components/CookieBanner'
 import './globals.css'
 
 // Font families for design packages — each gets its own CSS variable
@@ -51,6 +52,7 @@ export default function RootLayout({
             {children}
           </LanguageProvider>
         </ThemeProvider>
+        <CookieBanner />
         <script
           dangerouslySetInnerHTML={{
             __html: `if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function() {}); }`,

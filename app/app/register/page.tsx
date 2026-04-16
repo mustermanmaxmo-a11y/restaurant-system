@@ -8,6 +8,7 @@ import { BackgroundPaths } from '@/components/ui/background-paths'
 import { Utensils, Eye, EyeOff } from 'lucide-react'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
+import { LegalFooter } from '@/components/LegalFooter'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [confirmed, setConfirmed] = useState(false)
+  const [consentAccepted, setConsentAccepted] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,6 +28,12 @@ export default function RegisterPage() {
 
     if (password.length < 8) {
       setError('Passwort muss mindestens 8 Zeichen lang sein.')
+      setLoading(false)
+      return
+    }
+
+    if (!consentAccepted) {
+      setError('Bitte akzeptiere die AGB und Datenschutzerklärung.')
       setLoading(false)
       return
     }
@@ -165,6 +173,22 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={consentAccepted}
+                onChange={e => setConsentAccepted(e.target.checked)}
+                style={{ marginTop: '3px', accentColor: 'var(--accent)', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                Ich habe die{' '}
+                <a href="/agb" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>AGB</a>
+                {' '}und die{' '}
+                <a href="/datenschutz" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', fontWeight: 600 }}>Datenschutzerklärung</a>
+                {' '}gelesen und akzeptiere diese.
+              </span>
+            </label>
+
             {error && (
               <p style={{ color: '#ef4444', fontSize: '0.875rem', background: '#ef444415', padding: '10px 14px', borderRadius: '8px' }}>
                 {error}
@@ -201,6 +225,7 @@ export default function RegisterPage() {
         </div>
         </div>
       </div>
+      <LegalFooter />
     </BackgroundPaths>
   )
 }

@@ -20,7 +20,7 @@ type EmailType = 'reservation_guest' | 'reservation_status' | 'order_confirmatio
 export async function POST(request: NextRequest) {
   // 30 emails per IP per hour
   const ip = getClientIp(request.headers)
-  if (!rateLimit(`email:${ip}`, 30, 60 * 60 * 1000)) {
+  if (!await rateLimit(`email:${ip}`, 30, 60 * 60 * 1000)) {
     return NextResponse.json({ error: 'Zu viele Anfragen.' }, { status: 429 })
   }
 

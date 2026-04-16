@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       const subscriptionId = session.subscription as string
 
       if (userId) {
+        // Idempotency: only update if subscription not already set (prevents double-processing)
         await supabaseAdmin
           .from('restaurants')
           .update({
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
             active: true,
           })
           .eq('owner_id', userId)
+          .is('stripe_subscription_id', null)
       }
     }
   }
@@ -63,14 +65,15 @@ export async function POST(request: NextRequest) {
     const isTerminal = pi.payment_method_types?.includes('card_present')
     const restaurantId = pi.metadata?.restaurant_id
     if (isTerminal && restaurantId) {
-      await supabaseAdmin.from('external_transactions').insert({
+      // ignoreDuplicates: duplicate webhooks (same external_id) are silently skipped
+      await supabaseAdmin.from('external_transactions').upsert({
         restaurant_id: restaurantId,
         source: 'stripe_terminal',
         external_id: pi.id,
         amount: pi.amount / 100,
         currency: pi.currency.toUpperCase(),
         paid_at: new Date(pi.created * 1000).toISOString(),
-      })
+      }, { onConflict: 'external_id', ignoreDuplicates: true })
     }
   }
 
