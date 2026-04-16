@@ -18,11 +18,13 @@ interface GoogleAuthButtonProps {
   /** Relative callback path, e.g. '/auth/callback?next=/admin' */
   callbackPath: string
   label?: string
+  disabled?: boolean
 }
 
 export function GoogleAuthButton({
   callbackPath,
   label = 'Mit Google anmelden',
+  disabled = false,
 }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +59,7 @@ export function GoogleAuthButton({
       <button
         type="button"
         onClick={handleGoogleLogin}
-        disabled={loading}
+        disabled={loading || disabled}
         aria-busy={loading}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -76,13 +78,13 @@ export function GoogleAuthButton({
           color: 'var(--text)',
           fontSize: '1rem',
           fontWeight: 600,
-          cursor: loading ? 'not-allowed' : 'pointer',
+          cursor: (loading || disabled) ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           gap: '10px',
           transition: 'border-color 0.15s ease, background 0.15s ease, outline 0.1s ease',
-          opacity: loading ? 0.7 : 1,
+          opacity: (loading || disabled) ? 0.7 : 1,
         }}
       >
         <GoogleIcon />

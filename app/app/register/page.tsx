@@ -225,6 +225,7 @@ export default function RegisterPage() {
             <GoogleAuthButton
               callbackPath="/auth/callback?next=/admin/setup"
               label="Mit Google registrieren"
+              disabled={!consentAccepted}
             />
             <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', lineHeight: 1.5 }}>
               Mit Google fortfahren bedeutet, dass du unsere{' '}
