@@ -15,29 +15,31 @@ function GoogleIcon() {
 }
 
 interface GoogleAuthButtonProps {
-  redirectTo: string
+  /** Relative callback path, e.g. '/auth/callback?next=/admin' */
+  callbackPath: string
   label?: string
 }
 
 export function GoogleAuthButton({
-  redirectTo,
+  callbackPath,
   label = 'Mit Google anmelden',
 }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isHovered, setIsHovered] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
 
   async function handleGoogleLogin() {
     setLoading(true)
     setError(null)
 
-    // Guard against open redirect — only allow relative paths
-    const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/admin/setup'
+    // Only allow relative paths to prevent open redirect
+    const safePath = callbackPath.startsWith('/') ? callbackPath : '/admin/setup'
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${safeRedirect}`,
+        redirectTo: `${window.location.origin}${safePath}`,
       },
     })
 
@@ -48,6 +50,8 @@ export function GoogleAuthButton({
     // On success the browser navigates — no state reset needed
   }
 
+  const highlighted = isHovered || isFocused
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <button
@@ -55,15 +59,20 @@ export function GoogleAuthButton({
         onClick={handleGoogleLogin}
         disabled={loading}
         aria-busy={loading}
-        aria-label={label}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         style={{
           width: '100%',
           padding: '12px 16px',
           borderRadius: '10px',
-          border: `1px solid ${isHovered ? 'var(--accent)' : 'var(--border)'}`,
-          background: isHovered ? 'var(--surface-hover, color-mix(in srgb, var(--surface) 90%, var(--accent) 10%))' : 'var(--surface)',
+          border: `1px solid ${highlighted ? 'var(--accent)' : 'var(--border)'}`,
+          outline: isFocused ? '2px solid var(--accent)' : 'none',
+          outlineOffset: '2px',
+          background: highlighted
+            ? 'color-mix(in srgb, var(--surface) 94%, var(--accent) 6%)'
+            : 'var(--surface)',
           color: 'var(--text)',
           fontSize: '1rem',
           fontWeight: 600,
@@ -72,7 +81,7 @@ export function GoogleAuthButton({
           alignItems: 'center',
           justifyContent: 'center',
           gap: '10px',
-          transition: 'border-color 0.15s ease, background 0.15s ease',
+          transition: 'border-color 0.15s ease, background 0.15s ease, outline 0.1s ease',
           opacity: loading ? 0.7 : 1,
         }}
       >
