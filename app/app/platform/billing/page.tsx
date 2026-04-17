@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
 import { CreditCard, Clock, XCircle, Euro } from 'lucide-react'
 
@@ -27,6 +29,9 @@ type Row = Pick<Restaurant,
 const DAY = 24 * 60 * 60 * 1000
 
 export default async function PlatformBilling() {
+  const { role } = await requirePlatformAccess()
+  if (role === 'support' || role === 'developer') redirect('/platform/restaurants')
+
   const admin = createSupabaseAdmin()
   const { data: restaurants } = await admin
     .from('restaurants')

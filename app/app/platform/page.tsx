@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { requirePlatformAccess } from '@/lib/platform-auth'
 import { Building2, CreditCard, Clock, Euro } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +22,11 @@ const PLAN_LABELS: Record<string, string> = {
 }
 
 export default async function PlatformDashboard() {
+  const { role } = await requirePlatformAccess()
+  // Support sieht nur Restaurants, Billing sieht nur Billing
+  if (role === 'support') redirect('/platform/restaurants')
+  if (role === 'billing') redirect('/platform/billing')
+
   const admin = createSupabaseAdmin()
   const { data: restaurants } = await admin
     .from('restaurants')

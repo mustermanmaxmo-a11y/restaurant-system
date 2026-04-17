@@ -1,4 +1,5 @@
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
@@ -16,12 +17,40 @@ type Row = Pick<Restaurant,
 > & { owner_email: string }
 
 export default async function PlatformRestaurants() {
+  const { user, role } = await requirePlatformAccess()
   const admin = createSupabaseAdmin()
 
+  // Support-User sieht nur zugewiesene Restaurants
+  let allowedRestaurantIds: string[] | null = null
+  if (role === 'support') {
+    const { data: member } = await admin
+      .from('platform_team')
+      .select('id')
+      .eq('user_id', user!.id)
+      .single()
+
+    if (member) {
+      const { data: assignments } = await admin
+        .from('platform_team_restaurants')
+        .select('restaurant_id')
+        .eq('team_member_id', member.id)
+      allowedRestaurantIds = (assignments ?? []).map(a => a.restaurant_id)
+    } else {
+      allowedRestaurantIds = []
+    }
+  }
+
+  let query = admin
+    .from('restaurants')
+    .select('id, name, slug, plan, active, trial_ends_at, created_at, owner_id, stripe_customer_id, stripe_subscription_id')
+    .order('created_at', { ascending: false })
+
+  if (allowedRestaurantIds !== null) {
+    query = query.in('id', allowedRestaurantIds.length > 0 ? allowedRestaurantIds : ['00000000-0000-0000-0000-000000000000'])
+  }
+
   const [{ data: restaurants }, { data: usersRes }] = await Promise.all([
-    admin.from('restaurants')
-      .select('id, name, slug, plan, active, trial_ends_at, created_at, owner_id, stripe_customer_id, stripe_subscription_id')
-      .order('created_at', { ascending: false }),
+    query,
     admin.auth.admin.listUsers({ perPage: 1000 }),
   ])
 

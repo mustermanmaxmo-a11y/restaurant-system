@@ -1,6 +1,8 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { getLegalDocument, LEGAL_LABELS, LEGAL_PUBLIC_PATH, type LegalKey } from '@/lib/legal'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { requirePlatformAccess } from '@/lib/platform-auth'
+import { LEGAL_LABELS, LEGAL_PUBLIC_PATH, type LegalKey } from '@/lib/legal'
 import { LegalEditor } from '@/components/LegalEditor'
 import { ChevronLeft, ExternalLink } from 'lucide-react'
 
@@ -12,8 +14,20 @@ export default async function LegalEditorPage({ params }: { params: Promise<{ ke
   const { key } = await params
   if (!VALID_KEYS.includes(key as LegalKey)) notFound()
 
+  const { role } = await requirePlatformAccess()
+  if (role !== 'owner' && role !== 'co_founder') redirect('/platform')
+
   const typedKey = key as LegalKey
-  const content = await getLegalDocument(typedKey)
+  const admin = createSupabaseAdmin()
+
+  const { data: doc } = await admin
+    .from('legal_documents')
+    .select('content, draft_content')
+    .eq('key', typedKey)
+    .maybeSingle()
+
+  const content = doc?.content ?? ''
+  const draftContent = doc?.draft_content ?? null
   const publicPath = LEGAL_PUBLIC_PATH[typedKey]
 
   return (
@@ -31,7 +45,9 @@ export default async function LegalEditorPage({ params }: { params: Promise<{ ke
             {LEGAL_LABELS[typedKey]}
           </h1>
           <p style={{ color: '#888', fontSize: '0.8rem' }}>
-            HTML-Inhalt. Wird beim Speichern sofort auf der öffentlichen Seite aktualisiert.
+            {role === 'owner'
+              ? 'Direkt bearbeiten und live schalten.'
+              : 'Änderungen werden zur Freigabe eingereicht.'}
           </p>
         </div>
         {publicPath && (
@@ -47,7 +63,12 @@ export default async function LegalEditorPage({ params }: { params: Promise<{ ke
         )}
       </div>
 
-      <LegalEditor legalKey={typedKey} initialContent={content ?? ''} />
+      <LegalEditor
+        legalKey={typedKey}
+        initialContent={content}
+        role={role as 'owner' | 'co_founder'}
+        draftContent={draftContent}
+      />
     </div>
   )
 }

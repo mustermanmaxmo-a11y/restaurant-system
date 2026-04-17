@@ -4,25 +4,55 @@ import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield } from 'lucide-react'
+import type { PlatformRole } from '@/lib/platform-auth'
 
-const NAV = [
-  { icon: LayoutDashboard, label: 'Überblick',    href: '/platform' },
-  { icon: Building2,       label: 'Restaurants',  href: '/platform/restaurants' },
-  { icon: CreditCard,      label: 'Billing',      href: '/platform/billing' },
-  { icon: FileText,        label: 'Rechtstexte',  href: '/platform/legal' },
-  { icon: Users,           label: 'Team',         href: '/platform/team' },
-]
+type NavItem = {
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>
+  label: string
+  href: string
+  roles: PlatformRole[]
+  badge?: number
+}
 
-const ACCENT = '#ef4444' // Platform-Rot — bewusst abgesetzt von /admin
+const ACCENT = '#ef4444'
 
-export function PlatformSidebar({ userEmail }: { userEmail: string }) {
+function buildNav(role: PlatformRole, legalPendingCount: number): NavItem[] {
+  const all: NavItem[] = [
+    { icon: LayoutDashboard, label: 'Überblick',   href: '/platform',              roles: ['owner', 'co_founder', 'developer'] },
+    { icon: Building2,       label: 'Restaurants', href: '/platform/restaurants',  roles: ['owner', 'co_founder', 'developer', 'support'] },
+    { icon: CreditCard,      label: 'Billing',     href: '/platform/billing',      roles: ['owner', 'co_founder', 'billing'] },
+    { icon: FileText,        label: 'Rechtstexte', href: '/platform/legal',        roles: ['owner', 'co_founder'], badge: legalPendingCount },
+    { icon: Users,           label: 'Team',        href: '/platform/team',         roles: ['owner'] },
+  ]
+  return all.filter(item => item.roles.includes(role))
+}
+
+export function PlatformSidebar({
+  userEmail,
+  role,
+  legalPendingCount = 0,
+}: {
+  userEmail: string
+  role: PlatformRole
+  legalPendingCount?: number
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  const nav = buildNav(role, legalPendingCount)
+
+  const roleLabel: Record<PlatformRole, string> = {
+    owner: 'Owner',
+    co_founder: 'Co-Founder',
+    developer: 'Developer',
+    billing: 'Billing',
+    support: 'Support',
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push('/platform-login')
+    router.push(role === 'owner' ? '/platform-login' : '/team-login')
   }
 
   const Sidebar = () => (
@@ -46,12 +76,22 @@ export function PlatformSidebar({ userEmail }: { userEmail: string }) {
         <p style={{ color: '#888', fontSize: '0.68rem', marginLeft: '40px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {userEmail}
         </p>
+        <div style={{ marginLeft: '40px', marginTop: '4px' }}>
+          <span style={{
+            fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            color: role === 'owner' ? '#ef4444' : role === 'co_founder' ? '#f59e0b' : role === 'support' ? '#10b981' : '#6366f1',
+            background: role === 'owner' ? 'rgba(239,68,68,0.1)' : role === 'co_founder' ? 'rgba(245,158,11,0.1)' : role === 'support' ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
+            padding: '2px 6px', borderRadius: '4px',
+          }}>
+            {roleLabel[role]}
+          </span>
+        </div>
       </div>
 
       <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 16px 12px' }} />
 
       <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
-        {NAV.map(item => {
+        {nav.map(item => {
           const isActive = pathname === item.href || (item.href !== '/platform' && pathname.startsWith(item.href))
           return (
             <button
@@ -65,10 +105,22 @@ export function PlatformSidebar({ userEmail }: { userEmail: string }) {
                 fontWeight: isActive ? 700 : 500,
                 fontSize: '0.85rem', cursor: 'pointer', width: '100%', textAlign: 'left',
                 borderLeft: isActive ? `3px solid ${ACCENT}` : '3px solid transparent',
+                position: 'relative',
               }}
             >
               <item.icon size={15} style={{ flexShrink: 0 }} />
               {item.label}
+              {(item.badge ?? 0) > 0 && (
+                <span style={{
+                  marginLeft: 'auto', minWidth: '18px', height: '18px',
+                  background: '#f59e0b', borderRadius: '9px',
+                  fontSize: '0.65rem', fontWeight: 800, color: '#000',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 5px',
+                }}>
+                  {item.badge}
+                </span>
+              )}
             </button>
           )
         })}
@@ -76,18 +128,20 @@ export function PlatformSidebar({ userEmail }: { userEmail: string }) {
 
       <div style={{ padding: '12px 8px 20px' }}>
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 8px 10px' }} />
-        <button
-          onClick={() => router.push('/admin')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '9px 12px', borderRadius: '8px', border: 'none',
-            background: 'transparent', color: '#888',
-            fontSize: '0.8rem', cursor: 'pointer', width: '100%', textAlign: 'left',
-            marginBottom: '2px',
-          }}
-        >
-          → Restaurant-Admin
-        </button>
+        {role === 'owner' && (
+          <button
+            onClick={() => router.push('/admin')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '9px 12px', borderRadius: '8px', border: 'none',
+              background: 'transparent', color: '#888',
+              fontSize: '0.8rem', cursor: 'pointer', width: '100%', textAlign: 'left',
+              marginBottom: '2px',
+            }}
+          >
+            → Restaurant-Admin
+          </button>
+        )}
         <button
           onClick={handleLogout}
           style={{
