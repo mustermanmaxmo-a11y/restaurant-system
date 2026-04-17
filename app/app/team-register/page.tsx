@@ -23,10 +23,17 @@ export default function TeamRegisterPage() {
       return
     }
 
-    const { error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
 
     if (signUpError) {
       setError(signUpError.message)
+      setLoading(false)
+      return
+    }
+
+    // Supabase gibt bei bereits existierender E-Mail einen User mit leerem identities-Array zurück
+    if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      setError('Diese E-Mail ist bereits registriert. Gehe direkt zu /team-login und melde dich mit deinen bestehenden Zugangsdaten an.')
       setLoading(false)
       return
     }
