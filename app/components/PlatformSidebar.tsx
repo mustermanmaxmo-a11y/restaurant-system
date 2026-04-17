@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -16,13 +16,14 @@ type NavItem = {
 
 const ACCENT = '#ef4444'
 
-function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCount: number): NavItem[] {
+function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCount: number, designRequestCount: number): NavItem[] {
   const all: NavItem[] = [
-    { icon: LayoutDashboard, label: 'Überblick',   href: '/platform',              roles: ['owner', 'co_founder', 'developer'] },
-    { icon: Building2,       label: 'Restaurants', href: '/platform/restaurants',  roles: ['owner', 'co_founder', 'developer', 'support'] },
-    { icon: CreditCard,      label: 'Billing',     href: '/platform/billing',      roles: ['owner', 'co_founder', 'billing'] },
-    { icon: FileText,        label: 'Rechtstexte', href: '/platform/legal',        roles: ['owner', 'co_founder'], badge: legalPendingCount },
-    { icon: Users,           label: 'Team',        href: '/platform/team',         roles: ['owner'], badge: teamPendingCount },
+    { icon: LayoutDashboard, label: 'Überblick',       href: '/platform',                    roles: ['owner', 'co_founder', 'developer'] },
+    { icon: Building2,       label: 'Restaurants',     href: '/platform/restaurants',         roles: ['owner', 'co_founder', 'developer', 'support'] },
+    { icon: CreditCard,      label: 'Billing',         href: '/platform/billing',             roles: ['owner', 'co_founder', 'billing'] },
+    { icon: FileText,        label: 'Rechtstexte',     href: '/platform/legal',               roles: ['owner', 'co_founder'], badge: legalPendingCount },
+    { icon: Users,           label: 'Team',            href: '/platform/team',                roles: ['owner'], badge: teamPendingCount },
+    { icon: Palette,         label: 'Design-Anfragen', href: '/platform/design-requests',     roles: ['owner', 'co_founder'], badge: designRequestCount },
   ]
   return all.filter(item => item.roles.includes(role))
 }
@@ -32,17 +33,19 @@ export function PlatformSidebar({
   role,
   legalPendingCount = 0,
   teamPendingCount = 0,
+  designRequestCount = 0,
 }: {
   userEmail: string
   role: PlatformRole
   legalPendingCount?: number
   teamPendingCount?: number
+  designRequestCount?: number
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const nav = buildNav(role, legalPendingCount, teamPendingCount)
+  const nav = buildNav(role, legalPendingCount, teamPendingCount, designRequestCount)
 
   const roleLabel: Record<PlatformRole, string> = {
     owner: 'Owner',

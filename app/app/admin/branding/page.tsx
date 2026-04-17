@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check } from 'lucide-react'
+import { ImageIcon, Check, Palette, Clock, Loader2 } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -154,6 +154,13 @@ export default function BrandingPage() {
   const [description, setDescription] = useState('')
   const [showColorSection, setShowColorSection] = useState(false)
 
+  // Design-Request State
+  const [designReqMessage, setDesignReqMessage] = useState('')
+  const [designReqSubmitting, setDesignReqSubmitting] = useState(false)
+  const [designReqSent, setDesignReqSent] = useState(false)
+  const [designReqError, setDesignReqError] = useState<string | null>(null)
+  const [existingDesignReq, setExistingDesignReq] = useState<{ status: string; created_at: string } | null>(null)
+
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -177,6 +184,16 @@ export default function BrandingPage() {
       if (resto.contact_phone) setContactPhone(resto.contact_phone)
       if (resto.contact_address) setContactAddress(resto.contact_address)
       if (resto.description) setDescription(resto.description)
+
+      // Offene Design-Anfrage laden
+      const { data: openReq } = await supabase
+        .from('design_requests')
+        .select('status, created_at')
+        .eq('restaurant_id', resto.id)
+        .in('status', ['pending', 'in_progress'])
+        .maybeSingle()
+      if (openReq) setExistingDesignReq(openReq)
+
       setLoading(false)
     }
     load()
@@ -238,6 +255,26 @@ export default function BrandingPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  async function submitDesignRequest() {
+    if (!restaurant || designReqMessage.trim().length < 10) return
+    setDesignReqSubmitting(true)
+    setDesignReqError(null)
+    const res = await fetch('/api/platform/design-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: designReqMessage, restaurant_id: restaurant.id }),
+    })
+    const json = await res.json()
+    setDesignReqSubmitting(false)
+    if (!res.ok) {
+      setDesignReqError(json.error ?? 'Fehler beim Senden.')
+    } else {
+      setDesignReqSent(true)
+      setExistingDesignReq({ status: 'pending', created_at: new Date().toISOString() })
+      setDesignReqMessage('')
+    }
   }
 
   if (loading) return (
@@ -550,6 +587,90 @@ export default function BrandingPage() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ── Section 8: Custom Design anfragen ── */}
+      <section style={{ marginBottom: '36px' }}>
+        <label style={sectionLabel}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Palette size={16} />
+            Custom Design anfragen
+          </span>
+        </label>
+        <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+          {existingDesignReq ? (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                background: existingDesignReq.status === 'in_progress' ? '#f59e0b22' : existingDesignReq.status === 'done' ? '#10b98122' : `${pAccent}22`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {existingDesignReq.status === 'done'
+                  ? <Check size={16} color="#10b981" />
+                  : <Clock size={16} color={existingDesignReq.status === 'in_progress' ? '#f59e0b' : pAccent} />
+                }
+              </div>
+              <div>
+                <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 4px' }}>
+                  {existingDesignReq.status === 'pending' && 'Anfrage eingegangen — wir melden uns bald.'}
+                  {existingDesignReq.status === 'in_progress' && 'Dein Design wird gerade umgesetzt!'}
+                  {existingDesignReq.status === 'done' && 'Design-Anfrage abgeschlossen.'}
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
+                  Gesendet am {new Date(existingDesignReq.created_at).toLocaleDateString('de-DE')}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '14px', lineHeight: 1.5 }}>
+                Du möchtest ein individuelles Design, das perfekt zu deinem Restaurant passt?
+                Beschreibe deinen Stil, deine Farben oder Wünsche — wir setzen es für dich um.
+              </p>
+              <textarea
+                value={designReqMessage}
+                onChange={e => {
+                  setDesignReqMessage(e.target.value.slice(0, 1000))
+                  setDesignReqError(null)
+                }}
+                placeholder="z.B. Wir möchten ein warmes, mediterranes Design mit Olivgrün und Terrakotta. Am liebsten große Produktbilder…"
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', marginBottom: '8px' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0 }}>
+                  {designReqMessage.length}/1000
+                  {designReqMessage.trim().length > 0 && designReqMessage.trim().length < 10 && (
+                    <span style={{ color: '#ef4444', marginLeft: '8px' }}>Min. 10 Zeichen</span>
+                  )}
+                </p>
+                {designReqError && (
+                  <p style={{ color: '#ef4444', fontSize: '0.75rem', margin: 0 }}>{designReqError}</p>
+                )}
+                <button
+                  onClick={submitDesignRequest}
+                  disabled={designReqSubmitting || designReqMessage.trim().length < 10}
+                  style={{
+                    padding: '10px 20px', borderRadius: '8px',
+                    background: designReqSent ? '#10b981' : pAccent, color: '#fff',
+                    fontWeight: 700, fontSize: '0.82rem', border: 'none',
+                    cursor: (designReqSubmitting || designReqMessage.trim().length < 10) ? 'not-allowed' : 'pointer',
+                    opacity: (designReqSubmitting || designReqMessage.trim().length < 10) ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', gap: '7px', transition: 'background 0.3s',
+                  }}
+                >
+                  {designReqSubmitting
+                    ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Senden…</>
+                    : designReqSent
+                    ? <><Check size={13} /> Gesendet</>
+                    : <><Palette size={13} /> Design anfragen</>
+                  }
+                </button>
+              </div>
+              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </>
+          )}
         </div>
       </section>
 
