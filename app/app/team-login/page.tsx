@@ -157,6 +157,11 @@ export default function TeamLoginPage() {
         </form>
 
         <p style={{ textAlign: 'center', marginTop: '24px', color: '#444', fontSize: '0.8rem' }}>
+          <a href="/forgot-password" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
+            Passwort vergessen?
+          </a>
+        </p>
+        <p style={{ textAlign: 'center', marginTop: '12px', color: '#444', fontSize: '0.8rem' }}>
           Noch kein Account?{' '}
           <a href="/team-register" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
             Registrieren

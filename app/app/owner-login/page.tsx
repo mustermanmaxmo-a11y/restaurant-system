@@ -161,7 +161,13 @@ export default function OwnerLoginPage() {
             />
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <p style={{ textAlign: 'center', marginTop: '16px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <Link href="/forgot-password" style={{ color: 'var(--accent)', fontWeight: 600 }}>
+              Passwort vergessen?
+            </Link>
+          </p>
+
+          <p style={{ textAlign: 'center', marginTop: '12px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {t('auth.noAccount')}{' '}
             <Link href="/register" style={{ color: 'var(--accent)', fontWeight: 600 }}>
               {t('auth.registerHere')}
