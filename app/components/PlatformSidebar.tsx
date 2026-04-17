@@ -16,13 +16,13 @@ type NavItem = {
 
 const ACCENT = '#ef4444'
 
-function buildNav(role: PlatformRole, legalPendingCount: number): NavItem[] {
+function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCount: number): NavItem[] {
   const all: NavItem[] = [
     { icon: LayoutDashboard, label: 'Überblick',   href: '/platform',              roles: ['owner', 'co_founder', 'developer'] },
     { icon: Building2,       label: 'Restaurants', href: '/platform/restaurants',  roles: ['owner', 'co_founder', 'developer', 'support'] },
     { icon: CreditCard,      label: 'Billing',     href: '/platform/billing',      roles: ['owner', 'co_founder', 'billing'] },
     { icon: FileText,        label: 'Rechtstexte', href: '/platform/legal',        roles: ['owner', 'co_founder'], badge: legalPendingCount },
-    { icon: Users,           label: 'Team',        href: '/platform/team',         roles: ['owner'] },
+    { icon: Users,           label: 'Team',        href: '/platform/team',         roles: ['owner'], badge: teamPendingCount },
   ]
   return all.filter(item => item.roles.includes(role))
 }
@@ -31,16 +31,18 @@ export function PlatformSidebar({
   userEmail,
   role,
   legalPendingCount = 0,
+  teamPendingCount = 0,
 }: {
   userEmail: string
   role: PlatformRole
   legalPendingCount?: number
+  teamPendingCount?: number
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const nav = buildNav(role, legalPendingCount)
+  const nav = buildNav(role, legalPendingCount, teamPendingCount)
 
   const roleLabel: Record<PlatformRole, string> = {
     owner: 'Owner',

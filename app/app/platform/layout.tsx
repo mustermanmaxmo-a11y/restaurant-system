@@ -8,18 +8,20 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const { user, role } = await requirePlatformAccess()
 
   let legalPendingCount = 0
+  let teamPendingCount = 0
   if (role === 'owner') {
     const admin = createSupabaseAdmin()
-    const { data } = await admin
-      .from('legal_documents')
-      .select('key', { count: 'exact', head: false })
-      .not('draft_content', 'is', null)
-    legalPendingCount = data?.length ?? 0
+    const [{ data: legalDocs }, { data: teamRequests }] = await Promise.all([
+      admin.from('legal_documents').select('key').not('draft_content', 'is', null),
+      admin.from('team_registration_requests').select('id').eq('status', 'pending'),
+    ])
+    legalPendingCount = legalDocs?.length ?? 0
+    teamPendingCount = teamRequests?.length ?? 0
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#1a1a2e', color: '#e5e7eb' }}>
-      <PlatformSidebar userEmail={user?.email ?? '—'} role={role} legalPendingCount={legalPendingCount} />
+      <PlatformSidebar userEmail={user?.email ?? '—'} role={role} legalPendingCount={legalPendingCount} teamPendingCount={teamPendingCount} />
       <main style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }} className="platform-main">
         {children}
       </main>

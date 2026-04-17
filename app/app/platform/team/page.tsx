@@ -20,6 +20,13 @@ export default async function PlatformTeam() {
     .from('platform_team_restaurants')
     .select('team_member_id, restaurant_id')
 
+  // Ausstehende Registrierungsanfragen
+  const { data: pendingRequests } = await admin
+    .from('team_registration_requests')
+    .select('id, email, created_at')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+
   // Alle Restaurants laden (für das Assignment-UI)
   const { data: restaurants } = await admin
     .from('restaurants')
@@ -60,6 +67,7 @@ export default async function PlatformTeam() {
         currentUserId={currentUser.id}
         currentUserEmail={currentUser.email ?? '—'}
         members={members}
+        pendingRequests={pendingRequests ?? []}
         restaurants={restaurants ?? []}
       />
     </div>

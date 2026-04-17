@@ -38,6 +38,14 @@ export default function TeamRegisterPage() {
       return
     }
 
+    // Registrierungsanfrage speichern — Owner muss freischalten
+    if (data.user) {
+      await supabase.from('team_registration_requests').insert({
+        user_id: data.user.id,
+        email: email,
+      })
+    }
+
     setDone(true)
   }
 

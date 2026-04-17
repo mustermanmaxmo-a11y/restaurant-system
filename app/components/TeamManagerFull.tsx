@@ -1,9 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { UserPlus, Trash2, Crown, ChevronDown, Building2, X } from 'lucide-react'
+import { UserPlus, Trash2, Crown, ChevronDown, Building2, X, Clock, Check, Ban } from 'lucide-react'
 
 type TeamRole = 'co_founder' | 'developer' | 'billing' | 'support'
+
+type PendingRequest = {
+  id: string
+  email: string
+  created_at: string
+}
 
 type Member = {
   id: string
@@ -44,20 +50,53 @@ export function TeamManagerFull({
   currentUserId,
   currentUserEmail,
   members: initial,
+  pendingRequests: initialRequests,
   restaurants,
 }: {
   currentUserId: string
   currentUserEmail: string
   members: Member[]
+  pendingRequests: PendingRequest[]
   restaurants: Restaurant[]
 }) {
   const [members, setMembers] = useState(initial)
+  const [requests, setRequests] = useState(initialRequests)
+  const [approveRoles, setApproveRoles] = useState<Record<string, TeamRole>>({})
   const [newEmail, setNewEmail] = useState('')
   const [newRole, setNewRole] = useState<TeamRole>('co_founder')
   const [addError, setAddError] = useState('')
   const [addOk, setAddOk] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  function handleRequest(requestId: string, action: 'approve' | 'reject') {
+    const role = approveRoles[requestId] ?? 'support'
+    startTransition(async () => {
+      const res = await fetch('/api/platform/team/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: requestId, action, role }),
+      })
+      const data = await res.json()
+      if (!res.ok) return
+
+      setRequests(prev => prev.filter(r => r.id !== requestId))
+
+      if (action === 'approve') {
+        const req = requests.find(r => r.id === requestId)
+        if (req) {
+          setMembers(prev => [...prev, {
+            id: data.id,
+            user_id: data.user_id ?? '',
+            email: req.email,
+            role,
+            created_at: new Date().toISOString(),
+            restaurant_ids: [],
+          }])
+        }
+      }
+    })
+  }
 
   function addMember() {
     const email = newEmail.trim().toLowerCase()
@@ -146,6 +185,80 @@ export function TeamManagerFull({
 
   return (
     <div>
+      {/* Ausstehende Anfragen */}
+      {requests.length > 0 && (
+        <div style={{ background: '#242438', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Clock size={13} color="#f59e0b" />
+            <span style={{ color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {requests.length} ausstehende Anfrage{requests.length !== 1 ? 'n' : ''}
+            </span>
+          </div>
+
+          {requests.map(req => (
+            <div key={req.id} style={{
+              padding: '14px 18px', borderBottom: '1px solid rgba(245,158,11,0.1)',
+              display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+            }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Clock size={15} color="#f59e0b" />
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{req.email}</div>
+                <div style={{ color: '#666', fontSize: '0.72rem' }}>
+                  Registriert am {new Date(req.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
+                <select
+                  value={approveRoles[req.id] ?? 'support'}
+                  onChange={e => setApproveRoles(prev => ({ ...prev, [req.id]: e.target.value as TeamRole }))}
+                  style={{
+                    background: '#1a1a2e', border: '1px solid #2a2a3e', borderRadius: '7px',
+                    color: '#ccc', fontSize: '0.78rem', padding: '6px 8px', cursor: 'pointer', outline: 'none',
+                  }}
+                >
+                  {ROLE_OPTIONS.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => handleRequest(req.id, 'approve')}
+                  disabled={isPending}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    padding: '7px 12px', borderRadius: '7px', border: 'none',
+                    background: '#10b981', color: '#fff',
+                    fontWeight: 700, fontSize: '0.78rem',
+                    cursor: isPending ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Check size={13} /> Annehmen
+                </button>
+
+                <button
+                  onClick={() => handleRequest(req.id, 'reject')}
+                  disabled={isPending}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    padding: '7px 12px', borderRadius: '7px',
+                    border: '1px solid rgba(239,68,68,0.3)',
+                    background: 'rgba(239,68,68,0.08)', color: '#ef4444',
+                    fontWeight: 700, fontSize: '0.78rem',
+                    cursor: isPending ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Ban size={13} /> Ablehnen
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Owner (du) */}
       <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px' }}>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid #2a2a3e' }}>
