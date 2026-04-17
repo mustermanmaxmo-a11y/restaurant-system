@@ -1,51 +1,80 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Users, Eye, EyeOff } from 'lucide-react'
+import { Users, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
-export default function TeamLoginPage() {
-  const router = useRouter()
+export default function TeamRegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      setError('E-Mail oder Passwort falsch.')
+    if (password.length < 8) {
+      setError('Passwort muss mindestens 8 Zeichen lang sein.')
       setLoading(false)
       return
     }
 
-    const { data: role } = await supabase.rpc('get_platform_role')
+    const { error: signUpError } = await supabase.auth.signUp({ email, password })
 
-    if (!role) {
-      await supabase.auth.signOut()
-      setError('Kein Zugang — dein Account ist nicht für das Platform-Team freigeschalten.')
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
       return
     }
 
-    router.push('/platform')
+    setDone(true)
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#0a0a14',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+      }}>
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '380px', textAlign: 'center' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%',
+            background: 'rgba(16,185,129,0.15)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
+          }}>
+            <CheckCircle size={28} color="#10b981" />
+          </div>
+          <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 800, marginBottom: '10px' }}>
+            Account erstellt
+          </h1>
+          <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '24px' }}>
+            Dein Account wurde angelegt. Der Platform-Owner muss dich jetzt noch in{' '}
+            <strong style={{ color: '#ccc' }}>/platform/team</strong> freischalten — danach kannst du dich über{' '}
+            <a href="/team-login" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>/team-login</a> anmelden.
+          </p>
+          <a
+            href="/team-login"
+            style={{
+              display: 'inline-block', padding: '12px 28px', borderRadius: '10px',
+              background: '#6366f1', color: '#fff', fontWeight: 700,
+              fontSize: '0.9rem', textDecoration: 'none',
+            }}
+          >
+            Zum Login
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: '#0a0a14',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
+      minHeight: '100vh', background: '#0a0a14',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
     }}>
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
@@ -65,11 +94,19 @@ export default function TeamLoginPage() {
             <Users size={24} color="#fff" />
           </div>
           <h1 style={{ color: '#fff', fontSize: '1.75rem', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.03em' }}>
-            Team-Login
+            Team-Registrierung
           </h1>
           <p style={{ color: '#666', fontSize: '0.875rem' }}>
             Nur für das RestaurantOS-Team
           </p>
+        </div>
+
+        <div style={{
+          background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
+          borderRadius: '10px', padding: '12px 14px', marginBottom: '20px',
+          color: '#a5b4fc', fontSize: '0.8rem', lineHeight: 1.5,
+        }}>
+          Nach der Registrierung muss dich der Owner erst freischalten, bevor du dich einloggen kannst.
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -84,7 +121,7 @@ export default function TeamLoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              placeholder="name@restaurantos.de"
+              placeholder="name@email.de"
               style={{
                 width: '100%', padding: '12px 16px', borderRadius: '10px',
                 border: '1px solid #2a2a3e', background: '#1a1a2e',
@@ -106,7 +143,7 @@ export default function TeamLoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
+                placeholder="Mindestens 8 Zeichen"
                 style={{
                   width: '100%', padding: '12px 44px 12px 16px', borderRadius: '10px',
                   border: '1px solid #2a2a3e', background: '#1a1a2e',
@@ -152,20 +189,14 @@ export default function TeamLoginPage() {
               transition: 'all 0.15s ease',
             }}
           >
-            {loading ? 'Prüfe…' : 'Anmelden'}
+            {loading ? 'Erstelle Account…' : 'Account erstellen'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', color: '#444', fontSize: '0.8rem' }}>
-          Noch kein Account?{' '}
-          <a href="/team-register" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
-            Registrieren
-          </a>
-        </p>
-        <p style={{ textAlign: 'center', marginTop: '10px', color: '#444', fontSize: '0.8rem' }}>
-          Platform-Owner?{' '}
-          <a href="/platform-login" style={{ color: '#555', fontWeight: 600, textDecoration: 'none' }}>
-            Zum Owner-Login
+        <p style={{ textAlign: 'center', marginTop: '32px', color: '#444', fontSize: '0.8rem' }}>
+          Bereits registriert?{' '}
+          <a href="/team-login" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>
+            Zum Login
           </a>
         </p>
       </div>

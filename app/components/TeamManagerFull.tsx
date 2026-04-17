@@ -316,7 +316,7 @@ export function TeamManagerFull({
           Team-Mitglied hinzufügen
         </h2>
         <p style={{ color: '#888', fontSize: '0.8rem', marginBottom: '16px', lineHeight: 1.5 }}>
-          Die Person muss sich zuerst unter <a href="/register" style={{ color: '#ef4444' }}>/register</a> einen Account erstellen.
+          Die Person muss sich zuerst unter <a href="/team-register" style={{ color: '#ef4444' }}>/team-register</a> einen Account erstellen.
         </p>
 
         {/* Rolle wählen */}
