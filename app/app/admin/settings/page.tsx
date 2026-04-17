@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, Trash2, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2 } from 'lucide-react'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -14,6 +14,13 @@ export default function SettingsPage() {
   const [deleteInput, setDeleteInput] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+
+  // Password change state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError] = useState('')
+  const [pwSuccess, setPwSuccess] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,6 +47,23 @@ export default function SettingsPage() {
     } finally {
       setExporting(false)
     }
+  }
+
+  async function handlePasswordChange() {
+    setPwError('')
+    setPwSuccess(false)
+    if (newPassword.length < 8) { setPwError('Passwort muss mindestens 8 Zeichen haben.'); return }
+    if (newPassword !== confirmPassword) { setPwError('Passwörter stimmen nicht überein.'); return }
+    setPwLoading(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setPwError('Fehler: ' + error.message)
+    } else {
+      setPwSuccess(true)
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+    setPwLoading(false)
   }
 
   async function handleDelete() {
@@ -71,6 +95,67 @@ export default function SettingsPage() {
       {/* Account Info */}
       <Section title="Konto">
         <Row label="E-Mail" value={email} />
+      </Section>
+
+      {/* Password Change */}
+      <Section title="Sicherheit">
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: '12px', padding: '20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(108,99,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <KeyRound size={18} color="var(--accent)" />
+            </div>
+            <div>
+              <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', marginBottom: '2px' }}>Passwort ändern</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Neues Passwort (mind. 8 Zeichen)</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="password"
+              placeholder="Neues Passwort"
+              value={newPassword}
+              onChange={e => { setNewPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
+              style={{
+                padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
+                outline: 'none', width: '100%', boxSizing: 'border-box',
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Passwort bestätigen"
+              value={confirmPassword}
+              onChange={e => { setConfirmPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
+              style={{
+                padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
+                outline: 'none', width: '100%', boxSizing: 'border-box',
+              }}
+            />
+            {pwError && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{pwError}</p>}
+            {pwSuccess && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem' }}>
+                <CheckCircle2 size={14} /> Passwort erfolgreich geändert
+              </div>
+            )}
+            <button
+              onClick={handlePasswordChange}
+              disabled={pwLoading || !newPassword || !confirmPassword}
+              style={{
+                alignSelf: 'flex-start', padding: '9px 18px', borderRadius: '8px',
+                border: 'none', background: 'var(--accent)', color: '#fff',
+                fontSize: '0.82rem', fontWeight: 700,
+                cursor: pwLoading || !newPassword || !confirmPassword ? 'not-allowed' : 'pointer',
+                opacity: pwLoading || !newPassword || !confirmPassword ? 0.6 : 1,
+              }}
+            >
+              {pwLoading ? 'Wird gespeichert...' : 'Passwort speichern'}
+            </button>
+          </div>
+        </div>
       </Section>
 
       {/* DSGVO */}
