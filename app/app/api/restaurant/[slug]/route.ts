@@ -13,7 +13,7 @@ export async function GET(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: restaurant } = await supabase
+  const { data: restaurant, error: dbError } = await supabase
     .from('restaurants')
     .select('id, name, slug, plan, trial_ends_at, active, currency, default_language, theme_color, logo_url')
     .eq('slug', slug)
@@ -21,7 +21,13 @@ export async function GET(
     .single()
 
   if (!restaurant) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    console.error('[restaurant-api] slug:', slug, 'db error:', dbError)
+    return NextResponse.json({
+      error: 'Not found',
+      slug,
+      debug: dbError ? JSON.stringify(dbError) : 'query ok but no rows',
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 30),
+    }, { status: 404 })
   }
 
   const active = isRestaurantActive(
