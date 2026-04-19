@@ -89,6 +89,20 @@ export interface MenuItem {
   translations?: Record<string, { name: string; description: string }> | null
 }
 
+export interface ExtractedMenuItem {
+  name: string
+  description: string | null
+  price: number
+  category: string
+  tags: string[]
+  allergens: string[]
+}
+
+export interface ExtractedMenu {
+  categories: string[]
+  items: ExtractedMenuItem[]
+}
+
 export interface OrderItem {
   item_id: string
   name: string

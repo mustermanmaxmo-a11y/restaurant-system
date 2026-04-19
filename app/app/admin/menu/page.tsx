@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import type { MenuCategory, MenuItem, Restaurant } from '@/types/database'
+import type { MenuCategory, MenuItem, Restaurant, ExtractedMenuItem } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
-import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2 } from 'lucide-react'
+import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2, Sparkles, Upload, FileText } from 'lucide-react'
 
-type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | null
+type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | 'ai-import' | null
+type AiPhase = 'upload' | 'extracting' | 'review'
 
 const DIETARY_LABELS = [
   { key: 'vegetarisch', label: 'Vegetarisch' },
@@ -55,6 +56,14 @@ export default function MenuPage() {
   const [imageUploading, setImageUploading] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [translatingId, setTranslatingId] = useState<string | null>(null)
+
+  // AI Import
+  const [aiFile, setAiFile] = useState<File | null>(null)
+  const [aiPhase, setAiPhase] = useState<AiPhase>('upload')
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiItems, setAiItems] = useState<ExtractedMenuItem[]>([])
+  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set())
+  const [aiImporting, setAiImporting] = useState(false)
 
   async function triggerTranslation(itemId: string, name: string, description: string | null) {
     setTranslatingId(itemId)
@@ -224,6 +233,148 @@ export default function MenuPage() {
     setItems(prev => prev.filter(i => i.id !== itemId))
   }
 
+  // ─── AI Import ─────────────────────────────────────────────────────────────
+  const aiEnabled = restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise')
+
+  function openAiImport() {
+    setAiFile(null); setAiPhase('upload'); setAiError(null); setAiItems([]); setAiSelected(new Set())
+    setModal('ai-import')
+  }
+
+  function selectAiFile(file: File) {
+    const ok = file.type === 'application/pdf' || file.type.startsWith('image/')
+    if (!ok) { setAiError('Nur PDF- oder Bilddateien erlaubt'); return }
+    if (file.size > 15 * 1024 * 1024) { setAiError('Datei zu groß (max. 15 MB)'); return }
+    setAiError(null); setAiFile(file)
+  }
+
+  async function analyzeAiFile() {
+    if (!restaurant || !aiFile) return
+    setAiPhase('extracting'); setAiError(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Nicht eingeloggt')
+
+      const fd = new FormData()
+      fd.append('file', aiFile)
+      fd.append('restaurantId', restaurant.id)
+      fd.append('existingCategories', JSON.stringify(categories.map(c => c.name)))
+
+      const res = await fetch('/api/ai/menu-extract', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: fd,
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({ error: 'Fehler beim Hochladen' }))
+        throw new Error(j.error || 'Analyse fehlgeschlagen')
+      }
+      const data = await res.json() as { items: ExtractedMenuItem[] }
+      if (!data.items || data.items.length === 0) {
+        setAiError('Keine Gerichte in der Datei erkannt. Bitte anderes Foto/PDF versuchen.')
+        setAiPhase('upload')
+        return
+      }
+      setAiItems(data.items)
+      setAiSelected(new Set(data.items.map((_, i) => i)))
+      setAiPhase('review')
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Analyse fehlgeschlagen')
+      setAiPhase('upload')
+    }
+  }
+
+  function updateAiItem(idx: number, patch: Partial<ExtractedMenuItem>) {
+    setAiItems(prev => prev.map((it, i) => i === idx ? { ...it, ...patch } : it))
+  }
+
+  function toggleAiItemTag(idx: number, key: string) {
+    setAiItems(prev => prev.map((it, i) => i === idx
+      ? { ...it, tags: it.tags.includes(key) ? it.tags.filter(t => t !== key) : [...it.tags, key] }
+      : it
+    ))
+  }
+
+  function toggleAiItemAllergen(idx: number, key: string) {
+    setAiItems(prev => prev.map((it, i) => i === idx
+      ? { ...it, allergens: it.allergens.includes(key) ? it.allergens.filter(a => a !== key) : [...it.allergens, key] }
+      : it
+    ))
+  }
+
+  function toggleAiSelected(idx: number) {
+    setAiSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx); else next.add(idx)
+      return next
+    })
+  }
+
+  function toggleAllAiSelected() {
+    setAiSelected(prev => prev.size === aiItems.length ? new Set() : new Set(aiItems.map((_, i) => i)))
+  }
+
+  async function confirmAiImport() {
+    if (!restaurant) return
+    const selected = aiItems.filter((_, i) => aiSelected.has(i)).filter(it => it.name.trim() && it.category.trim() && it.price > 0)
+    if (selected.length === 0) { setAiError('Bitte mindestens ein Gericht auswählen'); return }
+
+    setAiImporting(true)
+    try {
+      // 1. Fehlende Kategorien anlegen
+      const needed = Array.from(new Set(selected.map(i => i.category.trim())))
+      const existingNames = new Set(categories.map(c => c.name))
+      const missing = needed.filter(n => !existingNames.has(n))
+      let maxOrder = Math.max(0, ...categories.map(c => c.sort_order))
+      let insertedCats: MenuCategory[] = []
+      if (missing.length > 0) {
+        const newCats = missing.map(name => ({
+          restaurant_id: restaurant.id, name, sort_order: ++maxOrder, active: true,
+        }))
+        const { data } = await supabase.from('menu_categories').insert(newCats).select()
+        insertedCats = data || []
+      }
+
+      // 2. Category-Map
+      const catMap = new Map<string, string>()
+      categories.forEach(c => catMap.set(c.name, c.id))
+      insertedCats.forEach(c => catMap.set(c.name, c.id))
+
+      // 3. Items vorbereiten + bulk insert
+      const rows = selected.map((item, idx) => ({
+        restaurant_id: restaurant.id,
+        category_id: catMap.get(item.category.trim())!,
+        name: item.name.trim(),
+        description: item.description?.trim() || null,
+        price: item.price,
+        tags: item.tags,
+        allergens: item.allergens,
+        available: true,
+        sort_order: idx,
+        image_url: null,
+      })).filter(r => r.category_id)
+
+      const { data: inserted, error: insertErr } = await supabase.from('menu_items').insert(rows).select('id, name, description')
+      if (insertErr) throw insertErr
+
+      // 4. Übersetzungen anstoßen (parallel, nicht blockieren)
+      if (restaurant.auto_translate_enabled !== false) {
+        inserted?.forEach(i => {
+          supabase.functions.invoke('translate-menu-item', {
+            body: { item_id: i.id, name: i.name, description: i.description || '' },
+          }).catch(() => { /* ignore */ })
+        })
+      }
+
+      await loadData(restaurant.id)
+      setModal(null)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : 'Import fehlgeschlagen')
+    } finally {
+      setAiImporting(false)
+    }
+  }
+
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
@@ -240,12 +391,31 @@ export default function MenuPage() {
           <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
           <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Menü verwalten</h1>
         </div>
-        <button
-          onClick={openAddCategory}
-          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
-        >
-          + Kategorie
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={openAiImport}
+            disabled={!aiEnabled}
+            title={aiEnabled ? 'Speisekarte per KI aus PDF/Foto einlesen' : 'Pro- oder Enterprise-Plan erforderlich'}
+            style={{
+              background: aiEnabled ? 'transparent' : 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: '8px', padding: '8px 14px',
+              color: aiEnabled ? 'var(--accent)' : 'var(--text-muted)',
+              fontWeight: 600, fontSize: '0.875rem',
+              cursor: aiEnabled ? 'pointer' : 'not-allowed',
+              opacity: aiEnabled ? 1 : 0.5,
+              display: 'flex', alignItems: 'center', gap: '6px',
+            }}
+          >
+            <Sparkles size={14} /> KI-Import
+          </button>
+          <button
+            onClick={openAddCategory}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+          >
+            + Kategorie
+          </button>
+        </div>
       </div>
 
       <div className="menu-layout" style={{ display: 'flex', height: 'calc(100vh - 57px)' }}>
@@ -386,7 +556,7 @@ export default function MenuPage() {
           style={{ position: 'fixed', inset: 0, background: '#00000080', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '24px' }}
           onWheel={e => e.stopPropagation()}
         >
-          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: modal === 'ai-import' ? '960px' : '480px', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
             {(modal === 'add-category' || modal === 'edit-category') && (
               <>
                 <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>
@@ -410,6 +580,218 @@ export default function MenuPage() {
                     {saving ? '...' : t('common.save')}
                   </button>
                 </div>
+              </>
+            )}
+
+            {modal === 'ai-import' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                  <Sparkles size={18} color="var(--accent)" />
+                  <h3 style={{ color: 'var(--text)', fontWeight: 700, margin: 0 }}>KI-Import aus PDF/Foto</h3>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '20px' }}>
+                  Lade deine bestehende Speisekarte hoch — Claude liest alle Gerichte mit Preisen und Kategorien aus.
+                </p>
+
+                {aiPhase === 'upload' && (
+                  <>
+                    <label
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: '10px', border: `2px dashed ${aiFile ? 'var(--accent)' : 'var(--border)'}`,
+                        borderRadius: '12px', padding: '40px 20px', cursor: 'pointer',
+                        background: aiFile ? 'var(--accent-subtle)' : 'var(--bg)',
+                      }}
+                      onDragOver={e => { e.preventDefault() }}
+                      onDrop={e => {
+                        e.preventDefault()
+                        const f = e.dataTransfer.files?.[0]
+                        if (f) selectAiFile(f)
+                      }}
+                    >
+                      {aiFile ? <FileText size={32} color="var(--accent)" /> : <Upload size={32} color="var(--text-muted)" />}
+                      <div style={{ textAlign: 'center' }}>
+                        {aiFile ? (
+                          <>
+                            <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '2px' }}>{aiFile.name}</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{(aiFile.size / 1024 / 1024).toFixed(2)} MB — klicken zum Ändern</p>
+                          </>
+                        ) : (
+                          <>
+                            <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '2px' }}>Datei auswählen oder hierher ziehen</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>PDF, JPG, PNG — max. 15 MB</p>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf,image/*"
+                        style={{ display: 'none' }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) selectAiFile(f) }}
+                      />
+                    </label>
+
+                    {aiError && (
+                      <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertTriangle size={14} /> {aiError}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                      <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
+                      <button
+                        onClick={analyzeAiFile}
+                        disabled={!aiFile}
+                        style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: aiFile ? 'var(--accent)' : 'var(--border)', color: '#fff', fontWeight: 600, cursor: aiFile ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Sparkles size={14} /> Analysieren
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {aiPhase === 'extracting' && (
+                  <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                    <Loader2 size={32} color="var(--accent)" className="ai-spin" style={{ marginBottom: '16px' }} />
+                    <p style={{ color: 'var(--text)', fontWeight: 600, marginBottom: '6px' }}>Speisekarte wird gelesen…</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Das kann 20–40 Sekunden dauern</p>
+                    <style>{`@keyframes ai-spin { to { transform: rotate(360deg) } } .ai-spin { animation: ai-spin 1s linear infinite; }`}</style>
+                  </div>
+                )}
+
+                {aiPhase === 'review' && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.95rem' }}>
+                          {aiItems.length} {aiItems.length === 1 ? 'Gericht' : 'Gerichte'} gefunden
+                          <span style={{ color: 'var(--text-muted)', fontWeight: 500, marginLeft: '8px' }}>
+                            • {aiSelected.size} ausgewählt
+                          </span>
+                        </p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '2px' }}>
+                          Prüfe & korrigiere jeden Eintrag, bevor du importierst.
+                        </p>
+                      </div>
+                      <button
+                        onClick={toggleAllAiSelected}
+                        style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 12px', color: 'var(--text)', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        {aiSelected.size === aiItems.length ? 'Alle abwählen' : 'Alle auswählen'}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '55vh', overflowY: 'auto', paddingRight: '4px' }}>
+                      {aiItems.map((item, idx) => {
+                        const isSel = aiSelected.has(idx)
+                        return (
+                          <div key={idx} style={{
+                            background: 'var(--bg)', borderRadius: '10px', padding: '12px',
+                            border: `1px solid ${isSel ? 'var(--accent)' : 'var(--border)'}`,
+                            opacity: isSel ? 1 : 0.55,
+                          }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSel}
+                                onChange={() => toggleAiSelected(idx)}
+                                style={{ width: '16px', height: '16px', marginTop: '10px', flexShrink: 0, cursor: 'pointer' }}
+                              />
+                              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr 0.7fr', gap: '8px' }}>
+                                <input
+                                  value={item.name}
+                                  onChange={e => updateAiItem(idx, { name: e.target.value })}
+                                  placeholder="Name"
+                                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.85rem', fontWeight: 600, outline: 'none' }}
+                                />
+                                <select
+                                  value={item.category}
+                                  onChange={e => updateAiItem(idx, { category: e.target.value })}
+                                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.82rem', outline: 'none' }}
+                                >
+                                  {Array.from(new Set([...categories.map(c => c.name), ...aiItems.map(i => i.category)])).filter(Boolean).map(cat => (
+                                    <option key={cat} value={cat}>{cat}{!categories.find(c => c.name === cat) ? ' (neu)' : ''}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  value={item.price.toString().replace('.', ',')}
+                                  onChange={e => updateAiItem(idx, { price: parseFloat(e.target.value.replace(',', '.')) || 0 })}
+                                  placeholder="Preis"
+                                  inputMode="decimal"
+                                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.85rem', fontWeight: 700, outline: 'none', textAlign: 'right' }}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ marginLeft: '26px', marginTop: '8px' }}>
+                              <textarea
+                                value={item.description || ''}
+                                onChange={e => updateAiItem(idx, { description: e.target.value || null })}
+                                placeholder="Beschreibung (optional)"
+                                rows={1}
+                                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.8rem', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+                              />
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                {DIETARY_LABELS.map(({ key, label }) => {
+                                  const active = item.tags.includes(key)
+                                  return (
+                                    <button key={key} type="button" onClick={() => toggleAiItemTag(idx, key)} style={{
+                                      padding: '3px 8px', borderRadius: '12px',
+                                      border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                                      background: active ? 'var(--accent-subtle)' : 'transparent',
+                                      color: active ? 'var(--accent)' : 'var(--text-muted)',
+                                      fontWeight: active ? 700 : 500, fontSize: '0.7rem', cursor: 'pointer',
+                                    }}>{label}</button>
+                                  )
+                                })}
+                              </div>
+                              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                {ALLERGEN_LIST.map(a => {
+                                  const active = item.allergens.includes(a)
+                                  return (
+                                    <button key={a} type="button" onClick={() => toggleAiItemAllergen(idx, a)} style={{
+                                      padding: '3px 8px', borderRadius: '12px',
+                                      border: `1px solid ${active ? '#ef4444' : 'var(--border)'}`,
+                                      background: active ? 'rgba(239,68,68,0.08)' : 'transparent',
+                                      color: active ? '#ef4444' : 'var(--text-muted)',
+                                      fontWeight: active ? 700 : 500, fontSize: '0.7rem', cursor: 'pointer',
+                                    }}>{a}</button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {aiError && (
+                      <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertTriangle size={14} /> {aiError}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                      <button
+                        onClick={() => { setAiPhase('upload'); setAiItems([]); setAiSelected(new Set()); setAiError(null) }}
+                        disabled={aiImporting}
+                        style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: aiImporting ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}
+                      >
+                        Neue Datei
+                      </button>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => setModal(null)} disabled={aiImporting} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: aiImporting ? 'not-allowed' : 'pointer' }}>{t('common.cancel')}</button>
+                        <button
+                          onClick={confirmAiImport}
+                          disabled={aiImporting || aiSelected.size === 0}
+                          style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: aiImporting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          {aiImporting ? <><Loader2 size={14} className="ai-spin" /> Importiere…</> : <>{aiSelected.size} {aiSelected.size === 1 ? 'Gericht' : 'Gerichte'} importieren</>}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
