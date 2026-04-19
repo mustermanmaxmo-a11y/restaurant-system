@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Syne, DM_Sans, Playfair_Display, Lato, Inter, Space_Grotesk, Merriweather, Source_Sans_3, Noto_Serif_Display, Noto_Sans } from 'next/font/google'
+import { Syne, DM_Sans, Playfair_Display, Lato, Inter, Space_Grotesk, Merriweather, Source_Sans_3, Noto_Serif_Display, Noto_Sans, Geist } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/components/providers/language-provider'
 import { CookieBanner } from '@/components/CookieBanner'
@@ -16,10 +16,11 @@ const merriweather = Merriweather({ subsets: ['latin'], variable: '--font-merriw
 const sourceSans3 = Source_Sans_3({ subsets: ['latin'], variable: '--font-source-sans', weight: ['400', '600'] })
 const notoSerifDisplay = Noto_Serif_Display({ subsets: ['latin'], variable: '--font-noto-serif', weight: ['400', '700'] })
 const notoSans = Noto_Sans({ subsets: ['latin'], variable: '--font-noto-sans', weight: ['400', '500', '600'] })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist', weight: ['300', '400', '500', '600', '700', '800'] })
 
 const allFontVars = [
   syne, dmSans, playfairDisplay, lato, inter, spaceGrotesk,
-  merriweather, sourceSans3, notoSerifDisplay, notoSans,
+  merriweather, sourceSans3, notoSerifDisplay, notoSans, geist,
 ].map(f => f.variable).join(' ')
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" className="theme-v1" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
