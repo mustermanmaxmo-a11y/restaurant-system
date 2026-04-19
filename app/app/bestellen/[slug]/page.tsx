@@ -841,30 +841,12 @@ export default function HomeOrderPage() {
       {restaurant && (() => {
         const pkg = getDesignPackage(restaurant.design_package)
         const accent = restaurant.primary_color ?? pkg.preview.primaryColor
-        const bg = restaurant.bg_color ?? pkg.preview.bgColor
-        const surface = restaurant.surface_color ?? pkg.preview.surfaceColor
-        const card = restaurant.card_color ?? pkg.preview.cardColor
         const header = restaurant.header_color ?? pkg.preview.headerColor
         const btn = restaurant.button_color ?? pkg.preview.buttonColor
-        const text = restaurant.text_color ?? pkg.preview.textColor
         const fp = FONT_PAIRS[restaurant.font_pair ?? pkg.fontPair] ?? FONT_PAIRS['syne-dmsans']
         return (
           <style>{`
-            :root {
-              --accent: ${accent};
-              --accent-hover: ${darken(accent, 15)};
-              --accent-subtle: ${accent}18;
-              --border-accent: ${accent}33;
-              --bg: ${bg};
-              --surface: ${surface};
-              --surface-2: ${card};
-              --header-bg: ${header};
-              --btn-bg: ${btn};
-              --text: ${text};
-              --font-heading: ${fp.heading};
-              --font-body: ${fp.body};
-            }
-            .dark {
+            :root, .dark {
               --accent: ${accent};
               --accent-hover: ${darken(accent, 15)};
               --accent-subtle: ${accent}18;
