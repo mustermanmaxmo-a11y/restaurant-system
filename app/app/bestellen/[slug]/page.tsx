@@ -56,7 +56,9 @@ export default function HomeOrderPage() {
   const [error, setError] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const [pageTab, setPageTab] = useState<PageTab>('order')
+  const [pageTab, setPageTab] = useState<PageTab>(
+    searchParams.get('tab') === 'reserve' ? 'reserve' : 'order'
+  )
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [detailQty, setDetailQty] = useState(1)
 
