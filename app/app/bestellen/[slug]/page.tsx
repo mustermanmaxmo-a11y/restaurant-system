@@ -902,26 +902,26 @@ export default function HomeOrderPage() {
           {resDone ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><PartyPopper size={56} color="var(--accent)" /></div>
-              <h2 style={{ color: '#1a1a2e', fontWeight: 700, fontSize: '1.3rem', marginBottom: '8px' }}>Anfrage eingegangen!</h2>
-              <p style={{ color: '#888', marginBottom: '24px' }}>Wir melden uns unter <strong style={{ color: '#1a1a2e' }}>{resDone.customer_phone}</strong> zur Bestätigung.</p>
-              <div style={{ background: '#fff', borderRadius: '14px', padding: '20px', textAlign: 'left', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '24px' }}>
+              <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.3rem', marginBottom: '8px' }}>Anfrage eingegangen!</h2>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Wir melden uns unter <strong style={{ color: 'var(--text)' }}>{resDone.customer_phone}</strong> zur Bestätigung.</p>
+              <div style={{ background: 'var(--surface)', borderRadius: '14px', padding: '20px', textAlign: 'left', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#888', fontSize: '0.875rem' }}>Datum</span>
-                    <span style={{ color: '#1a1a2e', fontWeight: 600, fontSize: '0.875rem' }}>{new Date(resDone.date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Datum</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem' }}>{new Date(resDone.date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#888', fontSize: '0.875rem' }}>Uhrzeit</span>
-                    <span style={{ color: '#1a1a2e', fontWeight: 600, fontSize: '0.875rem' }}>{resDone.time_from.slice(0, 5)} Uhr</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Uhrzeit</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem' }}>{resDone.time_from.slice(0, 5)} Uhr</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#888', fontSize: '0.875rem' }}>Personen</span>
-                    <span style={{ color: '#1a1a2e', fontWeight: 600, fontSize: '0.875rem' }}>{resDone.guests}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Personen</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem' }}>{resDone.guests}</span>
                   </div>
                   {resDone.table_id && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#888', fontSize: '0.875rem' }}>Tisch</span>
-                      <span style={{ color: '#1a1a2e', fontWeight: 600, fontSize: '0.875rem' }}>{tables.find(t => t.id === resDone.table_id)?.label ?? 'Ausgewählt'}</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tisch</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem' }}>{tables.find(t => t.id === resDone.table_id)?.label ?? 'Ausgewählt'}</span>
                     </div>
                   )}
                 </div>
@@ -933,7 +933,7 @@ export default function HomeOrderPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>{t('order.reserveTable')}</h2>
+              <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>{t('order.reserveTable')}</h2>
 
               {/* Mode selector — only show if floor plan exists */}
               {restaurant?.floor_plan_url && placedTables.length > 0 && (
@@ -954,7 +954,7 @@ export default function HomeOrderPage() {
                     >
                       <div style={{ marginBottom: '4px', display: 'flex' }}><ModeIcon size={22} color={resMode === mode ? 'var(--btn-text)' : 'var(--text)'} /></div>
                       <div style={{ color: resMode === mode ? 'var(--btn-text)' : 'var(--text)', fontWeight: 700, fontSize: '0.875rem' }}>{title}</div>
-                      <div style={{ color: resMode === mode ? (theme === 'dark' ? 'rgba(17,17,17,0.55)' : 'rgba(255,255,255,0.6)') : '#888', fontSize: '0.75rem' }}>{sub}</div>
+                      <div style={{ color: resMode === mode ? 'var(--btn-text)' : 'var(--text-muted)', fontSize: '0.75rem', opacity: 0.7 }}>{sub}</div>
                     </button>
                   ))}
                 </div>
@@ -1035,8 +1035,8 @@ export default function HomeOrderPage() {
                     ))}
                   </div>
                   {selectedTableId ? (
-                    <div style={{ background: '#f0eeff', borderRadius: '8px', padding: '10px 14px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#1a1a2e', fontSize: '0.875rem', fontWeight: 600 }}>
+                    <div style={{ background: 'var(--accent-subtle)', borderRadius: '8px', padding: '10px 14px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text)', fontSize: '0.875rem', fontWeight: 600 }}>
                         <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />{tables.find(t => t.id === selectedTableId)?.label} ausgewählt
                       </span>
                       <button onClick={() => setSelectedTableId(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}>Abwählen</button>
@@ -1049,7 +1049,7 @@ export default function HomeOrderPage() {
 
               {/* Hint when pick mode but date/time not yet set */}
               {resMode === 'pick' && !showFloorPlan && restaurant?.floor_plan_url && (
-                <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ background: 'var(--surface)', borderRadius: '10px', padding: '14px 16px', textAlign: 'center' }}>
                   <p style={{ color: '#888', fontSize: '0.875rem' }}>Wähle Datum, Uhrzeit und Personenzahl um den Grundriss zu sehen.</p>
                 </div>
               )}
@@ -1101,9 +1101,9 @@ export default function HomeOrderPage() {
               </button>
 
               {/* Walk-in section */}
-              <div style={{ marginTop: '8px', padding: '20px', background: '#f8f9fa', borderRadius: '14px', border: '1px solid #e0e0e0', textAlign: 'center' }}>
-                <div style={{ marginBottom: '6px', display: 'flex', justifyContent: 'center' }}><PersonStanding size={28} color="#888" /></div>
-                <h3 style={{ color: '#1a1a2e', fontWeight: 700, fontSize: '0.95rem', marginBottom: '6px' }}>Ohne Reservierung</h3>
+              <div style={{ marginTop: '8px', padding: '20px', background: 'var(--surface)', borderRadius: '14px', border: '1px solid var(--border)', textAlign: 'center' }}>
+                <div style={{ marginBottom: '6px', display: 'flex', justifyContent: 'center' }}><PersonStanding size={28} color="var(--text-muted)" /></div>
+                <h3 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.95rem', marginBottom: '6px' }}>Ohne Reservierung</h3>
                 <p style={{ color: '#888', fontSize: '0.8rem', lineHeight: 1.5 }}>
                   Einfach vorbeikommen!{freeTablesNow > 0
                     ? <> Aktuell <strong style={{ color: '#10b981' }}>{freeTablesNow} {freeTablesNow === 1 ? 'Tisch' : 'Tische'}</strong> heute noch verfügbar.</>

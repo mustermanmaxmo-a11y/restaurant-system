@@ -214,8 +214,8 @@ export default function ReservierenPage() {
         {resDone ? (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><PartyPopper size={56} color="var(--accent)" /></div>
-            <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.3rem', marginBottom: '8px' }}>Anfrage eingegangen!</h2>
-            <p style={{ color: '#888', marginBottom: '24px' }}>Wir melden uns unter <strong style={{ color: '#ffffff' }}>{resDone.customer_phone}</strong> zur Bestätigung.</p>
+            <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.3rem', marginBottom: '8px' }}>Anfrage eingegangen!</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Wir melden uns unter <strong style={{ color: 'var(--text)' }}>{resDone.customer_phone}</strong> zur Bestätigung.</p>
             <div style={{ background: 'var(--surface)', borderRadius: '14px', padding: '20px', textAlign: 'left', marginBottom: '24px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -247,7 +247,7 @@ export default function ReservierenPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Tisch reservieren</h2>
+            <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '4px' }}>Tisch reservieren</h2>
 
             {/* Mode selector — only show if floor plan exists */}
             {restaurant.floor_plan_url && placedTables.length > 0 && (
@@ -268,7 +268,7 @@ export default function ReservierenPage() {
                   >
                     <div style={{ marginBottom: '4px', display: 'flex' }}><ModeIcon size={22} color={resMode === mode ? 'var(--btn-text)' : 'var(--text)'} /></div>
                     <div style={{ color: resMode === mode ? 'var(--btn-text)' : 'var(--text)', fontWeight: 700, fontSize: '0.875rem' }}>{title}</div>
-                    <div style={{ color: resMode === mode ? (theme === 'dark' ? 'rgba(17,17,17,0.55)' : 'rgba(255,255,255,0.6)') : '#888', fontSize: '0.75rem' }}>{sub}</div>
+                    <div style={{ color: resMode === mode ? 'var(--btn-text)' : 'var(--text-muted)', fontSize: '0.75rem', opacity: 0.7 }}>{sub}</div>
                   </button>
                 ))}
               </div>
@@ -348,8 +348,8 @@ export default function ReservierenPage() {
                   ))}
                 </div>
                 {selectedTableId ? (
-                  <div style={{ background: '#f0eeff', borderRadius: '8px', padding: '10px 14px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#1a1a2e', fontSize: '0.875rem', fontWeight: 600 }}>
+                  <div style={{ background: 'var(--accent-subtle)', borderRadius: '8px', padding: '10px 14px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text)', fontSize: '0.875rem', fontWeight: 600 }}>
                       <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />{tables.find(t => t.id === selectedTableId)?.label} ausgewählt
                     </span>
                     <button onClick={() => setSelectedTableId(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}>Abwählen</button>
