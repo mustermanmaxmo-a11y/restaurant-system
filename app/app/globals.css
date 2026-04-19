@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Light Mode (Default) */
-:root {
+/* Light Mode (Default) — V1 Classic */
+:root, .theme-v1 {
   --font-heading: var(--font-syne);
   --font-body: var(--font-dm-sans);
   --bg: #F7F6F3;
@@ -30,8 +30,8 @@
   --status-served-bg: #ECFDF5;
 }
 
-/* Dark Mode */
-.dark {
+/* Dark Mode — V1 only */
+.theme-v1.dark, :root.dark:not(.theme-v2) {
   --bg: #0D0D0D;
   --surface: #161616;
   --surface-2: #1F1F1F;
@@ -56,6 +56,50 @@
   --status-cooking-bg: #1F1400;
   --status-served: #10B981;
   --status-served-bg: #061A0F;
+}
+
+/* V2 Bento Premium — dark-only in this phase */
+.theme-v2 {
+  --font-heading: var(--font-geist);
+  --font-body: var(--font-geist);
+
+  --bg: #0A0A0F;
+  --surface: #111118;
+  --surface-2: #16213e;
+  --surface-elevated: #1a1a2e;
+
+  --accent: #EA580C;
+  --accent-hover: #F97316;
+  --accent-subtle: #EA580C14;
+  --accent-glow: #EA580C40;
+
+  --text: #F5F5F7;
+  --text-muted: #8B8B93;
+
+  --border: #1F1F28;
+  --border-accent: #EA580C40;
+
+  --btn-bg: linear-gradient(135deg, #EA580C, #F97316);
+  --btn-text: #FFFFFF;
+
+  --header-bg: #0A0A0F;
+  --header-text: #F5F5F7;
+
+  --sidebar-bg: #0A0A0F;
+  --sidebar-text: #8B8B93;
+  --sidebar-active-bg: #1a1a2e;
+  --sidebar-active-text: #F5F5F7;
+
+  --status-new: #EA580C;
+  --status-new-bg: #2A1500;
+  --status-cooking: #F59E0B;
+  --status-cooking-bg: #1F1400;
+  --status-served: #10B981;
+  --status-served-bg: #061A0F;
+
+  --card-radius: 16px;
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --gradient-accent: linear-gradient(135deg, #EA580C, #F97316);
 }
 
 html {
