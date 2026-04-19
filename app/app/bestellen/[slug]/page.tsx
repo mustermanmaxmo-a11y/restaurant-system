@@ -895,19 +895,12 @@ export default function HomeOrderPage() {
         </div>
         {/* Page tabs */}
         <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
-          {([['order', t('order.orderTab')], ['reserve', t('order.reserveTab')]] as [PageTab, string][]).map(([tab, label]) => (
-            <button
-              key={tab}
-              onClick={() => setPageTab(tab)}
-              style={{
-                padding: '8px 16px', borderRadius: '9px', border: 'none',
-                background: pageTab === tab ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: pageTab === tab ? '#FFFFFF' : 'rgba(255,255,255,0.45)',
-                fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem',
-                transition: 'all 0.2s',
-              }}
-            >{label}</button>
-          ))}
+          <span style={{ padding: '8px 16px', borderRadius: '9px', background: 'rgba(255,255,255,0.12)', color: '#FFFFFF', fontWeight: 700, fontSize: '0.8rem' }}>
+            {t('order.orderTab')}
+          </span>
+          <a href={`/reservieren/${slug}`} style={{ padding: '8px 16px', borderRadius: '9px', background: 'transparent', color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none', display: 'inline-block' }}>
+            {t('order.reserveTab')}
+          </a>
         </div>
       </div>
 
