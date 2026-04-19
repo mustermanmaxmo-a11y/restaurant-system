@@ -166,7 +166,7 @@ export default function ReservierenPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', width: '100%', overflowX: 'hidden' }}>
       <style>{`
-        :root, .dark {
+        :root {
           --accent: ${accent};
           --accent-hover: ${darken(accent, 15)};
           --accent-subtle: ${accent}18;
@@ -177,6 +177,16 @@ export default function ReservierenPage() {
           --header-bg: ${header};
           --btn-bg: ${btn};
           --text: ${text};
+          --font-heading: ${fp.heading};
+          --font-body: ${fp.body};
+        }
+        .dark {
+          --accent: ${accent};
+          --accent-hover: ${darken(accent, 15)};
+          --accent-subtle: ${accent}18;
+          --border-accent: ${accent}33;
+          --header-bg: ${header};
+          --btn-bg: ${btn};
           --font-heading: ${fp.heading};
           --font-body: ${fp.body};
         }

@@ -850,7 +850,7 @@ export default function HomeOrderPage() {
         const fp = FONT_PAIRS[restaurant.font_pair ?? pkg.fontPair] ?? FONT_PAIRS['syne-dmsans']
         return (
           <style>{`
-            :root, .dark {
+            :root {
               --accent: ${accent};
               --accent-hover: ${darken(accent, 15)};
               --accent-subtle: ${accent}18;
@@ -861,6 +861,16 @@ export default function HomeOrderPage() {
               --header-bg: ${header};
               --btn-bg: ${btn};
               --text: ${text};
+              --font-heading: ${fp.heading};
+              --font-body: ${fp.body};
+            }
+            .dark {
+              --accent: ${accent};
+              --accent-hover: ${darken(accent, 15)};
+              --accent-subtle: ${accent}18;
+              --border-accent: ${accent}33;
+              --header-bg: ${header};
+              --btn-bg: ${btn};
               --font-heading: ${fp.heading};
               --font-body: ${fp.body};
             }
