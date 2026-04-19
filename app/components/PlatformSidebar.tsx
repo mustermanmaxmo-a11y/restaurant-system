@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Paintbrush, Settings } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -24,6 +24,7 @@ function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCoun
     { icon: FileText,        label: 'Rechtstexte',     href: '/platform/legal',               roles: ['owner', 'co_founder'], badge: legalPendingCount },
     { icon: Users,           label: 'Team',            href: '/platform/team',                roles: ['owner'], badge: teamPendingCount },
     { icon: Palette,         label: 'Design-Anfragen', href: '/platform/design-requests',     roles: ['owner', 'co_founder'], badge: designRequestCount },
+    { icon: Paintbrush,      label: 'Design',          href: '/platform/design',              roles: ['owner', 'co_founder'] },
     { icon: Settings,        label: 'Einstellungen',   href: '/platform/settings',            roles: ['owner', 'co_founder', 'developer', 'billing', 'support'] },
   ]
   return all.filter(item => item.roles.includes(role))
@@ -98,7 +99,7 @@ export function PlatformSidebar({
 
       <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
         {nav.map(item => {
-          const isActive = pathname === item.href || (item.href !== '/platform' && pathname.startsWith(item.href))
+          const isActive = pathname === item.href || (item.href !== '/platform' && pathname.startsWith(item.href + '/'))
           return (
             <button
               key={item.href}
