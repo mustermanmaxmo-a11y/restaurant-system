@@ -32,10 +32,13 @@ ALTER TABLE public.restaurants
 -- ─────────────────────────────────────────────
 ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
 
+-- Read: all authenticated users (restaurant owners need to see the default theme version)
+-- platform_settings contains only non-sensitive design preferences, no PII
 CREATE POLICY platform_settings_read
   ON public.platform_settings
   FOR SELECT
-  USING (public.get_platform_role() IS NOT NULL);
+  TO authenticated
+  USING (true);
 
 CREATE POLICY platform_settings_write_owner
   ON public.platform_settings
