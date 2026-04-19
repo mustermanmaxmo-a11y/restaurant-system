@@ -303,7 +303,7 @@ export default function BrandingPage() {
   const fp = FONT_PAIRS[fontPair] ?? FONT_PAIRS['syne-dmsans']
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: '820px' }}>
+    <div style={{ padding: '32px 24px', maxWidth: '1100px' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
@@ -313,6 +313,10 @@ export default function BrandingPage() {
           Gestalte deine Bestell-Seite individuell — alle Aenderungen sind sofort live.
         </p>
       </div>
+
+      <div className="branding-layout" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
+      {/* ── LEFT COLUMN: alle Einstellungen ── */}
+      <div style={{ flex: 1, minWidth: 0 }}>
 
       {/* ── Section 1: Design-Pakete ── */}
       <section style={{ marginBottom: '36px' }}>
@@ -500,96 +504,6 @@ export default function BrandingPage() {
         </div>
       </section>
 
-      {/* ── Section 7: Live Preview ── */}
-      <section style={{ marginBottom: '36px' }}>
-        <label style={sectionLabel}>Vorschau</label>
-        <div style={{
-          background: pBg, borderRadius: '16px', padding: '0', border: '1px solid var(--border)',
-          maxWidth: '340px', overflow: 'hidden',
-        }}>
-          {/* Preview Header */}
-          <div style={{ background: pHeader, padding: '16px 16px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {logoUrl ? (
-                <img src={logoUrl} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '7px', background: '#fff', padding: '2px' }} />
-              ) : (
-                <div style={{ width: '36px', height: '36px', borderRadius: '7px', background: pAccent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>{pkg.emoji}</div>
-              )}
-              <div>
-                <div style={{ color: pText, fontFamily: `${fp.heading}, system-ui`, fontWeight: 700, fontSize: '0.85rem' }}>{restaurant?.name ?? 'Dein Restaurant'}</div>
-                {description && <div style={{ color: pText, opacity: 0.5, fontSize: '0.65rem', marginTop: '1px' }}>{description}</div>}
-              </div>
-            </div>
-            {/* Category pills */}
-            <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
-              <div style={{ padding: '4px 10px', borderRadius: '20px', background: pAccent, color: '#fff', fontSize: '0.65rem', fontWeight: 600 }}>Vorspeisen</div>
-              <div style={{ padding: '4px 10px', borderRadius: '20px', background: `${pText}15`, color: pText, opacity: 0.5, fontSize: '0.65rem', fontWeight: 500 }}>Hauptgerichte</div>
-              <div style={{ padding: '4px 10px', borderRadius: '20px', background: `${pText}15`, color: pText, opacity: 0.5, fontSize: '0.65rem', fontWeight: 500 }}>Desserts</div>
-            </div>
-          </div>
-          {/* Preview Items */}
-          <div style={{ padding: '12px 16px 16px' }}>
-            {layoutVariant === 'cards' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {['Bruschetta', 'Caprese Salat'].map(name => (
-                  <div key={name} style={{ background: pCard, borderRadius: '10px', padding: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '7px', background: `${pText}10`, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.75rem' }}>{name}</div>
-                      <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.72rem', marginTop: '3px' }}>8,90 €</div>
-                    </div>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }}>+</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {layoutVariant === 'list' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {['Bruschetta', 'Caprese Salat', 'Minestrone'].map(name => (
-                  <div key={name} style={{ background: pCard, borderRadius: '8px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontSize: '0.72rem', fontWeight: 500 }}>{name}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: pAccent, fontWeight: 700, fontSize: '0.72rem' }}>8,90 €</span>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 700 }}>+</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {layoutVariant === 'large-cards' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ background: pCard, borderRadius: '12px', overflow: 'hidden' }}>
-                  <div style={{ height: '80px', background: `${pText}08` }} />
-                  <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                      <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.78rem' }}>Bruschetta</div>
-                      <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.75rem', marginTop: '3px' }}>8,90 €</div>
-                    </div>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }}>+</div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {layoutVariant === 'grid' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {['Bruschetta', 'Caprese'].map(name => (
-                  <div key={name} style={{ background: pCard, borderRadius: '10px', overflow: 'hidden' }}>
-                    <div style={{ aspectRatio: '1', background: `${pText}08` }} />
-                    <div style={{ padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.68rem' }}>{name}</div>
-                        <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.68rem' }}>8,90 €</div>
-                      </div>
-                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>+</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* ── Section 8: Custom Design anfragen ── */}
       <section style={{ marginBottom: '36px' }}>
         <label style={sectionLabel}>
@@ -674,7 +588,10 @@ export default function BrandingPage() {
         </div>
       </section>
 
-      <style>{`@media (max-width: 600px) { .branding-contact-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <style>{`
+        @media (max-width: 600px) { .branding-contact-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 900px) { .branding-layout { flex-direction: column !important; } .branding-preview-col { width: 100% !important; position: static !important; } }
+      `}</style>
 
       {/* ── Save Button ── */}
       <button onClick={save} disabled={saving} style={{
@@ -686,6 +603,99 @@ export default function BrandingPage() {
       }}>
         {saving ? '...' : saved ? <><Check size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />Gespeichert</> : t('common.save')}
       </button>
+      </div>{/* end left column */}
+
+      {/* ── RIGHT COLUMN: Sticky Live Preview ── */}
+      <div className="branding-preview-col" style={{ width: '340px', flexShrink: 0, position: 'sticky', top: '24px' }}>
+        <label style={sectionLabel}>Vorschau</label>
+        <div style={{
+          background: pBg, borderRadius: '16px', padding: '0', border: '1px solid var(--border)',
+          overflow: 'hidden',
+        }}>
+          {/* Preview Header */}
+          <div style={{ background: pHeader, padding: '16px 16px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {logoUrl ? (
+                <img src={logoUrl} alt="" style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '7px', background: '#fff', padding: '2px' }} />
+              ) : (
+                <div style={{ width: '36px', height: '36px', borderRadius: '7px', background: pAccent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>{pkg.emoji}</div>
+              )}
+              <div>
+                <div style={{ color: pText, fontFamily: `${fp.heading}, system-ui`, fontWeight: 700, fontSize: '0.85rem' }}>{restaurant?.name ?? 'Dein Restaurant'}</div>
+                {description && <div style={{ color: pText, opacity: 0.5, fontSize: '0.65rem', marginTop: '1px' }}>{description}</div>}
+              </div>
+            </div>
+            {/* Category pills */}
+            <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }}>
+              <div style={{ padding: '4px 10px', borderRadius: '20px', background: pAccent, color: '#fff', fontSize: '0.65rem', fontWeight: 600 }}>Vorspeisen</div>
+              <div style={{ padding: '4px 10px', borderRadius: '20px', background: `${pText}15`, color: pText, opacity: 0.5, fontSize: '0.65rem', fontWeight: 500 }}>Hauptgerichte</div>
+              <div style={{ padding: '4px 10px', borderRadius: '20px', background: `${pText}15`, color: pText, opacity: 0.5, fontSize: '0.65rem', fontWeight: 500 }}>Desserts</div>
+            </div>
+          </div>
+          {/* Preview Items */}
+          <div style={{ padding: '12px 16px 16px' }}>
+            {layoutVariant === 'cards' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {['Bruschetta', 'Caprese Salat'].map(name => (
+                  <div key={name} style={{ background: pCard, borderRadius: '10px', padding: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '7px', background: `${pText}10`, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.75rem' }}>{name}</div>
+                      <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.72rem', marginTop: '3px' }}>8,90 €</div>
+                    </div>
+                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }}>+</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {layoutVariant === 'list' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {['Bruschetta', 'Caprese Salat', 'Minestrone'].map(name => (
+                  <div key={name} style={{ background: pCard, borderRadius: '8px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontSize: '0.72rem', fontWeight: 500 }}>{name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: pAccent, fontWeight: 700, fontSize: '0.72rem' }}>8,90 €</span>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', fontWeight: 700 }}>+</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {layoutVariant === 'large-cards' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ background: pCard, borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ height: '80px', background: `${pText}08` }} />
+                  <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div>
+                      <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.78rem' }}>Bruschetta</div>
+                      <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.75rem', marginTop: '3px' }}>8,90 €</div>
+                    </div>
+                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 700 }}>+</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {layoutVariant === 'grid' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {['Bruschetta', 'Caprese'].map(name => (
+                  <div key={name} style={{ background: pCard, borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ aspectRatio: '1', background: `${pText}08` }} />
+                    <div style={{ padding: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ color: pText, fontFamily: `${fp.body}, system-ui`, fontWeight: 600, fontSize: '0.68rem' }}>{name}</div>
+                        <div style={{ color: pAccent, fontWeight: 700, fontSize: '0.68rem' }}>8,90 €</div>
+                      </div>
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: pButton, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>+</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>{/* end right column */}
+
+      </div>{/* end two-column layout */}
     </div>
   )
 }
