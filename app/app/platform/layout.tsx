@@ -1,6 +1,9 @@
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { PlatformSidebar } from '@/components/PlatformSidebar'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { resolveDesignVersion } from '@/lib/design-version'
+import { DesignVersionProvider } from '@/components/providers/design-version-provider'
+import PlatformV2Banner from './_v2/PlatformV2Banner'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,12 +25,24 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     designRequestCount = designReqs?.length ?? 0
   }
 
+  const version = await resolveDesignVersion('platform')
+  const bg = version === 'v2' ? '#0A0A0F' : '#1a1a2e'
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#1a1a2e', color: '#e5e7eb' }}>
-      <PlatformSidebar userEmail={user?.email ?? '—'} role={role} legalPendingCount={legalPendingCount} teamPendingCount={teamPendingCount} designRequestCount={designRequestCount} />
-      <main style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }} className="platform-main">
-        {children}
-      </main>
-    </div>
+    <DesignVersionProvider version={version}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: bg, color: '#e5e7eb' }}>
+        <PlatformSidebar
+          userEmail={user?.email ?? '—'}
+          role={role}
+          legalPendingCount={legalPendingCount}
+          teamPendingCount={teamPendingCount}
+          designRequestCount={designRequestCount}
+        />
+        <main style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }} className="platform-main">
+          {version === 'v2' && <PlatformV2Banner />}
+          {children}
+        </main>
+      </div>
+    </DesignVersionProvider>
   )
 }
