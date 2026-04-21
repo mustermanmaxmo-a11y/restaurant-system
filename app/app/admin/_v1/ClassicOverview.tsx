@@ -118,7 +118,7 @@ function AdminContent() {
               onClick={() => router.push('/admin/setup')}
               style={{
                 background: 'var(--accent)',
-                color: '#fff',
+                color: 'var(--accent-text)',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '8px 20px',

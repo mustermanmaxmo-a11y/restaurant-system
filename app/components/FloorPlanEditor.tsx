@@ -190,7 +190,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
         </p>
         <label style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
-          background: 'var(--accent)', color: '#fff', borderRadius: '8px',
+          background: 'var(--accent)', color: 'var(--accent-text)', borderRadius: '8px',
           padding: '8px 18px', fontWeight: 600, fontSize: '0.875rem',
           cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.7 : 1,
         }}>
@@ -247,7 +247,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
                 background: 'var(--accent)', opacity: 0.7,
                 border: '2.5px dashed #fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontWeight: 700, fontSize: '0.7rem',
+                color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.7rem',
                 pointerEvents: 'none', zIndex: 20,
               }}>
                 {ghostTable.table_num}
@@ -284,11 +284,11 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
                   <button onClick={() => setEditCapacity(c => Math.max(1, c - 1))} style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--surface-2)', border: 'none', color: 'var(--text)', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700 }}>−</button>
                   <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.3rem', minWidth: '32px', textAlign: 'center' }}>{editCapacity}</span>
-                  <button onClick={() => setEditCapacity(c => Math.min(30, c + 1))} style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent)', border: 'none', color: '#fff', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700 }}>+</button>
+                  <button onClick={() => setEditCapacity(c => Math.min(30, c + 1))} style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', fontSize: '1.1rem', cursor: 'pointer', fontWeight: 700 }}>+</button>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setEditingTable(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600 }}>Abbrechen</button>
-                  <button onClick={saveCapacity} disabled={savingCapacity} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 700, opacity: savingCapacity ? 0.7 : 1 }}>
+                  <button onClick={saveCapacity} disabled={savingCapacity} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', cursor: 'pointer', fontWeight: 700, opacity: savingCapacity ? 0.7 : 1 }}>
                     {savingCapacity ? '...' : 'Speichern'}
                   </button>
                 </div>
@@ -319,7 +319,7 @@ export default function FloorPlanEditor({ restaurant, tables, onTablesUpdate }: 
                       width: '28px', height: '28px', borderRadius: '50%',
                       background: 'var(--accent)', opacity: draggingId === table.id ? 0.4 : 1,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontWeight: 700, fontSize: '0.7rem',
+                      color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.7rem',
                     }}>
                       {table.table_num}
                     </div>
@@ -364,7 +364,7 @@ function TableMarker({ table, pos, isDragging, onPointerDown, onRemove }: {
         border: '2.5px solid #fff',
         boxShadow: isDragging ? '0 6px 20px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.25)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontWeight: 700, fontSize: '0.7rem',
+        color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.7rem',
         cursor: isDragging ? 'grabbing' : 'grab',
         zIndex: isDragging ? 30 : 10,
         touchAction: 'none',

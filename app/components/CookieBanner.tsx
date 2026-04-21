@@ -67,7 +67,7 @@ export function CookieBanner() {
         onClick={dismiss}
         style={{
           background: 'var(--accent, #6c63ff)',
-          color: '#fff',
+          color: 'var(--accent-text, #fff)',
           border: 'none',
           borderRadius: '8px',
           padding: '8px 16px',

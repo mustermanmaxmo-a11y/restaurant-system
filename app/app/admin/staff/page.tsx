@@ -95,7 +95,7 @@ export default function StaffPage() {
         </div>
         <button
           onClick={openAdd}
-          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
         >
           + Mitarbeiter
         </button>
@@ -106,7 +106,7 @@ export default function StaffPage() {
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><ChefHat size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch kein Staff angelegt</p>
-            <button onClick={openAdd} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={openAdd} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
               Ersten Mitarbeiter anlegen
             </button>
           </div>
@@ -186,7 +186,7 @@ export default function StaffPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
-              <button onClick={save} disabled={saving || !name.trim() || !code.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={save} disabled={saving || !name.trim() || !code.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
                 {saving ? '...' : t('common.save')}
               </button>
             </div>

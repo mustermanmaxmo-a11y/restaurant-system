@@ -146,7 +146,7 @@ export default function SettingsPage() {
               disabled={pwLoading || !newPassword || !confirmPassword}
               style={{
                 alignSelf: 'flex-start', padding: '9px 18px', borderRadius: '8px',
-                border: 'none', background: 'var(--accent)', color: '#fff',
+                border: 'none', background: 'var(--accent)', color: 'var(--accent-text)',
                 fontSize: '0.82rem', fontWeight: 700,
                 cursor: pwLoading || !newPassword || !confirmPassword ? 'not-allowed' : 'pointer',
                 opacity: pwLoading || !newPassword || !confirmPassword ? 0.6 : 1,

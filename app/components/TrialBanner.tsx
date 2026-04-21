@@ -58,7 +58,7 @@ export function TrialBanner({ plan, trialEndsAt }: TrialBannerProps) {
             borderRadius: '8px',
             border: 'none',
             background: 'var(--accent)',
-            color: '#fff',
+            color: 'var(--accent-text)',
             fontWeight: 700,
             fontSize: '0.8rem',
             cursor: 'pointer',
@@ -97,7 +97,7 @@ export function TrialBanner({ plan, trialEndsAt }: TrialBannerProps) {
           onClick={() => router.push('/admin/billing')}
           style={{
             padding: '8px 20px', borderRadius: '8px', border: 'none',
-            background: 'var(--accent)', color: '#fff', fontWeight: 700,
+            background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 700,
             fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap',
           }}
         >

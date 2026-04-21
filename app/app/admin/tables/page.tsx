@@ -140,7 +140,7 @@ export default function TablesPage() {
           {adminTab === 'tables' && (
             <button
               onClick={() => setShowModal(true)}
-              style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
             >
               + Tisch anlegen
             </button>
@@ -179,7 +179,7 @@ export default function TablesPage() {
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Armchair size={48} color="var(--text-muted)" /></div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch keine Tische angelegt</p>
-            <button onClick={() => setShowModal(true)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => setShowModal(true)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 24px', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
               Ersten Tisch anlegen
             </button>
           </div>
@@ -203,7 +203,7 @@ export default function TablesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <button
                     onClick={() => setQrModal(table)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}
                   >
                     QR-Code anzeigen
                   </button>
@@ -261,7 +261,7 @@ export default function TablesPage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowModal(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
-              <button onClick={addTable} disabled={saving || !tableNum} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={addTable} disabled={saving || !tableNum} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
                 {saving ? '...' : 'Anlegen'}
               </button>
             </div>
@@ -292,7 +292,7 @@ export default function TablesPage() {
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => copyUrl(qrModal)} style={{ flex: 1, padding: '10px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', border: `1px solid ${copiedId === qrModal.id ? '#10b98144' : 'var(--border)'}`, background: copiedId === qrModal.id ? '#10b98112' : 'transparent', color: copiedId === qrModal.id ? '#10b981' : 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>{copiedId === qrModal.id ? <><Check size={13} />Kopiert!</> : 'Link kopieren'}</button>
-              <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{t('common.close')}</button>
+              <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>{t('common.close')}</button>
             </div>
           </div>
         </div>

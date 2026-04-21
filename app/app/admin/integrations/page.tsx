@@ -314,7 +314,7 @@ function IntegrationsContent() {
                     <button
                       onClick={saveAiKey}
                       disabled={aiKeySaving || !aiKey.trim()}
-                      style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', opacity: aiKeySaving || !aiKey.trim() ? 0.5 : 1 }}
+                      style={{ background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', opacity: aiKeySaving || !aiKey.trim() ? 0.5 : 1 }}
                     >
                       {aiKeySaving ? 'Speichert...' : 'Speichern'}
                     </button>
@@ -381,7 +381,7 @@ function IntegrationsContent() {
                         { step: '6', text: 'Füge den Key oben ein und klicke auf "Speichern"' },
                       ].map(item => (
                         <div key={item.step} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                          <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent)', color: 'var(--accent-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
                             {item.step}
                           </div>
                           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, margin: 0 }}>

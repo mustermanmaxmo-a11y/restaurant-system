@@ -85,7 +85,7 @@ export default function OpeningHoursPage() {
         <button
           onClick={save}
           disabled={saving}
-          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
+          style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 20px', color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.875rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >
           {saving ? '...' : saved ? <Check size={16} /> : t('common.save')}
         </button>

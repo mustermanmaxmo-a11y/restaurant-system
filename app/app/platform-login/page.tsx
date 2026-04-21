@@ -158,14 +158,14 @@ export default function PlatformLoginPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', color: '#444', fontSize: '0.8rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '24px', color: '#999', fontSize: '0.8rem' }}>
           <a href="/forgot-password" style={{ color: '#ef4444', fontWeight: 600, textDecoration: 'none' }}>
             Passwort vergessen?
           </a>
         </p>
-        <p style={{ textAlign: 'center', marginTop: '16px', color: '#444', fontSize: '0.8rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '16px', color: '#999', fontSize: '0.8rem' }}>
           Restaurant-Owner?{' '}
-          <a href="/owner-login" style={{ color: '#666', fontWeight: 600, textDecoration: 'none' }}>
+          <a href="/owner-login" style={{ color: '#bbb', fontWeight: 600, textDecoration: 'none' }}>
             Zum Restaurant-Login
           </a>
         </p>

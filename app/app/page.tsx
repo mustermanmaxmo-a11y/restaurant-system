@@ -23,7 +23,7 @@ export default function HomePage() {
             href="/register"
             style={{
               background: 'var(--accent)',
-              color: '#fff',
+              color: 'var(--accent-text)',
               padding: '8px 20px',
               borderRadius: '8px',
               fontSize: '0.9rem',
@@ -50,7 +50,7 @@ export default function HomePage() {
             href="/register"
             style={{
               background: 'var(--accent)',
-              color: '#fff',
+              color: 'var(--accent-text)',
               padding: '16px 36px',
               borderRadius: '12px',
               fontSize: '1.1rem',

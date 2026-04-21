@@ -191,7 +191,7 @@ export default function ReservierenV1() {
           </div>
           <button
             onClick={toggleTheme}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0, marginTop: '4px' }}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-text)', flexShrink: 0, marginTop: '4px' }}
             title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -280,7 +280,7 @@ export default function ReservierenV1() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <button onClick={() => setResGuests(g => Math.max(1, g - 1))} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface-2)', border: '1.5px solid var(--border)', color: 'var(--text)', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>−</button>
                 <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.2rem', minWidth: '32px', textAlign: 'center' }}>{resGuests}</span>
-                <button onClick={() => setResGuests(g => Math.min(20, g + 1))} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700, color: '#fff' }}>+</button>
+                <button onClick={() => setResGuests(g => Math.min(20, g + 1))} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700, color: 'var(--accent-text)' }}>+</button>
               </div>
             </div>
 

@@ -150,7 +150,7 @@ export default function SpecialsPage() {
         <button
           onClick={openAddModal}
           style={{
-            background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px',
+            background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: '10px',
             padding: '10px 18px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap',
           }}
@@ -304,7 +304,7 @@ export default function SpecialsPage() {
               <button
                 onClick={save}
                 disabled={saving || !selectedItemId}
-                style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '0.88rem', cursor: saving || !selectedItemId ? 'not-allowed' : 'pointer', opacity: saving || !selectedItemId ? 0.6 : 1 }}
+                style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.88rem', cursor: saving || !selectedItemId ? 'not-allowed' : 'pointer', opacity: saving || !selectedItemId ? 0.6 : 1 }}
               >{saving ? 'Speichert...' : editingId ? 'Änderungen speichern' : 'Angebot erstellen'}</button>
             </div>
           </div>

@@ -561,7 +561,7 @@ export default function BestellenV1() {
               onClick={createGroup}
               disabled={!memberName.trim() || groupLoading}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              style={{ padding: '16px', borderRadius: '14px', border: 'none', background: memberName.trim() ? 'var(--accent)' : 'var(--border)', color: memberName.trim() ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '1rem', cursor: memberName.trim() ? 'pointer' : 'not-allowed' }}
+              style={{ padding: '16px', borderRadius: '14px', border: 'none', background: memberName.trim() ? 'var(--accent)' : 'var(--border)', color: memberName.trim() ? 'var(--accent-text)' : 'var(--text-muted)', fontWeight: 800, fontSize: '1rem', cursor: memberName.trim() ? 'pointer' : 'not-allowed' }}
             >
               {groupLoading ? 'Erstelle Gruppe...' : 'Gruppe starten →'}
             </motion.button>
@@ -591,7 +591,7 @@ export default function BestellenV1() {
               onClick={joinGroup}
               disabled={joinCodeInput.length < 4 || !memberName.trim() || groupLoading}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              style={{ padding: '16px', borderRadius: '14px', border: 'none', background: joinCodeInput.length === 4 && memberName.trim() ? 'var(--accent)' : 'var(--border)', color: joinCodeInput.length === 4 && memberName.trim() ? '#fff' : 'var(--text-muted)', fontWeight: 800, fontSize: '1rem', cursor: joinCodeInput.length === 4 && memberName.trim() ? 'pointer' : 'not-allowed' }}
+              style={{ padding: '16px', borderRadius: '14px', border: 'none', background: joinCodeInput.length === 4 && memberName.trim() ? 'var(--accent)' : 'var(--border)', color: joinCodeInput.length === 4 && memberName.trim() ? 'var(--accent-text)' : 'var(--text-muted)', fontWeight: 800, fontSize: '1rem', cursor: joinCodeInput.length === 4 && memberName.trim() ? 'pointer' : 'not-allowed' }}
             >
               {groupLoading ? 'Suche Gruppe...' : 'Beitreten →'}
             </motion.button>
@@ -878,7 +878,7 @@ export default function BestellenV1() {
             <LanguageSelector direction="down" />
             <button
               onClick={toggleTheme}
-              style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-text)' }}
               title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -966,7 +966,7 @@ export default function BestellenV1() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <button onClick={() => setResGuests(g => Math.max(1, g - 1))} style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--surface-2)', border: '1.5px solid var(--border)', color: 'var(--text)', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700 }}>−</button>
                   <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.2rem', minWidth: '32px', textAlign: 'center' }}>{resGuests}</span>
-                  <button onClick={() => setResGuests(g => Math.min(20, g + 1))} className="btn-add" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700, color: '#fff' }}>+</button>
+                  <button onClick={() => setResGuests(g => Math.min(20, g + 1))} className="btn-add" style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', border: 'none', fontSize: '1.2rem', cursor: 'pointer', fontWeight: 700, color: 'var(--accent-text)' }}>+</button>
                 </div>
               </div>
 
@@ -1127,7 +1127,7 @@ export default function BestellenV1() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px' }}><Users size={14} /> Gruppe aktiv</span>
-              <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: '8px', padding: '2px 10px', fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.1em' }}>{groupCode}</span>
+              <span style={{ background: 'var(--accent)', color: 'var(--accent-text)', borderRadius: '8px', padding: '2px 10px', fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.1em' }}>{groupCode}</span>
             </div>
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -1361,7 +1361,7 @@ export default function BestellenV1() {
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               style={{
                 background: 'var(--accent)', border: 'none', borderRadius: '50px',
-                padding: '16px 22px 16px 16px', color: '#fff', fontWeight: 700,
+                padding: '16px 22px 16px 16px', color: 'var(--accent-text)', fontWeight: 700,
                 cursor: 'pointer', fontSize: '0.95rem',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
                 display: 'flex', alignItems: 'center', gap: '14px', width: '100%',
@@ -1476,7 +1476,7 @@ export default function BestellenV1() {
                                     const menuItem = items.find(i => i.id === gi.item_id)
                                     if (menuItem) addToGroupCart(menuItem)
                                   }}
-                                  style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >+</motion.button>
                               </div>
                             ) : (
@@ -1512,7 +1512,7 @@ export default function BestellenV1() {
                           <motion.button
                             whileTap={{ scale: 0.85 }}
                             onClick={() => addToCart(item)}
-                            style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >+</motion.button>
                         </div>
                       </motion.div>
@@ -1652,7 +1652,7 @@ export default function BestellenV1() {
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                  style={{ flex: 1, height: '44px', borderRadius: '12px', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem', fontWeight: 700 }}
+                  style={{ flex: 1, height: '44px', borderRadius: '12px', background: 'var(--accent)', border: 'none', color: 'var(--accent-text)', cursor: 'pointer', fontSize: '1rem', fontWeight: 700 }}
                 >
                   {t('order.addToCart')} · {(selectedItem.price * detailQty).toFixed(2)} €
                 </motion.button>

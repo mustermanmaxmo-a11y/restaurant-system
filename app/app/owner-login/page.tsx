@@ -141,7 +141,7 @@ export default function OwnerLoginPage() {
                 borderRadius: '10px',
                 border: 'none',
                 background: loading ? 'var(--border)' : 'var(--accent)',
-                color: '#fff',
+                color: 'var(--accent-text)',
                 fontSize: '1rem',
                 fontWeight: 700,
                 cursor: loading ? 'not-allowed' : 'pointer',

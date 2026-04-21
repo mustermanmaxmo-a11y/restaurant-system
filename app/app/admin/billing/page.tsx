@@ -128,7 +128,7 @@ export default function BillingPage() {
                 disabled={redirecting}
                 style={{
                   width: '100%', padding: '14px', borderRadius: '10px', border: 'none',
-                  background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+                  background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 700, fontSize: '0.95rem',
                   cursor: redirecting ? 'not-allowed' : 'pointer', opacity: redirecting ? 0.7 : 1,
                 }}
               >
@@ -158,7 +158,7 @@ export default function BillingPage() {
             {restaurant?.plan === 'starter' ? (
               <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem', display:'flex',alignItems:'center',justifyContent:'center',gap:'5px' }}><Check size={14} />Aktueller Plan</div>
             ) : (
-              <button onClick={() => handleSelectPlan('starter')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
+              <button onClick={() => handleSelectPlan('starter')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
                 {planLoading ? '...' : 'Starter wählen'}
               </button>
             )}
@@ -169,7 +169,7 @@ export default function BillingPage() {
             background: 'var(--surface)', border: `2px solid ${restaurant?.plan === 'pro' ? 'var(--accent)' : 'var(--border)'}`,
             borderRadius: '16px', padding: '24px', position: 'relative',
           }}>
-            <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+            <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: 'var(--accent-text)', fontSize: '0.7rem', fontWeight: 700, padding: '4px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
               Empfohlen
             </div>
             <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '4px' }}>Professional</p>
@@ -182,7 +182,7 @@ export default function BillingPage() {
             {restaurant?.plan === 'pro' ? (
               <div style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem', display:'flex',alignItems:'center',justifyContent:'center',gap:'5px' }}><Check size={14} />Aktueller Plan</div>
             ) : (
-              <button onClick={() => handleSelectPlan('pro')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
+              <button onClick={() => handleSelectPlan('pro')} disabled={planLoading} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 700, cursor: 'pointer', opacity: planLoading ? 0.6 : 1 }}>
                 {planLoading ? '...' : 'Professional wählen'}
               </button>
             )}

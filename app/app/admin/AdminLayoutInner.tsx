@@ -164,10 +164,10 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Utensils size={13} color="#fff" /></div>
+          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Utensils size={13} color="var(--accent-text)" /></div>
           <span style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.85rem' }}>RestaurantOS</span>
         </div>
-        <button onClick={() => setMobileOpen(o => !o)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}>
+        <button onClick={() => setMobileOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'var(--accent-text)', fontSize: '1.2rem', cursor: 'pointer', padding: '4px' }}>
           {mobileOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>

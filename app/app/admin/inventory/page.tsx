@@ -438,7 +438,7 @@ export default function InventoryPage() {
   }
   const labelStyle = { display: 'block', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '4px', fontWeight: 500 }
   const btnPrimary = {
-    background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '8px',
+    background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: '8px',
     padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem',
   }
   const btnSecondary = {

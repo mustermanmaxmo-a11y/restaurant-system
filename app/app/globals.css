@@ -22,6 +22,7 @@
   --sidebar-text: rgba(255,255,255,0.55);
   --sidebar-active-bg: rgba(255,255,255,0.08);
   --sidebar-active-text: #FFFFFF;
+  --accent-text: #111111;
   --status-new: #FF6B2C;
   --status-new-bg: #FFF0E8;
   --status-cooking: #F59E0B;
@@ -50,6 +51,7 @@
   --sidebar-text: rgba(255,255,255,0.4);
   --sidebar-active-bg: rgba(255,255,255,0.06);
   --sidebar-active-text: #F2F2F2;
+  --accent-text: #111111;
   --status-new: #FF6B2C;
   --status-new-bg: #2A1500;
   --status-cooking: #F59E0B;
@@ -81,6 +83,7 @@
 
   --btn-bg: linear-gradient(135deg, #EA580C, #F97316);
   --btn-text: #FFFFFF;
+  --accent-text: #FFFFFF;
 
   --header-bg: #0A0A0F;
   --header-text: #F5F5F7;

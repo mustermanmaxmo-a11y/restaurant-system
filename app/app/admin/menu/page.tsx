@@ -411,7 +411,7 @@ export default function MenuPage() {
           </button>
           <button
             onClick={openAddCategory}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
           >
             + Kategorie
           </button>
@@ -474,7 +474,7 @@ export default function MenuPage() {
                 <div style={{ textAlign: 'center', padding: '60px 0' }}>
                   <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><UtensilsCrossed size={40} color="var(--text-muted)" /></div>
                   <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Noch keine Items in dieser Kategorie</p>
-                  <button onClick={() => openAddItem(activeCategory)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={() => openAddItem(activeCategory)} style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '10px 20px', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
                     Erstes Item anlegen
                   </button>
                 </div>
@@ -576,7 +576,7 @@ export default function MenuPage() {
                 )}
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
-                  <button onClick={saveCategory} disabled={saving || !catName.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={saveCategory} disabled={saving || !catName.trim()} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
                     {saving ? '...' : t('common.save')}
                   </button>
                 </div>
@@ -642,7 +642,7 @@ export default function MenuPage() {
                       <button
                         onClick={analyzeAiFile}
                         disabled={!aiFile}
-                        style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: aiFile ? 'var(--accent)' : 'var(--border)', color: '#fff', fontWeight: 600, cursor: aiFile ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: aiFile ? 'var(--accent)' : 'var(--border)', color: 'var(--accent-text)', fontWeight: 600, cursor: aiFile ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '6px' }}
                       >
                         <Sparkles size={14} /> Analysieren
                       </button>
@@ -784,7 +784,7 @@ export default function MenuPage() {
                         <button
                           onClick={confirmAiImport}
                           disabled={aiImporting || aiSelected.size === 0}
-                          style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: aiImporting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: aiImporting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                         >
                           {aiImporting ? <><Loader2 size={14} className="ai-spin" /> Importiere…</> : <>{aiSelected.size} {aiSelected.size === 1 ? 'Gericht' : 'Gerichte'} importieren</>}
                         </button>
@@ -881,7 +881,7 @@ export default function MenuPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
-                  <button onClick={saveItem} disabled={saving || !itemName.trim() || !itemPrice} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={saveItem} disabled={saving || !itemName.trim() || !itemPrice} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>
                     {saving ? '...' : t('common.save')}
                   </button>
                 </div>

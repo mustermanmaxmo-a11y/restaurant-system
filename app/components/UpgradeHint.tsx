@@ -43,7 +43,7 @@ export function UpgradeHint({ feature, requiredPlan = 'pro' }: UpgradeHintProps)
           borderRadius: '10px',
           border: 'none',
           background: 'var(--accent)',
-          color: '#fff',
+          color: 'var(--accent-text)',
           fontWeight: 700,
           fontSize: '0.85rem',
           cursor: 'pointer',
