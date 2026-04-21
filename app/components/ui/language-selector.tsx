@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LANGUAGES } from '@/lib/translations'
 
-export function LanguageSelector({ direction = 'up' }: { direction?: 'up' | 'down' }) {
+export function LanguageSelector({ direction }: { direction?: 'up' | 'down' }) {
   const { lang, setLang } = useLanguage()
   const [open, setOpen] = useState(false)
+  const [resolvedDirection, setResolvedDirection] = useState<'up' | 'down'>(direction ?? 'up')
   const ref = useRef<HTMLDivElement>(null)
 
   const current = LANGUAGES.find(l => l.code === lang)!
@@ -19,10 +20,23 @@ export function LanguageSelector({ direction = 'up' }: { direction?: 'up' | 'dow
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  function handleToggle() {
+    if (!open && !direction && ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      const dropdownHeight = LANGUAGES.length * 38 + 12
+      const spaceBelow = window.innerHeight - rect.bottom
+      const spaceAbove = rect.top
+      setResolvedDirection(spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove ? 'down' : 'up')
+    }
+    setOpen(o => !o)
+  }
+
+  const effectiveDirection = direction ?? resolvedDirection
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs cursor-pointer"
         style={{
           background: 'var(--surface-2)',
@@ -39,7 +53,7 @@ export function LanguageSelector({ direction = 'up' }: { direction?: 'up' | 'dow
       {open && (
         <div style={{
           position: 'absolute',
-          ...(direction === 'down'
+          ...(effectiveDirection === 'down'
             ? { top: 'calc(100% + 6px)' }
             : { bottom: 'calc(100% + 6px)' }),
           left: 0, zIndex: 100,
