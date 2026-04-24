@@ -70,6 +70,8 @@ export interface Table {
   section: string | null
   shape: 'rect' | 'circle' | null
   active: boolean
+  occupied_manual: boolean
+  occupied_since: string | null
   created_at: string
 }
 
@@ -136,6 +138,7 @@ export interface Order {
     zip: string
   } | null
   estimated_time: number | null
+  source: 'guest' | 'staff'
   created_at: string
 }
 
