@@ -9,6 +9,7 @@ import {
   ClipboardList, ChefHat, CheckCircle2, Car, User, Phone, MapPin,
   AlertTriangle, Bell, BellRing, Receipt, CalendarDays, Users, Bike, X,
 } from 'lucide-react'
+import StaffOrderPanel from './StaffOrderPanel'
 
 type Session = { staff: Staff; restaurant: Restaurant }
 type Column = 'new' | 'cooking' | 'served'
@@ -42,6 +43,7 @@ export default function DashboardPage() {
 
   const [tableMap, setTableMap] = useState<Record<string, number>>({})
   const [tables, setTables] = useState<Table[]>([])
+  const [orderingTable, setOrderingTable] = useState<Table | null>(null)
 
   // Load orders
   const loadOrders = useCallback(async (restaurantId: string) => {
@@ -677,6 +679,23 @@ export default function DashboardPage() {
                       ) : (
                         <p style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>Frei</p>
                       )}
+                      <button
+                        onClick={() => setOrderingTable(table)}
+                        style={{
+                          marginTop: '10px',
+                          width: '100%',
+                          background: '#e5b44b',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '5px 0',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        + Bestellen
+                      </button>
                     </div>
                   )
                 })}
@@ -685,6 +704,43 @@ export default function DashboardPage() {
           </div>
         )
       })()}
+
+      {/* Staff Order Panel — Desktop slide-over */}
+      {orderingTable && (
+        <div className="hidden md:block">
+          {/* Backdrop */}
+          <div
+            onClick={() => setOrderingTable(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 40 }}
+          />
+          {/* Panel */}
+          <div style={{
+            position: 'fixed', right: 0, top: 0, height: '100%', width: '380px',
+            zIndex: 50, background: '#141414', borderLeft: '1px solid #2a2a2a', overflowY: 'auto',
+          }}>
+            <StaffOrderPanel
+              table={orderingTable}
+              restaurantId={session.restaurant.id}
+              existingOrders={orders.filter(o => o.table_id === orderingTable.id && ['new', 'cooking'].includes(o.status))}
+              onClose={() => setOrderingTable(null)}
+              onOrderPlaced={() => { /* orders update via realtime subscription */ }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Staff Order Panel — Mobile fullscreen */}
+      {orderingTable && (
+        <div className="md:hidden" style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#0d0d0d', overflowY: 'auto' }}>
+          <StaffOrderPanel
+            table={orderingTable}
+            restaurantId={session.restaurant.id}
+            existingOrders={orders.filter(o => o.table_id === orderingTable.id && ['new', 'cooking'].includes(o.status))}
+            onClose={() => setOrderingTable(null)}
+            onOrderPlaced={() => { /* orders update via realtime subscription */ }}
+          />
+        </div>
+      )}
 
       {/* Reservierungen View */}
       {view === 'reservations' && (() => {
