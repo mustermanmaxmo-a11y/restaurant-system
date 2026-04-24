@@ -72,6 +72,29 @@ export default function ReservierenV1() {
     load()
   }, [slug])
 
+  useEffect(() => {
+    if (!restaurant?.id) return
+    const channel = supabase
+      .channel(`reservieren-tables-${restaurant.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tables',
+        filter: `restaurant_id=eq.${restaurant.id}`
+      }, () => {
+        supabase
+          .from('tables')
+          .select('*')
+          .eq('restaurant_id', restaurant.id)
+          .eq('active', true)
+          .then(({ data }) => {
+            if (data) setTables(data as Table[])
+          })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [restaurant?.id])
+
   async function submitReservation() {
     if (!restaurant || !resName.trim() || !resPhone.trim() || !resDate || !resTime) return
     setResSubmitting(true)
@@ -104,6 +127,7 @@ export default function ReservierenV1() {
   function getTableStatus(table: Table, date: string, timeFrom: string, guests: number): TableStatus {
     if (table.position_x === null || table.position_y === null) return 'no-position'
     if (table.capacity < guests) return 'taken'
+    if (table.occupied_manual) return 'taken'
     const [rh, rm] = timeFrom.split(':').map(Number)
     const requestMin = rh * 60 + rm
     const hasConflict = allReservations.some(r => {
