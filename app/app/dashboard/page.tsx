@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [tableMap, setTableMap] = useState<Record<string, number>>({})
   const [tables, setTables] = useState<Table[]>([])
   const [orderingTable, setOrderingTable] = useState<Table | null>(null)
+  const [togglingTable, setTogglingTable] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   )
@@ -92,12 +93,17 @@ export default function DashboardPage() {
 
   // Toggle manual occupancy on a table
   const toggleOccupied = async (table: Table) => {
+    setTogglingTable(table.id)
     const newVal = !table.occupied_manual
-    await supabase.from('tables').update({
+    const { error } = await supabase.from('tables').update({
       occupied_manual: newVal,
       occupied_since: newVal ? new Date().toISOString() : null,
     }).eq('id', table.id)
-    // Realtime subscription will update state automatically
+    setTogglingTable(null)
+    if (error) {
+      console.error('Error toggling occupancy:', error)
+      return
+    }
   }
 
   // Load service calls
@@ -735,6 +741,7 @@ export default function DashboardPage() {
                       {!hasActiveOrders && (
                         <button
                           onClick={() => toggleOccupied(table)}
+                          disabled={togglingTable === table.id}
                           style={{
                             marginTop: 4,
                             width: '100%',
@@ -744,10 +751,11 @@ export default function DashboardPage() {
                             border: table.occupied_manual ? '1px solid #ef444488' : '1px solid #444',
                             background: table.occupied_manual ? '#ef444422' : 'transparent',
                             color: table.occupied_manual ? '#f87171' : '#666',
-                            cursor: 'pointer',
+                            cursor: togglingTable === table.id ? 'not-allowed' : 'pointer',
+                            opacity: togglingTable === table.id ? 0.5 : 1,
                           }}
                         >
-                          {table.occupied_manual ? 'Freigeben' : 'Besetzt markieren'}
+                          {togglingTable === table.id ? '…' : table.occupied_manual ? 'Freigeben' : 'Besetzt markieren'}
                         </button>
                       )}
                     </div>
