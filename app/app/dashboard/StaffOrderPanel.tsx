@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { X, Search, ShoppingCart, AlertTriangle, ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react'
 import type { Order, Table, MenuItem, MenuCategory } from '@/types/database'
+import { timeAgo } from '@/lib/utils'
 
 interface CartItem {
   item: MenuItem
@@ -22,13 +23,6 @@ const COMMON_ALLERGENS = ['Gluten', 'Laktose', 'Nüsse', 'Eier', 'Fisch', 'Soja'
 
 const ACCENT = '#e5b44b'
 
-function timeAgo(dateStr: string) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return `${diff}s`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  return `${Math.floor(diff / 3600)}h`
-}
-
 export default function StaffOrderPanel({
   table,
   restaurantId,
@@ -46,6 +40,8 @@ export default function StaffOrderPanel({
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [allergenOpen, setAllergenOpen] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const allergenRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function fetchMenu() {
@@ -70,6 +66,31 @@ export default function StaffOrderPanel({
     }
     fetchMenu()
   }, [restaurantId])
+
+  // Clear submit error whenever the cart changes
+  useEffect(() => {
+    if (submitError) setSubmitError(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart])
+
+  // Fix 4 — allergen dropdown outside-click + Escape dismiss
+  useEffect(() => {
+    if (!allergenOpen) return
+    const handler = (e: MouseEvent) => {
+      if (allergenRef.current && !allergenRef.current.contains(e.target as Node)) {
+        setAllergenOpen(false)
+      }
+    }
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAllergenOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', keyHandler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', keyHandler)
+    }
+  }, [allergenOpen])
 
   // Filtering
   const filteredItems = items.filter(item => {
@@ -110,8 +131,9 @@ export default function StaffOrderPanel({
   async function handleSubmit() {
     if (cart.length === 0 || submitting) return
     setSubmitting(true)
+    setSubmitError(null)
     const total = cart.reduce((s, c) => s + c.item.price * c.qty, 0)
-    await supabase.from('orders').insert({
+    const { error } = await supabase.from('orders').insert({
       restaurant_id: restaurantId,
       order_type: 'dine_in',
       table_id: table.id,
@@ -127,6 +149,11 @@ export default function StaffOrderPanel({
       total,
     })
     setSubmitting(false)
+    if (error) {
+      console.error('Order insert failed:', error)
+      setSubmitError('Bestellung konnte nicht gesendet werden. Bitte erneut versuchen.')
+      return
+    }
     onOrderPlaced()
     onClose()
   }
@@ -264,7 +291,7 @@ export default function StaffOrderPanel({
         </div>
 
         {/* Allergen filter */}
-        <div style={{ marginBottom: '16px', position: 'relative' }}>
+        <div ref={allergenRef} style={{ marginBottom: '16px', position: 'relative' }}>
           <button
             onClick={() => setAllergenOpen(o => !o)}
             style={{
@@ -436,6 +463,11 @@ export default function StaffOrderPanel({
 
       {/* Submit footer */}
       <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', flexShrink: 0, background: '#1a1a1a' }}>
+        {submitError && (
+          <p style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: '10px', textAlign: 'center' }}>
+            {submitError}
+          </p>
+        )}
         <button
           onClick={handleSubmit}
           disabled={cart.length === 0 || submitting}

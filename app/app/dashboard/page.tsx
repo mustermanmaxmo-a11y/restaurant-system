@@ -10,6 +10,7 @@ import {
   AlertTriangle, Bell, BellRing, Receipt, CalendarDays, Users, Bike, X,
 } from 'lucide-react'
 import StaffOrderPanel from './StaffOrderPanel'
+import { timeAgo } from '@/lib/utils'
 
 type Session = { staff: Staff; restaurant: Restaurant }
 type Column = 'new' | 'cooking' | 'served'
@@ -19,13 +20,6 @@ const COLUMNS: { key: Column; label: string; icon: LucideIcon; color: string; ne
   { key: 'cooking', label: 'In Zubereitung', icon: ChefHat,       color: '#ff6b35', next: 'served',  nextLabel: 'Serviert' },
   { key: 'served',  label: 'Serviert',       icon: CheckCircle2,  color: '#10b981' },
 ]
-
-function timeAgo(dateStr: string) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return `${diff}s`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  return `${Math.floor(diff / 3600)}h`
-}
 
 export default function DashboardPage() {
   const [session, setSession] = useState<Session | null>(null)
@@ -44,7 +38,9 @@ export default function DashboardPage() {
   const [tableMap, setTableMap] = useState<Record<string, number>>({})
   const [tables, setTables] = useState<Table[]>([])
   const [orderingTable, setOrderingTable] = useState<Table | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  )
 
   // Track mobile state
   useEffect(() => {
