@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import QRCode from 'qrcode'
 import { generateQrPdf } from '@/lib/qr-pdf'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -22,6 +23,7 @@ export default function TablesPage() {
   const [tableLabel, setTableLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [qrModal, setQrModal] = useState<Table | null>(null)
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const [adminTab, setAdminTab] = useState<'tables' | 'floorplan'>('tables')
   const [generatingPdf, setGeneratingPdf] = useState(false)
 
@@ -96,6 +98,11 @@ export default function TablesPage() {
   function getQrUrl(table: Table) {
     return `${window.location.origin}/order/${table.qr_token}`
   }
+
+  useEffect(() => {
+    if (!qrModal || !qrCanvasRef.current) return
+    QRCode.toCanvas(qrCanvasRef.current, getQrUrl(qrModal), { width: 200, margin: 1 })
+  }, [qrModal])
 
   const copyUrl = useCallback((table: Table) => {
     navigator.clipboard.writeText(getQrUrl(table))
@@ -276,14 +283,9 @@ export default function TablesPage() {
             <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '4px' }}>{qrModal.label}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '24px' }}>Scanne diesen QR-Code am Tisch</p>
 
-            {/* QR Code via API */}
+            {/* QR Code — client-side via qrcode library */}
             <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', display: 'inline-block', marginBottom: '20px' }}>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getQrUrl(qrModal))}`}
-                alt="QR Code"
-                width={200}
-                height={200}
-              />
+              <canvas ref={qrCanvasRef} width={200} height={200} />
             </div>
 
             <div style={{ background: 'var(--bg)', borderRadius: '8px', padding: '10px 14px', marginBottom: '20px', wordBreak: 'break-all' }}>
