@@ -52,11 +52,21 @@ export default function DashboardPage() {
 
   // Load orders
   const loadOrders = useCallback(async (restaurantId: string) => {
-    const [{ data: ordersData }, { data: tablesData }] = await Promise.all([
-      supabase.from('orders').select('*').eq('restaurant_id', restaurantId).in('status', ['new', 'cooking', 'out_for_delivery', 'served']).order('created_at', { ascending: true }), // pending_payment excluded intentionally
-      supabase.from('tables').select('id, table_num').eq('restaurant_id', restaurantId),
-    ])
+    const { data: ordersData } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .in('status', ['new', 'cooking', 'out_for_delivery', 'served'])
+      .order('created_at', { ascending: true }) // pending_payment excluded intentionally
     setOrders((ordersData as Order[]) || [])
+  }, [])
+
+  // Load tables (full rows for occupied_manual / occupied_since)
+  const loadTables = useCallback(async (restaurantId: string) => {
+    const { data: tablesData } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
     if (tablesData) {
       const map: Record<string, number> = {}
       tablesData.forEach(t => { map[t.id] = t.table_num })
@@ -80,6 +90,16 @@ export default function DashboardPage() {
     setReservations((data as Reservation[]) || [])
   }, [])
 
+  // Toggle manual occupancy on a table
+  const toggleOccupied = async (table: Table) => {
+    const newVal = !table.occupied_manual
+    await supabase.from('tables').update({
+      occupied_manual: newVal,
+      occupied_since: newVal ? new Date().toISOString() : null,
+    }).eq('id', table.id)
+    // Realtime subscription will update state automatically
+  }
+
   // Load service calls
   const loadCalls = useCallback(async (restaurantId: string) => {
     const { data } = await supabase
@@ -97,6 +117,7 @@ export default function DashboardPage() {
     const rId = session.restaurant.id
 
     loadOrders(rId)
+    loadTables(rId)
     loadCalls(rId)
     loadReservations(rId)
 
@@ -104,6 +125,12 @@ export default function DashboardPage() {
       .channel(`dashboard-orders-${rId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${rId}` },
         () => loadOrders(rId))
+      .subscribe()
+
+    const tablesChannel = supabase
+      .channel(`dashboard-tables-${rId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables', filter: `restaurant_id=eq.${rId}` },
+        () => loadTables(rId))
       .subscribe()
 
     const callsChannel = supabase
@@ -120,10 +147,11 @@ export default function DashboardPage() {
 
     return () => {
       supabase.removeChannel(ordersChannel)
+      supabase.removeChannel(tablesChannel)
       supabase.removeChannel(callsChannel)
       supabase.removeChannel(reservationsChannel)
     }
-  }, [session, loadOrders, loadCalls, loadReservations])
+  }, [session, loadOrders, loadTables, loadCalls, loadReservations])
 
   async function handleSlugSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
@@ -623,8 +651,8 @@ export default function DashboardPage() {
         const activeOrders = orders.filter(o => o.status === 'new' || o.status === 'cooking')
         const occupiedTableIds = new Set(activeOrders.map(o => o.table_id).filter(Boolean))
         const dineInTables = tables.filter(t => t.active)
-        const occupied = dineInTables.filter(t => occupiedTableIds.has(t.id))
-        const free = dineInTables.filter(t => !occupiedTableIds.has(t.id))
+        const occupied = dineInTables.filter(t => occupiedTableIds.has(t.id) || t.occupied_manual)
+        const free = dineInTables.filter(t => !occupiedTableIds.has(t.id) && !t.occupied_manual)
 
         return (
           <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
@@ -653,7 +681,8 @@ export default function DashboardPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
                 {dineInTables.sort((a, b) => a.table_num - b.table_num).map(table => {
                   const tableOrders = activeOrders.filter(o => o.table_id === table.id)
-                  const isOccupied = tableOrders.length > 0
+                  const hasActiveOrders = tableOrders.length > 0
+                  const isOccupied = hasActiveOrders || table.occupied_manual
                   const hasNew = tableOrders.some(o => o.status === 'new')
                   const borderColor = hasNew ? '#f59e0b' : isOccupied ? '#ff6b35' : '#2a2a2a'
                   const dotColor = hasNew ? '#f59e0b' : isOccupied ? '#ff6b35' : '#10b981'
@@ -670,7 +699,7 @@ export default function DashboardPage() {
                       {table.label !== `Tisch ${table.table_num}` && (
                         <p style={{ color: '#555', fontSize: '0.75rem', marginBottom: '8px' }}>{table.label}</p>
                       )}
-                      {isOccupied ? (
+                      {hasActiveOrders ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {tableOrders.map(o => (
                             <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -681,6 +710,8 @@ export default function DashboardPage() {
                             </div>
                           ))}
                         </div>
+                      ) : table.occupied_manual ? (
+                        <p style={{ color: '#ff6b35', fontSize: '0.8rem', fontWeight: 600 }}>● Besetzt</p>
                       ) : (
                         <p style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>Frei</p>
                       )}
@@ -701,6 +732,24 @@ export default function DashboardPage() {
                       >
                         + Bestellen
                       </button>
+                      {!hasActiveOrders && (
+                        <button
+                          onClick={() => toggleOccupied(table)}
+                          style={{
+                            marginTop: 4,
+                            width: '100%',
+                            padding: '2px 0',
+                            fontSize: 11,
+                            borderRadius: 4,
+                            border: table.occupied_manual ? '1px solid #ef444488' : '1px solid #444',
+                            background: table.occupied_manual ? '#ef444422' : 'transparent',
+                            color: table.occupied_manual ? '#f87171' : '#666',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {table.occupied_manual ? 'Freigeben' : 'Besetzt markieren'}
+                        </button>
+                      )}
                     </div>
                   )
                 })}
