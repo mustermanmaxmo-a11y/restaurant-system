@@ -44,6 +44,15 @@ export default function DashboardPage() {
   const [tableMap, setTableMap] = useState<Record<string, number>>({})
   const [tables, setTables] = useState<Table[]>([])
   const [orderingTable, setOrderingTable] = useState<Table | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Track mobile state
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   // Load orders
   const loadOrders = useCallback(async (restaurantId: string) => {
@@ -706,8 +715,8 @@ export default function DashboardPage() {
       })()}
 
       {/* Staff Order Panel — Desktop slide-over */}
-      {orderingTable && (
-        <div className="hidden md:block">
+      {orderingTable && !isMobile && (
+        <>
           {/* Backdrop */}
           <div
             onClick={() => setOrderingTable(null)}
@@ -726,12 +735,12 @@ export default function DashboardPage() {
               onOrderPlaced={() => { /* orders update via realtime subscription */ }}
             />
           </div>
-        </div>
+        </>
       )}
 
       {/* Staff Order Panel — Mobile fullscreen */}
-      {orderingTable && (
-        <div className="md:hidden" style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#0d0d0d', overflowY: 'auto' }}>
+      {orderingTable && isMobile && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: '#0d0d0d', overflowY: 'auto' }}>
           <StaffOrderPanel
             table={orderingTable}
             restaurantId={session.restaurant.id}
