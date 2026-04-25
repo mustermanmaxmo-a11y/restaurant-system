@@ -122,15 +122,26 @@ export default function StatsPage() {
   })).filter(h => h.count > 0)
 
   // Tisch-Aktivität
-  const tableActivity: Record<string, number> = {}
+  const tableActivity: Record<string, { count: number; revenue: number }> = {}
   orders.filter(o => o.table_id).forEach(o => {
-    tableActivity[o.table_id!] = (tableActivity[o.table_id!] || 0) + 1
+    if (!tableActivity[o.table_id!]) tableActivity[o.table_id!] = { count: 0, revenue: 0 }
+    tableActivity[o.table_id!].count++
+    tableActivity[o.table_id!].revenue += o.total || 0
   })
   const tableMap = Object.fromEntries(tables.map(t => [t.id, t.label || `Tisch ${t.table_num}`]))
   const tableChartData = Object.entries(tableActivity)
-    .map(([id, count]) => ({ name: tableMap[id] || 'Tisch', count }))
+    .map(([id, data]) => ({ name: tableMap[id] || 'Tisch', count: data.count, revenue: data.revenue }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
+
+  // Nach Wochentag
+  const DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+  const byDay = Array(7).fill(0)
+  orders.forEach(o => {
+    const d = new Date(o.created_at).getDay()
+    byDay[d]++
+  })
+  const maxDay = Math.max(...byDay, 1)
 
   const hasData = orders.length > 0
 
@@ -264,22 +275,55 @@ export default function StatsPage() {
               </div>
             )}
 
+            {/* Nach Wochentag */}
+            {orders.length > 0 && (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '4px' }}>Nach Wochentag</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '20px' }}>Ø Bestellungen pro Tag</p>
+                {DAYS.map((day, i) => (
+                  <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <div style={{ width: '24px', fontSize: '12px', color: '#888' }}>{day}</div>
+                    <div style={{ flex: 1, background: '#2a2a2a', borderRadius: '3px', height: '14px' }}>
+                      <div style={{
+                        background: byDay[i] === Math.max(...byDay) ? '#e5b44b' : '#e5b44b66',
+                        borderRadius: '3px',
+                        height: '100%',
+                        width: `${(byDay[i] / maxDay) * 100}%`,
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                    <div style={{ width: '28px', fontSize: '11px', color: byDay[i] === Math.max(...byDay) ? '#e5b44b' : '#888', textAlign: 'right' }}>
+                      {byDay[i]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Tisch-Aktivität */}
             {tableChartData.length > 0 && (
               <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
                 <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>Tisch-Aktivität</p>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={tableChartData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" width={70} tick={{ fill: 'var(--text)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}
-                      formatter={(v: unknown) => [`${v} Bestellungen`]}
-                    />
-                    <Bar dataKey="count" fill={COLORS[1]} radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ textAlign: 'left', padding: '8px 0', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>Tisch</th>
+                        <th style={{ textAlign: 'right', padding: '8px 0', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>Bestellungen</th>
+                        <th style={{ textAlign: 'right', padding: '8px 0', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600 }}>Umsatz</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tableChartData.map((t) => (
+                        <tr key={t.name} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '12px 0', color: 'var(--text)', fontSize: '0.9rem' }}>{t.name}</td>
+                          <td style={{ textAlign: 'right', padding: '12px 0', color: 'var(--text)', fontSize: '0.9rem' }}>{t.count}</td>
+                          <td style={{ textAlign: 'right', padding: '12px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t.revenue.toFixed(0)} €</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>
