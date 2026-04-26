@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { BarChart2 } from 'lucide-react'
 import WeeklyReport from './_components/WeeklyReport'
+import RevenueForecast from './_components/RevenueForecast'
 
 interface Reservation { id: string }
 interface Bestseller { name: string; qty: number }
@@ -334,6 +335,11 @@ export default function StatsPage() {
         {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (
           <div style={{ padding: '0 24px 24px' }}>
             <WeeklyReport restaurantId={restaurant.id} />
+          </div>
+        )}
+        {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise' || restaurant?.plan === 'trial') && (
+          <div style={{ padding: '0 24px 24px' }}>
+            <RevenueForecast restaurantId={restaurant.id} />
           </div>
         )}
       </div>
