@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { KeyRound, CheckCircle2 } from 'lucide-react'
+import { KeyRound, CheckCircle2, Sparkles } from 'lucide-react'
 
 export default function PlatformSettingsPage() {
   const [newPassword, setNewPassword] = useState('')
@@ -10,6 +10,29 @@ export default function PlatformSettingsPage() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
+
+  const [aiKey, setAiKey] = useState('')
+  const [aiKeySaving, setAiKeySaving] = useState(false)
+  const [aiKeySuccess, setAiKeySuccess] = useState(false)
+  const [aiKeyError, setAiKeyError] = useState('')
+
+  async function handleAiKeySave() {
+    if (!aiKey.trim()) { setAiKeyError('Bitte API Key eingeben.'); return }
+    setAiKeySaving(true)
+    setAiKeyError('')
+    setAiKeySuccess(false)
+    const { error } = await supabase
+      .from('platform_settings')
+      .update({ anthropic_api_key: aiKey.trim(), updated_at: new Date().toISOString() })
+      .eq('id', '00000000-0000-0000-0000-000000000001')
+    if (error) {
+      setAiKeyError('Speichern fehlgeschlagen: ' + error.message)
+    } else {
+      setAiKeySuccess(true)
+      setAiKey('')
+    }
+    setAiKeySaving(false)
+  }
 
   async function handlePasswordChange() {
     setPwError('')
@@ -36,6 +59,57 @@ export default function PlatformSettingsPage() {
       <p style={{ color: '#888', fontSize: '0.875rem', marginBottom: '40px' }}>
         Konto & Sicherheit
       </p>
+
+      <Section title="KI / Anthropic">
+        <div style={{
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '12px', padding: '20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(108,99,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Sparkles size={18} color="#6c63ff" />
+            </div>
+            <div>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', marginBottom: '2px' }}>Platform API Key</p>
+              <p style={{ color: '#888', fontSize: '0.78rem' }}>Anthropic Key für alle KI-Features — gilt für alle Restaurants</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="password"
+              placeholder="sk-ant-api03-..."
+              value={aiKey}
+              onChange={e => { setAiKey(e.target.value); setAiKeyError(''); setAiKeySuccess(false) }}
+              style={{
+                padding: '10px 12px', borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.05)', color: '#fff',
+                fontSize: '0.875rem', outline: 'none',
+                width: '100%', boxSizing: 'border-box', fontFamily: 'monospace',
+              }}
+            />
+            {aiKeyError && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{aiKeyError}</p>}
+            {aiKeySuccess && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem' }}>
+                <CheckCircle2 size={14} /> API Key gespeichert
+              </div>
+            )}
+            <button
+              onClick={handleAiKeySave}
+              disabled={aiKeySaving || !aiKey}
+              style={{
+                alignSelf: 'flex-start', padding: '9px 18px', borderRadius: '8px',
+                border: 'none', background: '#6c63ff', color: '#fff',
+                fontSize: '0.82rem', fontWeight: 700,
+                cursor: aiKeySaving || !aiKey ? 'not-allowed' : 'pointer',
+                opacity: aiKeySaving || !aiKey ? 0.6 : 1,
+              }}
+            >
+              {aiKeySaving ? 'Wird gespeichert...' : 'Key speichern'}
+            </button>
+          </div>
+        </div>
+      </Section>
 
       <Section title="Sicherheit">
         <div style={{

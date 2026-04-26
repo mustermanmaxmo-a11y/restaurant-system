@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Resolves the correct Anthropic API key for a restaurant based on their plan:
- * - enterprise → platform key (ANTHROPIC_API_KEY in .env)
- * - pro        → restaurant's own key (BYOK, stored in restaurants.anthropic_api_key)
- * - starter/other → null (AI not available)
+ * Resolves the Anthropic API key for a restaurant:
+ * 1. BYOK: restaurant's own key (if set) — takes priority
+ * 2. Platform key: stored in platform_settings (managed by platform admin)
+ * 3. Env var fallback: ANTHROPIC_API_KEY (local dev / legacy)
+ * Plans without AI access (starter): always returns null.
  *
- * SECURITY: Uses service role to read the key server-side only.
- * Never expose this function or its result to the client.
+ * SECURITY: Uses service role — server-side only. Never expose to client.
  */
 export async function resolveAiKey(restaurantId: string): Promise<string | null> {
   const supabase = createClient(
@@ -23,13 +23,20 @@ export async function resolveAiKey(restaurantId: string): Promise<string | null>
 
   if (!restaurant) return null
 
-  if (restaurant.plan === 'enterprise') {
-    return process.env.ANTHROPIC_API_KEY ?? null
-  }
+  const aiPlans = ['enterprise', 'pro', 'trial']
+  if (!aiPlans.includes(restaurant.plan)) return null
 
-  if (restaurant.plan === 'pro' || restaurant.plan === 'trial') {
-    return restaurant.anthropic_api_key ?? null
-  }
+  // BYOK: restaurant's own key takes priority
+  if (restaurant.anthropic_api_key) return restaurant.anthropic_api_key
 
-  return null
+  // Platform key from DB (set by platform admin in /platform/settings)
+  const { data: settings } = await supabase
+    .from('platform_settings')
+    .select('anthropic_api_key')
+    .single()
+
+  if (settings?.anthropic_api_key) return settings.anthropic_api_key
+
+  // Env var fallback (local dev)
+  return process.env.ANTHROPIC_API_KEY ?? null
 }
