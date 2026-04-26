@@ -12,6 +12,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { BarChart2 } from 'lucide-react'
+import WeeklyReport from './_components/WeeklyReport'
 
 interface Reservation { id: string }
 interface Bestseller { name: string; qty: number }
@@ -324,6 +325,12 @@ export default function StatsPage() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            )}
+            {/* KI-Wochenbericht — Pro/Enterprise only */}
+            {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (
+              <div style={{ padding: '0 0 24px' }}>
+                <WeeklyReport restaurantId={restaurant.id} />
               </div>
             )}
           </>

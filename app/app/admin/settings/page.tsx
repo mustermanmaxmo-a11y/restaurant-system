@@ -15,6 +15,9 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean } | null>(null)
+  const [emailToggleLoading, setEmailToggleLoading] = useState(false)
+
   // Password change state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -23,11 +26,20 @@ export default function SettingsPage() {
   const [pwSuccess, setPwSuccess] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/owner-login'); return }
       setEmail(session.user.email ?? '')
+      const { data: resto } = await supabase
+        .from('restaurants')
+        .select('id, plan, weekly_report_email')
+        .eq('owner_id', session.user.id)
+        .limit(1)
+        .single()
+      if (resto) setRestaurant(resto)
       setLoading(false)
-    })
+    }
+    init()
   }, [router])
 
   async function handleExport() {
@@ -66,6 +78,18 @@ export default function SettingsPage() {
     setPwLoading(false)
   }
 
+  async function handleEmailToggle() {
+    if (!restaurant) return
+    setEmailToggleLoading(true)
+    const newValue = !restaurant.weekly_report_email
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ weekly_report_email: newValue })
+      .eq('id', restaurant.id)
+    if (!error) setRestaurant(prev => prev ? { ...prev, weekly_report_email: newValue } : prev)
+    setEmailToggleLoading(false)
+  }
+
   async function handleDelete() {
     if (deleteInput !== 'LÖSCHEN') return
     setDeleting(true)
@@ -91,6 +115,44 @@ export default function SettingsPage() {
       <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '40px' }}>
         Konto & Datenschutz
       </p>
+
+      {/* KI-Wochenbericht E-Mail — Pro/Enterprise only */}
+      {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (
+        <div style={{
+          background: 'var(--surface)', borderRadius: '16px',
+          border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
+        }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
+            KI-Wochenbericht
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Erhalte jeden Montag automatisch den KI-Wochenbericht per E-Mail.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>Wöchentliche E-Mail</span>
+            <button
+              onClick={handleEmailToggle}
+              disabled={emailToggleLoading}
+              style={{
+                width: '48px', height: '26px', borderRadius: '13px', border: 'none',
+                background: restaurant.weekly_report_email ? 'var(--accent)' : 'var(--border)',
+                cursor: emailToggleLoading ? 'wait' : 'pointer',
+                position: 'relative', transition: 'background 0.2s',
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: '3px',
+                left: restaurant.weekly_report_email ? '25px' : '3px',
+                width: '20px', height: '20px', borderRadius: '50%',
+                background: '#fff', transition: 'left 0.2s',
+              }} />
+            </button>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '8px' }}>
+            {restaurant.weekly_report_email ? 'E-Mail aktiviert' : 'E-Mail deaktiviert'}
+          </p>
+        </div>
+      )}
 
       {/* Account Info */}
       <Section title="Konto">
