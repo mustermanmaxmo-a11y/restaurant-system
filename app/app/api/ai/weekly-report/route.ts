@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const prevSince = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [{ data: orders }, { data: prevOrders }] = await Promise.all([
+  const [{ data: orders, error: ordersErr }, { data: prevOrders, error: prevErr }] = await Promise.all([
     admin
       .from('orders')
       .select('total, items, order_type')
@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
       .lt('created_at', since)
       .neq('status', 'cancelled'),
   ])
+  if (ordersErr || prevErr) {
+    return NextResponse.json({ error: 'Datenabruf fehlgeschlagen' }, { status: 500 })
+  }
 
   const totalRevenue = (orders ?? []).reduce((s, o) => s + (o.total ?? 0), 0)
   const prevRevenue = (prevOrders ?? []).reduce((s, o) => s + (o.total ?? 0), 0)
@@ -66,8 +69,9 @@ export async function POST(request: NextRequest) {
   // Count items sold
   const itemCounts: Record<string, { name: string; count: number }> = {}
   ;(orders ?? []).forEach(order => {
-    const items = order.items as { name: string; qty: number }[]
+    const items = Array.isArray(order.items) ? (order.items as { name: string; qty: number }[]) : []
     items.forEach(item => {
+      if (!item?.name || typeof item.qty !== 'number') return
       if (!itemCounts[item.name]) itemCounts[item.name] = { name: item.name, count: 0 }
       itemCounts[item.name].count += item.qty
     })
