@@ -1,6 +1,7 @@
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
+import CreateRestaurantModal from '@/components/platform/CreateRestaurantModal'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,9 +67,12 @@ export default async function PlatformRestaurants() {
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>Restaurants</h1>
-        <p style={{ color: '#888', fontSize: '0.85rem' }}>{rows.length} insgesamt · sortiert nach Anmeldedatum</p>
+      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>Restaurants</h1>
+          <p style={{ color: '#888', fontSize: '0.85rem' }}>{rows.length} insgesamt · sortiert nach Anmeldedatum</p>
+        </div>
+        <CreateRestaurantModal role={role} />
       </div>
 
       <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden' }}>
