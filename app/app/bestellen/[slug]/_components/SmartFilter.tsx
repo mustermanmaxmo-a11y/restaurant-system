@@ -37,6 +37,7 @@ export default function SmartFilter({ restaurantId, items, accentColor = '#6c63f
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restaurantId, query: q, items }),
       })
+      if (!res.ok) { onFilterChange(null); return }
       const json: FilterResult = await res.json()
       onFilterChange(json)
     } catch {
