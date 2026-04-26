@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { MenuCategory, MenuItem, Restaurant, ExtractedMenuItem } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
-import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2, Sparkles, Upload, FileText } from 'lucide-react'
+import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2, Sparkles, Upload, FileText, BarChart2 } from 'lucide-react'
+import ProfitabilityPanel from './_components/ProfitabilityPanel'
 
 type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | 'ai-import' | null
 type AiPhase = 'upload' | 'extracting' | 'review'
@@ -32,6 +33,7 @@ export default function MenuPage() {
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<ModalType>(null)
+  const [showProfitability, setShowProfitability] = useState(false)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -397,6 +399,20 @@ export default function MenuPage() {
           <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Menü verwalten</h1>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise' || restaurant?.plan === 'trial') && (
+            <button
+              onClick={() => setShowProfitability(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '10px',
+                border: '1.5px solid var(--accent)', background: 'var(--accent-subtle)',
+                color: 'var(--accent)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+              }}
+            >
+              <BarChart2 size={14} />
+              Profitabilität
+            </button>
+          )}
           <button
             onClick={openAiImport}
             disabled={!aiEnabled}
@@ -915,6 +931,14 @@ export default function MenuPage() {
             )}
           </div>
         </div>
+      )}
+
+      {showProfitability && restaurant && (
+        <ProfitabilityPanel
+          restaurantId={restaurant.id}
+          items={items}
+          onClose={() => setShowProfitability(false)}
+        />
       )}
     </div>
   )
