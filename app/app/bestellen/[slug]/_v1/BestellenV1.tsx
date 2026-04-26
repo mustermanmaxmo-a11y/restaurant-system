@@ -676,17 +676,17 @@ export default function BestellenV1() {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '50%',
-                    background: statusIdx >= i ? 'var(--btn-bg)' : 'var(--surface-2)',
+                    background: statusIdx >= i ? '#111111' : '#E8E8E8',
+                    color: statusIdx >= i ? '#fff' : '#999',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: statusIdx >= i ? '1rem' : '0.85rem',
                     transition: 'all 0.5s',
                     boxShadow: statusIdx === i ? '0 0 0 4px rgba(17,17,17,0.15)' : 'none',
                   }}>
                     {statusIdx > i ? <CheckCircle2 size={16} /> : <step.icon size={16} />}
                   </div>
-                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? 'var(--btn-text)' : 'var(--text-muted)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
+                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? '#111111' : '#AAAAAA', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
                 </div>
-                {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? 'var(--btn-bg)' : 'var(--border)', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
+                {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? '#111111' : '#E8E8E8', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
               </div>
             ))}
           </div>

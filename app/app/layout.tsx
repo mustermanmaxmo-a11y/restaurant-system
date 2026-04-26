@@ -26,6 +26,7 @@ const allFontVars = [
 export const metadata: Metadata = {
   title: 'RestaurantOS',
   description: 'Digitales Restaurant-System',
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
@@ -41,7 +42,7 @@ export default function RootLayout({
             __html: `(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.classList.toggle('dark',t==='dark');})();`,
           }}
         />
-        <link rel="manifest" href="/manifest.json" />
+
         <meta name="theme-color" content="#6c63ff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

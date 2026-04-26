@@ -1,6 +1,6 @@
-const CACHE_NAME = 'restaurantos-v1'
+const CACHE_NAME = 'restaurantos-v2'
 
-const APP_SHELL = ['/admin']
+const APP_SHELL = ['/admin', '/dashboard']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -20,8 +20,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
+    const url = new URL(event.request.url)
+    const fallback = url.pathname.startsWith('/dashboard') ? '/dashboard' : '/admin'
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('/admin'))
+      fetch(event.request).catch(() => caches.match(fallback))
     )
   }
 })
