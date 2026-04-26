@@ -14,6 +14,7 @@ import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, Gro
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
+import SmartFilter from '../_components/SmartFilter'
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, ChefHat, CheckCircle2, XCircle, Clock, User, Users,
@@ -108,6 +109,10 @@ export default function BestellenV1() {
   const [activeDietary, setActiveDietary] = useState<string[]>([])
   const [excludedAllergens, setExcludedAllergens] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [filterResult, setFilterResult] = useState<{
+    suitable: string[]
+    unsuitable: { id: string; reason: string }[]
+  } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -364,6 +369,16 @@ export default function BestellenV1() {
   }
 
   const filterCount = activeDietary.length + excludedAllergens.length
+
+  function getItemSuitability(itemId: string): 'suitable' | 'unsuitable' | 'neutral' {
+    if (!filterResult) return 'neutral'
+    if (filterResult.unsuitable.some(u => u.id === itemId)) return 'unsuitable'
+    return 'suitable'
+  }
+
+  function getUnsuitableReason(itemId: string): string | undefined {
+    return filterResult?.unsuitable.find(u => u.id === itemId)?.reason
+  }
 
   const DIETARY_FILTERS = [
     { key: 'vegetarisch', label: t('order.dietary.vegetarisch') },
@@ -1280,6 +1295,24 @@ export default function BestellenV1() {
         )}
       </AnimatePresence>
 
+      {/* SmartFilter */}
+      {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (
+        <div style={{ padding: '0 16px', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          <SmartFilter
+            restaurantId={restaurant.id}
+            items={items.map(i => ({
+              id: i.id,
+              name: i.name,
+              description: i.description ?? null,
+              allergens: (i.allergens as string[] | null) ?? null,
+              tags: (i.tags as string[] | null) ?? null,
+            }))}
+            accentColor={restaurant.primary_color ?? '#6c63ff'}
+            onFilterChange={setFilterResult}
+          />
+        </div>
+      )}
+
       {/* Items */}
       <div style={{ padding: '20px 16px', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {categories.map(cat => {
@@ -1296,19 +1329,37 @@ export default function BestellenV1() {
                   const displayName = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.name ?? item.name
                   const displayDesc = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.description ?? item.description
                   return (
-                    <MenuItemCard
+                    <div
                       key={item.id}
-                      item={item}
-                      qty={qty}
-                      layout={(restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant}
-                      displayName={displayName}
-                      displayDesc={displayDesc}
-                      index={idx}
-                      special={specials[item.id]}
-                      onOpen={() => setSelectedItem(item)}
-                      onAdd={() => orderMode === 'group-active' ? addToGroupCart(item) : addToCart(item)}
-                      onRemove={() => orderMode === 'group-active' ? removeFromGroupCart(item) : removeFromCart(item.id)}
-                    />
+                      style={{
+                        opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : 1,
+                        transition: 'opacity 0.3s',
+                        position: 'relative',
+                      }}
+                    >
+                      {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (
+                        <div style={{
+                          position: 'absolute', top: '8px', right: '8px', zIndex: 10,
+                          background: '#ef4444', color: '#fff', fontSize: '0.7rem',
+                          padding: '2px 8px', borderRadius: '20px', fontWeight: 600,
+                          pointerEvents: 'none',
+                        }}>
+                          {getUnsuitableReason(item.id)}
+                        </div>
+                      )}
+                      <MenuItemCard
+                        item={item}
+                        qty={qty}
+                        layout={(restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant}
+                        displayName={displayName}
+                        displayDesc={displayDesc}
+                        index={idx}
+                        special={specials[item.id]}
+                        onOpen={() => setSelectedItem(item)}
+                        onAdd={() => orderMode === 'group-active' ? addToGroupCart(item) : addToCart(item)}
+                        onRemove={() => orderMode === 'group-active' ? removeFromGroupCart(item) : removeFromCart(item.id)}
+                      />
+                    </div>
                   )
                 })}
               </MenuItemGrid>
