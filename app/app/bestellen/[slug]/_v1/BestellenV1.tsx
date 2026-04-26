@@ -38,6 +38,27 @@ const TABLE_STATUS_COLORS: Record<TableStatus, string | null> = {
   'no-position': null,
 }
 
+async function calculateAndStoreEta(
+  orderId: string,
+  restaurantId: string,
+  items: { item_id: string; qty: number }[],
+  orderType: string
+) {
+  try {
+    const res = await fetch('/api/orders/calculate-eta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId, orderItems: items, orderType }),
+    })
+    if (!res.ok) return
+    const { etaMinutes } = await res.json()
+    if (typeof etaMinutes === 'number') {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase.from('orders').update({ estimated_time: etaMinutes }).eq('id', orderId)
+    }
+  } catch { /* non-critical */ }
+}
+
 export default function BestellenV1() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -430,6 +451,12 @@ export default function BestellenV1() {
     setView('status')
     setSubmitting(false)
 
+    // After successful insert, calculate ETA (non-blocking)
+    if (data?.id) {
+      const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
+      calculateAndStoreEta(data.id, restaurant.id, cartItems, orderType)
+    }
+
     // Fire-and-forget order confirmation email (delivery + pickup only, requires email)
     // Orders currently don't collect email — skipping for now
   }
@@ -666,6 +693,16 @@ export default function BestellenV1() {
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem' }}>
             {restaurant?.name} · {isPickup ? t('order.pickup') : t('order.delivery')}
           </p>
+          {order.estimated_time != null && order.status !== 'served' && order.status !== 'cancelled' && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
+              borderRadius: '10px', padding: '6px 14px',
+              fontSize: '0.85rem', fontWeight: 600, marginTop: '8px',
+            }}>
+              ⏱ Geschätzte Wartezeit: ~{order.estimated_time} Minuten
+            </div>
+          )}
         </div>
 
         <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px' }}>
