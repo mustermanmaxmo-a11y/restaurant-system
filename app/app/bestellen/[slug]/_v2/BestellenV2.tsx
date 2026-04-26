@@ -157,6 +157,39 @@ export default function BestellenV2() {
     )
   }
 
+  const closedInfo = restaurant ? getClosedInfo(restaurant.opening_hours) : null
+  if (closedInfo && view !== 'status') {
+    const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+    return (
+      <div style={{ minHeight: '100vh', background: V2.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'var(--font-geist), system-ui, sans-serif' }}>
+        <div style={{ textAlign: 'center', maxWidth: '360px', width: '100%' }}>
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+            <Clock size={48} color="rgba(255,255,255,0.6)" />
+          </div>
+          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', marginBottom: '8px', letterSpacing: '-0.02em' }}>
+            {restaurant?.name}
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '28px' }}>{closedInfo}</p>
+          {restaurant?.opening_hours && (
+            <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px', textAlign: 'left', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
+                Öffnungszeiten
+              </p>
+              {Object.entries(restaurant.opening_hours).map(([key, dh]) => (
+                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>{dayNames[parseInt(key)]}</span>
+                  <span style={{ color: dh.closed ? 'rgba(255,255,255,0.3)' : '#fff', fontSize: '0.85rem', fontWeight: 700 }}>
+                    {dh.closed ? 'Geschlossen' : `${dh.open} – ${dh.close}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, fontFamily: 'var(--font-geist), system-ui, sans-serif', paddingBottom: cartCount > 0 && view === 'menu' ? '100px' : '0' }}>
       {/* STATUS VIEW */}
@@ -680,3 +713,34 @@ function StatusView({ order, onReset }: { order: Order; onReset: () => void }) {
     </div>
   )
 }
+
+function getClosedInfo(
+  opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null
+): string | null {
+  if (!opening_hours) return null
+  const now = new Date()
+  const jsDay = now.getDay()
+  const key = String(jsDay === 0 ? 6 : jsDay - 1)
+  const dh = opening_hours[key]
+  if (!dh) return null
+  if (dh.closed) {
+    for (let i = 1; i <= 7; i++) {
+      const nextKey = String((parseInt(key) + i) % 7)
+      const next = opening_hours[nextKey]
+      if (next && !next.closed) {
+        const dayNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
+        return `Heute geschlossen. Nächste Öffnung: ${dayNames[parseInt(nextKey)]} ab ${next.open} Uhr`
+      }
+    }
+    return 'Heute geschlossen.'
+  }
+  const [oh, om] = dh.open.split(':').map(Number)
+  const [ch, cm] = dh.close.split(':').map(Number)
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  const openMin = oh * 60 + om
+  const closeMin = ch * 60 + cm
+  if (nowMin < openMin) return `Öffnet heute um ${dh.open} Uhr`
+  if (nowMin >= closeMin) return `Heute geschlossen. Öffnungszeit war bis ${dh.close} Uhr`
+  return null
+}
+
