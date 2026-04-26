@@ -27,7 +27,7 @@ export async function resolveAiKey(restaurantId: string): Promise<string | null>
     return process.env.ANTHROPIC_API_KEY ?? null
   }
 
-  if (restaurant.plan === 'pro') {
+  if (restaurant.plan === 'pro' || restaurant.plan === 'trial') {
     return restaurant.anthropic_api_key ?? null
   }
 

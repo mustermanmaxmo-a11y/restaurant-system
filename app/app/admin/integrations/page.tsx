@@ -253,7 +253,7 @@ function IntegrationsContent() {
         </div>
 
         {/* KI-Assistent */}
-        {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (
+        {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise' || restaurant.plan === 'trial') && (
           <div style={{
             marginTop: '24px', background: 'var(--surface)',
             border: `1px solid ${aiKeyMasked ? '#6c63ff44' : 'var(--border)'}`,
@@ -282,6 +282,48 @@ function IntegrationsContent() {
                 Im Enterprise-Plan ist die KI automatisch aktiv — du musst nichts einrichten.
                 Menü-Assistent für Gäste und Bestandsanalyse im Admin sind sofort verfügbar.
               </p>
+            ) : restaurant.plan === 'trial' ? (
+              <>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '16px' }}>
+                  Im Trial kannst du alle KI-Features mit deinem eigenen Anthropic API Key testen.
+                  Nach dem Upgrade auf Pro läuft alles genauso weiter.
+                </p>
+                {!aiKeyEditing && aiKeyMasked ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <code style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 14px', color: 'var(--text)', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+                      {aiKeyMasked}
+                    </code>
+                    <button onClick={() => setAiKeyEditing(true)} style={{ background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                      Ändern
+                    </button>
+                    <button onClick={removeAiKey} style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef444433', borderRadius: '8px', padding: '7px 14px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                      Entfernen
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <input
+                      type="password"
+                      value={aiKey}
+                      onChange={e => setAiKey(e.target.value)}
+                      placeholder="sk-ant-api03-..."
+                      style={{ flex: 1, minWidth: '220px', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'monospace' }}
+                    />
+                    <button
+                      onClick={saveAiKey}
+                      disabled={aiKeySaving || !aiKey.trim()}
+                      style={{ background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: '8px', padding: '9px 18px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', opacity: aiKeySaving || !aiKey.trim() ? 0.5 : 1 }}
+                    >
+                      {aiKeySaving ? 'Speichert...' : 'Speichern'}
+                    </button>
+                    {aiKeyEditing && (
+                      <button onClick={() => { setAiKeyEditing(false); setAiKey('') }} style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 14px', fontSize: '0.82rem', cursor: 'pointer' }}>
+                        Abbrechen
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '16px' }}>
