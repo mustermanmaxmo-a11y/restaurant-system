@@ -747,13 +747,6 @@ export default function OrderPage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <LanguageSelector direction="down" />
-            <motion.button onClick={() => setShowFilters(f => !f)} whileTap={{ scale: 0.88 }} transition={springBouncy}
-              style={{ position: 'relative', background: filterCount > 0 ? C.accentDim : C.surface2, border: `1px solid ${filterCount > 0 ? C.accent : C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Search size={18} color={filterCount > 0 ? C.accent : C.text} />
-              {filterCount > 0 && (
-                <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: C.accent, color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{filterCount}</span>
-              )}
-            </motion.button>
             <motion.button onClick={() => setShowMenu(true)} whileTap={{ scale: 0.88 }} transition={springBouncy}
               style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5px', flexShrink: 0 }}>
               {[0, 1, 2].map(i => (
@@ -809,6 +802,24 @@ export default function OrderPage() {
                   </button>
                 )
               })}
+
+              {/* Filter button */}
+              <motion.button
+                onClick={() => setShowFilters(f => !f)}
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                style={{
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: '5px',
+                  background: filterCount > 0 ? C.accentDim : 'transparent',
+                  border: `1.5px solid ${filterCount > 0 ? C.accent : C.border}`,
+                  borderRadius: '20px', padding: '7px 13px',
+                  color: filterCount > 0 ? C.accent : C.muted,
+                  fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                <Search size={13} />
+                Filter{filterCount > 0 ? ` (${filterCount})` : ''}
+              </motion.button>
             </div>
           </motion.div>
         )}
