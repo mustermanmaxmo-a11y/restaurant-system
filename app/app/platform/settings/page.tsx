@@ -21,15 +21,25 @@ export default function PlatformSettingsPage() {
     setAiKeySaving(true)
     setAiKeyError('')
     setAiKeySuccess(false)
-    const { error } = await supabase
-      .from('platform_settings')
-      .update({ anthropic_api_key: aiKey.trim(), updated_at: new Date().toISOString() })
-      .eq('id', '00000000-0000-0000-0000-000000000001')
-    if (error) {
-      setAiKeyError('Speichern fehlgeschlagen: ' + error.message)
-    } else {
-      setAiKeySuccess(true)
-      setAiKey('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/platform/ai-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ apiKey: aiKey.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setAiKeyError('Speichern fehlgeschlagen: ' + (json.error ?? 'Unbekannter Fehler'))
+      } else {
+        setAiKeySuccess(true)
+        setAiKey('')
+      }
+    } catch {
+      setAiKeyError('Speichern fehlgeschlagen.')
     }
     setAiKeySaving(false)
   }
