@@ -52,6 +52,7 @@ export default function MenuPage() {
   const [itemTags, setItemTags] = useState<string[]>([])
   const [itemAllergens, setItemAllergens] = useState<string[]>([])
   const [itemAvailable, setItemAvailable] = useState(true)
+  const [itemPrepTime, setItemPrepTime] = useState<string>('')
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
@@ -117,6 +118,7 @@ export default function MenuPage() {
 
   function openAddItem(categoryId?: string) {
     setItemName(''); setItemDesc(''); setItemPrice(''); setItemTags([]); setItemAllergens([]); setItemAvailable(true); setItemImageUrl(null)
+    setItemPrepTime('')
     setItemCategoryId(categoryId || activeCategory || categories[0]?.id || '')
     setEditingItem(null)
     setModal('add-item')
@@ -131,6 +133,7 @@ export default function MenuPage() {
     setItemAllergens(item.allergens || [])
     setItemAvailable(item.available)
     setItemImageUrl(item.image_url)
+    setItemPrepTime(item.prep_time?.toString() ?? '')
     setEditingItem(item)
     setModal('edit-item')
   }
@@ -189,6 +192,7 @@ export default function MenuPage() {
         name: itemName.trim(), description: itemDesc.trim() || null,
         price, category_id: itemCategoryId, tags: itemTags, allergens: itemAllergens,
         available: itemAvailable, image_url: itemImageUrl,
+        prep_time: itemPrepTime ? parseInt(itemPrepTime, 10) : null,
       }).eq('id', editingItem.id)
     } else {
       const catItems = items.filter(i => i.category_id === itemCategoryId)
@@ -198,6 +202,7 @@ export default function MenuPage() {
         name: itemName.trim(), description: itemDesc.trim() || null,
         price, tags: itemTags, allergens: itemAllergens, available: itemAvailable,
         sort_order: maxOrder + 1, image_url: itemImageUrl,
+        prep_time: itemPrepTime ? parseInt(itemPrepTime, 10) : null,
       })
     }
     await loadData(restaurant.id)
@@ -818,6 +823,27 @@ export default function MenuPage() {
                   <div>
                     <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>{t('common.price')} (€) *</label>
                     <input value={itemPrice} onChange={e => setItemPrice(e.target.value)} placeholder="4.90" type="text" inputMode="decimal" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>
+                      Zubereitungszeit (Minuten)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={itemPrepTime}
+                      onChange={e => setItemPrepTime(e.target.value)}
+                      placeholder="z.B. 12"
+                      style={{
+                        width: '100%', padding: '9px 12px', borderRadius: '8px',
+                        border: '1px solid var(--border)', background: 'var(--bg)',
+                        color: 'var(--text)', fontSize: '0.875rem',
+                      }}
+                    />
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '4px' }}>
+                      Für die Wartezeit-Schätzung der Gäste. Leer lassen = 15 Min. Standard.
+                    </p>
                   </div>
                   <div>
                     <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Foto</label>
