@@ -9,6 +9,7 @@ import {
   ChefHat, CheckCircle2, Clock, Bike, PersonStanding, MapPin,
 } from 'lucide-react'
 import BestellenV1 from '../_v1/BestellenV1'
+import SmartFilter from '../_components/SmartFilter'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'pickup' | 'delivery'
@@ -52,6 +53,10 @@ export default function BestellenV2() {
   const [city, setCity] = useState('')
   const [zip, setZip] = useState('')
   const [note, setNote] = useState('')
+  const [filterResult, setFilterResult] = useState<{
+    suitable: string[]
+    unsuitable: { id: string; reason: string }[]
+  } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -104,6 +109,16 @@ export default function BestellenV2() {
 
   function getQty(itemId: string) {
     return cart.find(c => c.item.id === itemId)?.qty ?? 0
+  }
+
+  function getItemSuitability(itemId: string): 'suitable' | 'unsuitable' | 'neutral' {
+    if (!filterResult) return 'neutral'
+    if (filterResult.unsuitable.some(u => u.id === itemId)) return 'unsuitable'
+    return 'suitable'
+  }
+
+  function getUnsuitableReason(itemId: string): string | undefined {
+    return filterResult?.unsuitable.find(u => u.id === itemId)?.reason
   }
 
   const total = cart.reduce((s, c) => s + c.item.price * c.qty, 0)
@@ -277,6 +292,24 @@ export default function BestellenV2() {
             })}
           </div>
 
+          {/* SmartFilter */}
+          {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (
+            <div style={{ padding: '0 20px' }}>
+              <SmartFilter
+                restaurantId={restaurant.id}
+                items={items.map(i => ({
+                  id: i.id,
+                  name: i.name,
+                  description: i.description ?? null,
+                  allergens: (i.allergens as string[] | null) ?? null,
+                  tags: (i.tags as string[] | null) ?? null,
+                }))}
+                accentColor={V2.accent}
+                onFilterChange={setFilterResult}
+              />
+            </div>
+          )}
+
           {/* Menu grid by category */}
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {categories.map(cat => {
@@ -291,6 +324,23 @@ export default function BestellenV2() {
                       return (
                         <div
                           key={item.id}
+                          style={{
+                            opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : 1,
+                            transition: 'opacity 0.3s',
+                            position: 'relative',
+                          }}
+                        >
+                          {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (
+                            <div style={{
+                              position: 'absolute', top: '8px', right: '8px', zIndex: 10,
+                              background: '#ef4444', color: '#fff', fontSize: '0.7rem',
+                              padding: '2px 8px', borderRadius: '20px', fontWeight: 600,
+                              pointerEvents: 'none',
+                            }}>
+                              {getUnsuitableReason(item.id)}
+                            </div>
+                          )}
+                        <div
                           onClick={() => setSelectedItem(item)}
                           style={{
                             background: V2.surface,
@@ -333,6 +383,7 @@ export default function BestellenV2() {
                               )}
                             </div>
                           </div>
+                        </div>
                         </div>
                       )
                     })}
