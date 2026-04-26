@@ -40,6 +40,7 @@ export interface Restaurant {
   // Versioned design system
   admin_design_version: 'v1' | 'v2' | null
   guest_design_version: 'v1' | 'v2' | null
+  delivery_buffer_minutes: number
 }
 
 export interface PlatformSettings {
@@ -96,6 +97,7 @@ export interface MenuItem {
   tags: string[]
   available: boolean
   sort_order: number
+  prep_time: number | null
   created_at: string
   translations?: Record<string, { name: string; description: string }> | null
 }
@@ -308,4 +310,13 @@ export interface WasteLog {
   note: string | null
   logged_at: string
   created_at: string
+}
+
+export interface StaffPresence {
+  id: string
+  restaurant_id: string
+  staff_id: string
+  role: string
+  checked_in_at: string
+  checked_out_at: string | null
 }
