@@ -28,6 +28,27 @@ const V2 = {
   radius: 16,
 }
 
+async function calculateAndStoreEta(
+  orderId: string,
+  restaurantId: string,
+  items: { item_id: string; qty: number }[],
+  orderType: string
+) {
+  try {
+    const res = await fetch('/api/orders/calculate-eta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId, orderItems: items, orderType }),
+    })
+    if (!res.ok) return
+    const { etaMinutes } = await res.json()
+    if (typeof etaMinutes === 'number') {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase.from('orders').update({ estimated_time: etaMinutes }).eq('id', orderId)
+    }
+  } catch { /* non-critical */ }
+}
+
 export default function BestellenV2() {
   const params = useParams()
   const slug = params.slug as string
@@ -152,6 +173,11 @@ export default function BestellenV2() {
     setView('status')
     setCart([])
     setSubmitting(false)
+    // After successful insert, calculate ETA (non-blocking)
+    if (data?.id) {
+      const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
+      calculateAndStoreEta(data.id, restaurant.id, cartItems, orderType)
+    }
   }
 
   if (showV1) return <BestellenV1 />
@@ -689,6 +715,16 @@ function StatusView({ order, onReset }: { order: Order; onReset: () => void }) {
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', marginTop: '6px', marginBottom: 0 }}>
           #{order.id.slice(0, 8).toUpperCase()} · {order.total.toFixed(2)} €
         </p>
+        {order.estimated_time != null && order.status !== 'served' && order.status !== 'cancelled' && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(245,158,11,0.2)', color: '#fbbf24',
+            borderRadius: '10px', padding: '6px 14px',
+            fontSize: '0.85rem', fontWeight: 600, marginTop: '10px',
+          }}>
+            ⏱ Geschätzte Wartezeit: ~{order.estimated_time} Minuten
+          </div>
+        )}
       </div>
 
       {/* Status steps */}

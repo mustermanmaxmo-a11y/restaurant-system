@@ -32,6 +32,27 @@ const ALLERGEN_FILTERS = [
 
 // C is derived per-render from restaurant branding (see buildColors call inside component)
 
+async function calculateAndStoreEta(
+  orderId: string,
+  restaurantId: string,
+  items: { item_id: string; qty: number }[],
+  orderType: string
+) {
+  try {
+    const res = await fetch('/api/orders/calculate-eta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restaurantId, orderItems: items, orderType }),
+    })
+    if (!res.ok) return
+    const { etaMinutes } = await res.json()
+    if (typeof etaMinutes === 'number') {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase.from('orders').update({ estimated_time: etaMinutes }).eq('id', orderId)
+    }
+  } catch { /* non-critical */ }
+}
+
 const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
 const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
 
@@ -385,6 +406,11 @@ export default function OrderPage() {
     }).select().single()
     if (err || !data) { setError('Fehler beim Bestellen. Bitte versuche es erneut.'); setSubmitting(false); return }
     setOrder(data as Order); setView('status'); setSubmitting(false)
+    // After successful insert, calculate ETA (non-blocking)
+    if (data?.id) {
+      const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
+      calculateAndStoreEta(data.id, restaurant.id, cartItems, 'dine_in')
+    }
   }
 
   function scrollToCategory(catId: string) {
@@ -529,6 +555,16 @@ export default function OrderPage() {
             >{statusLabel}</motion.h1>
           </AnimatePresence>
           <p style={{ color: C.muted, fontSize: '0.85rem' }}>Tisch {table?.table_num} · {restaurant?.name}</p>
+          {order.estimated_time != null && order.status !== 'served' && order.status !== 'cancelled' && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: '#f59e0b20', color: '#f59e0b',
+              borderRadius: '10px', padding: '6px 14px',
+              fontSize: '0.85rem', fontWeight: 600, marginTop: '8px',
+            }}>
+              ⏱ Geschätzte Wartezeit: ~{order.estimated_time} Minuten
+            </div>
+          )}
         </div>
 
         <div style={{ maxWidth: '480px', margin: '0 auto', padding: '28px 20px' }}>

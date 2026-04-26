@@ -15,8 +15,10 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
+  const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
+  const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
 
   // Password change state
   const [newPassword, setNewPassword] = useState('')
@@ -32,11 +34,14 @@ export default function SettingsPage() {
       setEmail(session.user.email ?? '')
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
-      if (resto) setRestaurant(resto)
+      if (resto) {
+        setRestaurant(resto)
+        setDeliveryBuffer(String(resto.delivery_buffer_minutes ?? 25))
+      }
       setLoading(false)
     }
     init()
@@ -92,6 +97,19 @@ export default function SettingsPage() {
       setRestaurant(prev => prev ? { ...prev, weekly_report_email: newValue } : prev)
     }
     setEmailToggleLoading(false)
+  }
+
+  async function handleDeliveryBufferSave() {
+    if (!restaurant) return
+    const val = parseInt(deliveryBuffer, 10)
+    if (isNaN(val) || val < 1 || val > 120) { alert('Wert zwischen 1 und 120 Minuten eingeben.'); return }
+    setDeliveryBufferSaving(true)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ delivery_buffer_minutes: val })
+      .eq('id', restaurant.id)
+    if (error) alert('Speichern fehlgeschlagen.')
+    setDeliveryBufferSaving(false)
   }
 
   async function handleDelete() {
@@ -157,6 +175,46 @@ export default function SettingsPage() {
           </p>
         </div>
       )}
+
+      {/* Liefer-Puffer */}
+      <div style={{
+        background: 'var(--surface)', borderRadius: '16px',
+        border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
+      }}>
+        <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
+          Liefer-Puffer
+        </h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+          Wie viele Minuten dauert die Lieferung typischerweise ab Küche bis zum Gast?
+        </p>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="number"
+            min="1"
+            max="120"
+            value={deliveryBuffer}
+            onChange={e => setDeliveryBuffer(e.target.value)}
+            style={{
+              width: '80px', padding: '9px 12px', borderRadius: '8px',
+              border: '1px solid var(--border)', background: 'var(--bg)',
+              color: 'var(--text)', fontSize: '0.875rem', textAlign: 'center',
+            }}
+          />
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Minuten</span>
+          <button
+            onClick={handleDeliveryBufferSave}
+            disabled={deliveryBufferSaving}
+            style={{
+              padding: '9px 18px', borderRadius: '8px', border: 'none',
+              background: 'var(--accent)', color: 'var(--accent-text)',
+              fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+              opacity: deliveryBufferSaving ? 0.6 : 1,
+            }}
+          >
+            {deliveryBufferSaving ? 'Speichert...' : 'Speichern'}
+          </button>
+        </div>
+      </div>
 
       {/* Account Info */}
       <Section title="Konto">
