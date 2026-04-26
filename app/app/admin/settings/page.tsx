@@ -86,7 +86,11 @@ export default function SettingsPage() {
       .from('restaurants')
       .update({ weekly_report_email: newValue })
       .eq('id', restaurant.id)
-    if (!error) setRestaurant(prev => prev ? { ...prev, weekly_report_email: newValue } : prev)
+    if (error) {
+      alert('Einstellung konnte nicht gespeichert werden.')
+    } else {
+      setRestaurant(prev => prev ? { ...prev, weekly_report_email: newValue } : prev)
+    }
     setEmailToggleLoading(false)
   }
 

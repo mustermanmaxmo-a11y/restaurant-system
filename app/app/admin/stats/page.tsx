@@ -327,13 +327,14 @@ export default function StatsPage() {
                 </div>
               </div>
             )}
-            {/* KI-Wochenbericht — Pro/Enterprise only */}
-            {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (
-              <div style={{ padding: '0 0 24px' }}>
-                <WeeklyReport restaurantId={restaurant.id} />
-              </div>
-            )}
           </>
+        )}
+
+        {/* KI-Wochenbericht — Pro/Enterprise only, always visible */}
+        {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (
+          <div style={{ padding: '0 24px 24px' }}>
+            <WeeklyReport restaurantId={restaurant.id} />
+          </div>
         )}
       </div>
     </div>
