@@ -39,6 +39,8 @@ export default function DashboardPage() {
   const [tables, setTables] = useState<Table[]>([])
   const [orderingTable, setOrderingTable] = useState<Table | null>(null)
   const [togglingTable, setTogglingTable] = useState<string | null>(null)
+  const [checkedIn, setCheckedIn] = useState(false)
+  const [checkInLoading, setCheckInLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   )
@@ -215,6 +217,30 @@ export default function DashboardPage() {
 
   async function resolveCall(callId: string) {
     await supabase.from('service_calls').update({ resolved: true }).eq('id', callId)
+  }
+
+  async function handleCheckIn() {
+    if (!session) return
+    setCheckInLoading(true)
+    await fetch('/api/staff/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staffId: session.staff.id, restaurantId: session.restaurant.id }),
+    })
+    setCheckedIn(true)
+    setCheckInLoading(false)
+  }
+
+  async function handleCheckOut() {
+    if (!session) return
+    setCheckInLoading(true)
+    await fetch('/api/staff/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ staffId: session.staff.id, restaurantId: session.restaurant.id }),
+    })
+    setCheckedIn(false)
+    setCheckInLoading(false)
   }
 
   // ── LOGIN ───────────────────────────────────────────────────────────────────
@@ -468,9 +494,31 @@ export default function DashboardPage() {
               {(session.staff.role as string) === 'kitchen' ? <><ChefHat size={11} /> Küche</> : (session.staff.role as string) === 'delivery' ? <><Car size={11} /> Lieferant</> : <><BellRing size={11} /> Service</>}
             </span>
           </div>
-          <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 8px', cursor: 'pointer', flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center' }}>
-            <X size={13} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: checkedIn ? '#10b981' : '#6b7280',
+              }} />
+              <button
+                onClick={checkedIn ? handleCheckOut : handleCheckIn}
+                disabled={checkInLoading}
+                style={{
+                  padding: '6px 14px', borderRadius: '8px', border: '1.5px solid',
+                  borderColor: checkedIn ? '#10b981' : '#2a2a2a',
+                  background: checkedIn ? '#10b98115' : 'transparent',
+                  color: checkedIn ? '#10b981' : '#666',
+                  fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer',
+                  opacity: checkInLoading ? 0.6 : 1,
+                }}
+              >
+                {checkInLoading ? '...' : checkedIn ? 'Schicht beenden' : 'Ich bin da'}
+              </button>
+            </div>
+            <button onClick={() => setSession(null)} style={{ background: 'none', border: '1px solid #2a2a2a', borderRadius: '6px', color: '#666', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <X size={13} />
+            </button>
+          </div>
         </div>
         {/* Nav tabs row — scrollable */}
         <div style={{ overflowX: 'auto', display: 'flex', gap: '2px', padding: '0 12px 10px' }}>
@@ -570,7 +618,19 @@ export default function DashboardPage() {
                             <span style={{ color: '#666', fontSize: '0.75rem' }}>{order.customer_name}</span>
                           )}
                         </div>
-                        <span style={{ color: '#555', fontSize: '0.75rem' }}>{timeAgo(order.created_at)}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                          <span style={{ color: '#555', fontSize: '0.75rem' }}>{timeAgo(order.created_at)}</span>
+                          {order.estimated_time != null && (
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '4px',
+                              background: '#f59e0b20', color: '#f59e0b',
+                              borderRadius: '6px', padding: '2px 8px',
+                              fontSize: '0.72rem', fontWeight: 600,
+                            }}>
+                              ⏱ ~{order.estimated_time} Min
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Items */}
