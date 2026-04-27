@@ -7,6 +7,7 @@ import type { Staff, Restaurant, RestaurantPlan } from '@/types/database'
 import { getPlanLimits } from '@/lib/plan-limits'
 import { useLanguage } from '@/components/providers/language-provider'
 import { ChefHat, Car, BellRing, Trash2, Lightbulb } from 'lucide-react'
+import ShiftPlanning from './_components/ShiftPlanning'
 
 export default function StaffPage() {
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function StaffPage() {
   const [code, setCode] = useState('')
   const [role, setRole] = useState<'kitchen' | 'waiter' | 'delivery'>('kitchen')
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<'staff' | 'planning'>('staff')
 
   useEffect(() => {
     async function load() {
@@ -101,6 +103,27 @@ export default function StaffPage() {
         </button>
       </div>
 
+      {/* Tab navigation */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '0', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
+        {(['staff', 'planning'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '8px 18px', borderRadius: '8px 8px 0 0', border: 'none',
+              background: activeTab === tab ? 'var(--accent)' : 'transparent',
+              color: activeTab === tab ? 'var(--accent-text)' : 'var(--text-muted)',
+              fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+              marginBottom: '-1px',
+              borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+            }}
+          >
+            {tab === 'staff' ? 'Mitarbeiter' : 'Schichtplanung'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'staff' && (
       <div style={{ padding: '24px', maxWidth: '700px', margin: '0 auto' }}>
         {staffList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -156,6 +179,23 @@ export default function StaffPage() {
           </div>
         )}
       </div>
+      )}
+
+      {activeTab === 'planning' && restaurant && (
+        (restaurant.plan === 'pro' || restaurant.plan === 'enterprise' || restaurant.plan === 'trial')
+          ? <ShiftPlanning restaurantId={restaurant.id} />
+          : (
+            <div style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: '16px', padding: '40px', textAlign: 'center',
+              maxWidth: '700px', margin: '24px auto',
+            }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                KI-Schichtplanung ist ab dem Pro-Plan verfügbar.
+              </p>
+            </div>
+          )
+      )}
 
       {/* Modal */}
       {showModal && (
