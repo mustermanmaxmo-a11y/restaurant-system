@@ -320,3 +320,26 @@ export interface StaffPresence {
   checked_in_at: string
   checked_out_at: string | null
 }
+
+export interface ShiftSlot {
+  start: string
+  end: string
+  kitchen: number
+  waiter: number
+  note: string
+}
+
+export interface ShiftDay {
+  day: string
+  date: string
+  shifts: ShiftSlot[]
+}
+
+export interface ShiftPlan {
+  id: string
+  restaurant_id: string
+  week_start: string
+  plan: ShiftDay[]
+  created_at: string
+  updated_at: string
+}
