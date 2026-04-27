@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { supabase } from '@/lib/supabase'
 import type { MenuItem, MenuCategory, Order, Restaurant } from '@/types/database'
 import {
@@ -150,9 +151,20 @@ export default function BestellenV2() {
     categoryRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  function validatePhone(phone: string): string | null {
+    const raw = phone.trim()
+    if (!raw) return 'Telefonnummer ist erforderlich.'
+    if (!/^[+\d\s\-().]+$/.test(raw)) return 'Ungültige Zeichen in der Telefonnummer.'
+    const parsed = parsePhoneNumberFromString(raw, 'DE')
+    if (!parsed || !parsed.isValid()) return 'Bitte eine gültige Telefonnummer eingeben (z.B. 0151 12345678).'
+    return null
+  }
+
   async function submitOrder() {
     if (!restaurant || cart.length === 0) return
-    if (!customerName.trim() || !customerPhone.trim()) { setError('Name und Telefon erforderlich.'); return }
+    if (!customerName.trim()) { setError('Name ist erforderlich.'); return }
+    const phoneErr = validatePhone(customerPhone)
+    if (phoneErr) { setError(phoneErr); return }
     if (orderType === 'delivery' && (!street.trim() || !city.trim() || !zip.trim())) { setError('Lieferadresse vollständig angeben.'); return }
     setSubmitting(true)
     setError('')
