@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { supabase } from '@/lib/supabase'
 import { darken } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
@@ -418,8 +419,19 @@ export default function BestellenV1() {
     'Meeresfrüchte', 'Soja', 'Sellerie', 'Senf', 'Sesam',
   ]
 
+  function validatePhone(phone: string): string | null {
+    const raw = phone.trim()
+    if (!raw) return 'Telefonnummer ist erforderlich.'
+    if (!/^[+\d\s\-().]+$/.test(raw)) return 'Ungültige Zeichen in der Telefonnummer.'
+    const parsed = parsePhoneNumberFromString(raw, 'DE')
+    if (!parsed || !parsed.isValid()) return 'Bitte eine gültige Telefonnummer eingeben (z.B. 0151 12345678).'
+    return null
+  }
+
   async function submitOrder() {
     if (!restaurant) return
+    const phoneErr = validatePhone(customerPhone)
+    if (phoneErr) { setError(phoneErr); return }
     setSubmitting(true)
     setError('')
 
@@ -462,7 +474,9 @@ export default function BestellenV1() {
   }
 
   async function submitReservation() {
-    if (!restaurant || !resName.trim() || !resPhone.trim() || !resDate || !resTime) return
+    if (!restaurant || !resName.trim() || !resDate || !resTime) return
+    const phoneErr = validatePhone(resPhone)
+    if (phoneErr) { setResError(phoneErr); return }
     setResSubmitting(true)
     setResError('')
     const { data, error: err } = await supabase
@@ -527,7 +541,7 @@ export default function BestellenV1() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa', padding: '24px' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><XCircle size={48} color="#ef4444" /></div>
-          <p style={{ color: '#1a1a2e', fontWeight: 700 }}>Restaurant nicht gefunden</p>
+          <p style={{ color: 'var(--text)', fontWeight: 700 }}>Restaurant nicht gefunden</p>
           <p style={{ color: '#888', fontSize: '0.875rem', marginTop: '8px' }}>{error}</p>
         </div>
       </div>
@@ -707,29 +721,29 @@ export default function BestellenV1() {
 
         <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px' }}>
           {/* Progress */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0', marginBottom: '32px', background: '#fff', borderRadius: '16px', padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0', marginBottom: '32px', background: 'var(--surface)', borderRadius: '16px', padding: '20px' }}>
             {([{ label: 'Eingegangen', icon: ClipboardList }, { label: 'Zubereitung', icon: ChefHat }, { label: 'Fertig', icon: CheckCircle2 }] as { label: string; icon: LucideIcon }[]).map((step, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? '1' : 'none' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '50%',
-                    background: statusIdx >= i ? '#111111' : '#E8E8E8',
-                    color: statusIdx >= i ? '#fff' : '#999',
+                    background: statusIdx >= i ? 'var(--text)' : 'var(--border)',
+                    color: statusIdx >= i ? 'var(--bg)' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.5s',
-                    boxShadow: statusIdx === i ? '0 0 0 4px rgba(17,17,17,0.15)' : 'none',
+                    boxShadow: statusIdx === i ? '0 0 0 4px var(--border-accent)' : 'none',
                   }}>
                     {statusIdx > i ? <CheckCircle2 size={16} /> : <step.icon size={16} />}
                   </div>
-                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? '#111111' : '#AAAAAA', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
+                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? 'var(--text)' : 'var(--text-muted)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
                 </div>
-                {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? '#111111' : '#E8E8E8', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
+                {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? 'var(--text)' : 'var(--border)', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
               </div>
             ))}
           </div>
 
           {/* Order Summary */}
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
             <h3 style={{ color: 'var(--text)', fontWeight: 800, marginBottom: '14px', fontSize: '0.9rem' }}>Deine Bestellung</h3>
             {order.items.map((item, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -737,14 +751,14 @@ export default function BestellenV1() {
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{(item.price * item.qty).toFixed(2)} €</span>
               </div>
             ))}
-            <div style={{ borderTop: '1px solid #EEECE8', marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ borderTop: '1px solid var(--border)', marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text)', fontWeight: 800 }}>{t('order.total')}</span>
               <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{order.total.toFixed(2)} €</span>
             </div>
           </div>
 
           {order.delivery_address && (
-            <div style={{ background: '#fff', borderRadius: '16px', padding: '16px 20px' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '16px 20px' }}>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Lieferadresse</p>
               <p style={{ color: 'var(--text)', fontSize: '0.875rem', fontWeight: 600 }}>
                 {order.delivery_address.street}, {order.delivery_address.zip} {order.delivery_address.city}
@@ -1027,12 +1041,12 @@ export default function BestellenV1() {
                 <div>
                   <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Datum *</label>
                   <input type="date" value={resDate} onChange={e => setResDate(e.target.value)} min={new Date().toISOString().split('T')[0]}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
                   <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Uhrzeit *</label>
                   <select value={resTime} onChange={e => setResTime(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}>
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}>
                     {Array.from({ length: 23 }, (_, i) => {
                       const h = Math.floor(i / 2) + 11
                       const m = i % 2 === 0 ? '00' : '30'
@@ -1045,7 +1059,7 @@ export default function BestellenV1() {
               {/* Floor Plan — only in "pick" mode, only when date+time+guests set */}
               {resMode === 'pick' && showFloorPlan && (
                 <div>
-                  <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                  <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                     <img src={restaurant!.floor_plan_url!} alt="Grundriss"
                       style={{ width: '100%', display: 'block', userSelect: 'none' }} draggable={false} />
                     {placedTables.map(table => {
@@ -1110,22 +1124,22 @@ export default function BestellenV1() {
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Name *</label>
                 <input value={resName} onChange={e => setResName(e.target.value)} placeholder="Vor- und Nachname"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Telefon *</label>
                 <input value={resPhone} onChange={e => setResPhone(e.target.value)} placeholder="+49 170 1234567" type="tel"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>E-Mail (optional)</label>
                 <input value={resEmail} onChange={e => setResEmail(e.target.value)} placeholder="email@beispiel.de" type="email"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Anmerkung (optional)</label>
                 <textarea value={resNote} onChange={e => setResNote(e.target.value)} placeholder="z.B. Fensterplatz, Geburtstagstorte..." rows={2}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
               </div>
 
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>

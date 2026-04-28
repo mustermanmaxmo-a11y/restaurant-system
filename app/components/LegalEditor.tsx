@@ -212,20 +212,20 @@ export function LegalEditor({ legalKey, initialContent, role, draftContent }: Pr
 
         {(mode === 'preview' || mode === 'split') && (
           <div style={{
-            background: '#fff', borderRadius: '14px', overflow: 'hidden',
+            background: 'var(--surface)', borderRadius: '14px', overflow: 'hidden',
             display: 'flex', flexDirection: 'column',
           }}>
             <div style={{
-              padding: '10px 16px', borderBottom: '1px solid #e5e7eb',
-              color: '#666', fontSize: '0.7rem', fontWeight: 700,
+              padding: '10px 16px', borderBottom: '1px solid var(--border)',
+              color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.06em',
-              background: '#fafafa',
+              background: 'var(--surface-2)',
             }}>
               Vorschau
             </div>
             <div
-              style={{ flex: 1, padding: '24px', color: '#1a1a2e', fontSize: '0.9rem', lineHeight: 1.7, overflowY: 'auto' }}
-              dangerouslySetInnerHTML={{ __html: (isOwner && reviewMode ? reviewContent : content) || '<p style="color:#999">Leer</p>' }}
+              style={{ flex: 1, padding: '24px', color: 'var(--text)', fontSize: '0.9rem', lineHeight: 1.7, overflowY: 'auto' }}
+              dangerouslySetInnerHTML={{ __html: (isOwner && reviewMode ? reviewContent : content) || '<p style="color:var(--text-muted)">Leer</p>' }}
             />
           </div>
         )}

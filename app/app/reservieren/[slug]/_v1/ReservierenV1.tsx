@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { supabase } from '@/lib/supabase'
 import { darken } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
@@ -95,8 +96,19 @@ export default function ReservierenV1() {
     return () => { supabase.removeChannel(channel) }
   }, [restaurant?.id])
 
+  function validatePhone(phone: string): string | null {
+    const raw = phone.trim()
+    if (!raw) return 'Telefonnummer ist erforderlich.'
+    if (!/^[+\d\s\-().]+$/.test(raw)) return 'Ungültige Zeichen in der Telefonnummer.'
+    const parsed = parsePhoneNumberFromString(raw, 'DE')
+    if (!parsed || !parsed.isValid()) return 'Bitte eine gültige Telefonnummer eingeben (z.B. 0151 12345678).'
+    return null
+  }
+
   async function submitReservation() {
-    if (!restaurant || !resName.trim() || !resPhone.trim() || !resDate || !resTime) return
+    if (!restaurant || !resName.trim() || !resDate || !resTime) return
+    const phoneErr = validatePhone(resPhone)
+    if (phoneErr) { setResError(phoneErr); return }
     setResSubmitting(true)
     setResError('')
     const { data, error: err } = await supabase
@@ -313,12 +325,12 @@ export default function ReservierenV1() {
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Datum *</label>
                 <input type="date" value={resDate} onChange={e => setResDate(e.target.value)} min={new Date().toISOString().split('T')[0]}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Uhrzeit *</label>
                 <select value={resTime} onChange={e => setResTime(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}>
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}>
                   {Array.from({ length: 23 }, (_, i) => {
                     const h = Math.floor(i / 2) + 11
                     const m = i % 2 === 0 ? '00' : '30'
@@ -331,7 +343,7 @@ export default function ReservierenV1() {
             {/* Floor Plan */}
             {resMode === 'pick' && showFloorPlan && (
               <div>
-                <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
                   <img src={restaurant.floor_plan_url!} alt="Grundriss"
                     style={{ width: '100%', display: 'block', userSelect: 'none' }} draggable={false} />
                   {placedTables.map(table => {
@@ -394,22 +406,22 @@ export default function ReservierenV1() {
             <div>
               <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Name *</label>
               <input value={resName} onChange={e => setResName(e.target.value)} placeholder="Vor- und Nachname"
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Telefon *</label>
               <input value={resPhone} onChange={e => setResPhone(e.target.value)} placeholder="+49 170 1234567" type="tel"
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>E-Mail (optional)</label>
               <input value={resEmail} onChange={e => setResEmail(e.target.value)} placeholder="email@beispiel.de" type="email"
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ color: '#888', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '6px' }}>Anmerkung (optional)</label>
               <textarea value={resNote} onChange={e => setResNote(e.target.value)} placeholder="z.B. Fensterplatz, Geburtstagstorte..." rows={2}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e0e0e0', background: '#fff', color: '#1a1a2e', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
             </div>
 
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
