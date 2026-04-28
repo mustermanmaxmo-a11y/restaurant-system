@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2 } from 'lucide-react'
+import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2, Smartphone } from 'lucide-react'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -27,6 +27,18 @@ export default function SettingsPage() {
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
 
+  // 2FA state
+  const [mfaEnabled, setMfaEnabled] = useState(false)
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null)
+  const [mfaEnrolling, setMfaEnrolling] = useState(false)
+  const [mfaQrCode, setMfaQrCode] = useState<string | null>(null)
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
+  const [mfaVerifying, setMfaVerifying] = useState(false)
+  const [mfaError, setMfaError] = useState('')
+  const [mfaSuccess, setMfaSuccess] = useState(false)
+  const [mfaUnenrolling, setMfaUnenrolling] = useState(false)
+
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -42,10 +54,69 @@ export default function SettingsPage() {
         setRestaurant(resto)
         setDeliveryBuffer(String(resto.delivery_buffer_minutes ?? 25))
       }
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const totpFactor = factors?.totp?.find((f: { status: string }) => f.status === 'verified')
+      if (totpFactor) {
+        setMfaEnabled(true)
+        setMfaFactorId(totpFactor.id)
+      }
       setLoading(false)
     }
     init()
   }, [router])
+
+  async function handleMfaEnroll() {
+    setMfaEnrolling(true)
+    setMfaError('')
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'RestaurantOS', friendlyName: 'RestaurantOS' })
+    if (error || !data) {
+      setMfaError('Fehler beim Aktivieren. Bitte versuche es erneut.')
+      setMfaEnrolling(false)
+      return
+    }
+    setMfaFactorId(data.id)
+    setMfaQrCode(data.totp.qr_code)
+    setMfaSecret(data.totp.secret)
+    setMfaEnrolling(false)
+  }
+
+  async function handleMfaVerify() {
+    if (!mfaFactorId || mfaCode.length !== 6) return
+    setMfaVerifying(true)
+    setMfaError('')
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+    if (challengeError || !challengeData) {
+      setMfaError('Fehler beim Challenge. Bitte erneut versuchen.')
+      setMfaVerifying(false)
+      return
+    }
+    const { error: verifyError } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challengeData.id, code: mfaCode })
+    if (verifyError) {
+      setMfaError('Ungültiger Code. Bitte prüfe deine Authenticator-App.')
+      setMfaVerifying(false)
+      return
+    }
+    setMfaEnabled(true)
+    setMfaQrCode(null)
+    setMfaSecret(null)
+    setMfaCode('')
+    setMfaSuccess(true)
+    setMfaVerifying(false)
+  }
+
+  async function handleMfaUnenroll() {
+    if (!mfaFactorId) return
+    setMfaUnenrolling(true)
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId })
+    if (error) {
+      alert('Deaktivierung fehlgeschlagen.')
+    } else {
+      setMfaEnabled(false)
+      setMfaFactorId(null)
+      setMfaSuccess(false)
+    }
+    setMfaUnenrolling(false)
+  }
 
   async function handleExport() {
     setExporting(true)
@@ -279,6 +350,114 @@ export default function SettingsPage() {
               {pwLoading ? 'Wird gespeichert...' : 'Passwort speichern'}
             </button>
           </div>
+        </div>
+        {/* 2FA Card */}
+        <div style={{
+          background: 'var(--surface)', border: mfaEnabled ? '1px solid rgba(16,185,129,0.3)' : '1px solid var(--border)',
+          borderRadius: '12px', padding: '20px', marginTop: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: mfaEnabled ? 'rgba(16,185,129,0.12)' : 'rgba(108,99,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Smartphone size={18} color={mfaEnabled ? '#10b981' : 'var(--accent)'} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', marginBottom: '2px' }}>Zwei-Faktor-Authentifizierung</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                {mfaEnabled ? 'Aktiv — Login benötigt Authenticator-App' : 'Schütze deinen Account mit einer Authenticator-App'}
+              </p>
+            </div>
+            {mfaEnabled && (
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(16,185,129,0.12)', color: '#10b981', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
+                Aktiv
+              </span>
+            )}
+          </div>
+
+          {!mfaEnabled && !mfaQrCode && (
+            <button
+              onClick={handleMfaEnroll}
+              disabled={mfaEnrolling}
+              style={{
+                padding: '9px 18px', borderRadius: '8px', border: 'none',
+                background: 'var(--accent)', color: 'var(--accent-text)',
+                fontWeight: 700, fontSize: '0.82rem', cursor: mfaEnrolling ? 'wait' : 'pointer',
+                opacity: mfaEnrolling ? 0.6 : 1,
+              }}
+            >
+              {mfaEnrolling ? 'Wird vorbereitet...' : '2FA aktivieren'}
+            </button>
+          )}
+
+          {mfaQrCode && (
+            <div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '12px', lineHeight: 1.5 }}>
+                Scanne den QR-Code mit Google Authenticator, Authy oder einer anderen TOTP-App.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                <img src={mfaQrCode} alt="2FA QR Code" style={{ width: '160px', height: '160px', borderRadius: '8px', border: '1px solid var(--border)', background: '#fff', padding: '4px' }} />
+              </div>
+              {mfaSecret && (
+                <div style={{ background: 'var(--bg)', borderRadius: '8px', padding: '10px 12px', marginBottom: '14px', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginBottom: '4px' }}>Manueller Code</p>
+                  <code style={{ color: 'var(--text)', fontSize: '0.85rem', letterSpacing: '0.1em', fontFamily: 'monospace' }}>{mfaSecret}</code>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-stelliger Code"
+                  value={mfaCode}
+                  onChange={e => { setMfaCode(e.target.value.replace(/\D/g, '')); setMfaError('') }}
+                  style={{
+                    flex: 1, padding: '10px 12px', borderRadius: '8px',
+                    border: '1px solid var(--border)', background: 'var(--bg)',
+                    color: 'var(--text)', fontSize: '1rem', outline: 'none',
+                    letterSpacing: '0.2em', textAlign: 'center',
+                  }}
+                />
+                <button
+                  onClick={handleMfaVerify}
+                  disabled={mfaVerifying || mfaCode.length !== 6}
+                  style={{
+                    padding: '10px 18px', borderRadius: '8px', border: 'none',
+                    background: 'var(--accent)', color: 'var(--accent-text)',
+                    fontWeight: 700, fontSize: '0.82rem',
+                    cursor: mfaVerifying || mfaCode.length !== 6 ? 'not-allowed' : 'pointer',
+                    opacity: mfaVerifying || mfaCode.length !== 6 ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {mfaVerifying ? 'Prüfe...' : 'Bestätigen'}
+                </button>
+              </div>
+              {mfaError && <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '8px' }}>{mfaError}</p>}
+            </div>
+          )}
+
+          {mfaEnabled && (
+            <div>
+              {mfaSuccess && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem', marginBottom: '12px' }}>
+                  <CheckCircle2 size={14} /> 2FA erfolgreich aktiviert
+                </div>
+              )}
+              <button
+                onClick={handleMfaUnenroll}
+                disabled={mfaUnenrolling}
+                style={{
+                  padding: '9px 18px', borderRadius: '8px',
+                  border: '1px solid #ef444460', background: 'transparent',
+                  color: '#ef4444', fontWeight: 600, fontSize: '0.82rem',
+                  cursor: mfaUnenrolling ? 'wait' : 'pointer',
+                  opacity: mfaUnenrolling ? 0.6 : 1,
+                }}
+              >
+                {mfaUnenrolling ? 'Wird deaktiviert...' : '2FA deaktivieren'}
+              </button>
+            </div>
+          )}
         </div>
       </Section>
 
