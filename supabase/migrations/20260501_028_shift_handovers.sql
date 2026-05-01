@@ -1,7 +1,9 @@
-CREATE TABLE IF NOT EXISTS shift_handovers (
+DROP TABLE IF EXISTS shift_handovers CASCADE;
+
+CREATE TABLE shift_handovers (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
-  staff_id      uuid NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+  staff_id      uuid NOT NULL,
   staff_name    text NOT NULL,
   raw_notes     text NOT NULL,
   summary       text NOT NULL,
