@@ -7,9 +7,10 @@ import type { Order, ServiceCall, Staff, Restaurant, Table, Reservation } from '
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, ChefHat, CheckCircle2, Car, User, Phone, MapPin,
-  AlertTriangle, Bell, BellRing, Receipt, CalendarDays, Users, Bike, X,
+  AlertTriangle, Bell, BellRing, Receipt, CalendarDays, Users, Bike, X, Sparkles,
 } from 'lucide-react'
 import StaffOrderPanel from './StaffOrderPanel'
+import ShiftHandoverModal from './ShiftHandoverModal'
 import { timeAgo } from '@/lib/utils'
 
 type Session = { staff: Staff; restaurant: Restaurant }
@@ -41,6 +42,8 @@ export default function DashboardPage() {
   const [togglingTable, setTogglingTable] = useState<string | null>(null)
   const [checkedIn, setCheckedIn] = useState(false)
   const [checkInLoading, setCheckInLoading] = useState(false)
+  const [showHandoverModal, setShowHandoverModal] = useState(false)
+  const [lastHandover, setLastHandover] = useState<{ staff_name: string; summary: string; created_at: string } | null>(null)
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   )
@@ -229,6 +232,10 @@ export default function DashboardPage() {
     })
     setCheckedIn(true)
     setCheckInLoading(false)
+    // Load last handover from previous shift
+    const res = await fetch(`/api/ai/shift-handover?restaurantId=${session.restaurant.id}`)
+    const json = await res.json()
+    if (json.handover) setLastHandover(json.handover)
   }
 
   async function handleCheckOut() {
@@ -241,6 +248,7 @@ export default function DashboardPage() {
     })
     setCheckedIn(false)
     setCheckInLoading(false)
+    setLastHandover(null)
   }
 
   // ── LOGIN ───────────────────────────────────────────────────────────────────
@@ -501,7 +509,7 @@ export default function DashboardPage() {
                 background: checkedIn ? '#10b981' : '#6b7280',
               }} />
               <button
-                onClick={checkedIn ? handleCheckOut : handleCheckIn}
+                onClick={checkedIn ? () => setShowHandoverModal(true) : handleCheckIn}
                 disabled={checkInLoading}
                 style={{
                   padding: '6px 14px', borderRadius: '8px', border: '1.5px solid',
@@ -539,6 +547,30 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* Last Handover Card */}
+      {lastHandover && (
+        <div style={{
+          margin: '12px 12px 0',
+          background: 'rgba(108,99,255,0.08)',
+          border: '1px solid rgba(108,99,255,0.2)',
+          borderRadius: '10px', padding: '12px 14px',
+          display: 'flex', gap: '10px', alignItems: 'flex-start',
+        }}>
+          <Sparkles size={15} color="#6c63ff" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ color: '#6c63ff', fontWeight: 700, fontSize: '0.75rem', margin: '0 0 4px' }}>
+              Übergabe von {lastHandover.staff_name} · {new Date(lastHandover.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', whiteSpace: 'pre-line', margin: 0, lineHeight: 1.5 }}>
+              {lastHandover.summary}
+            </p>
+          </div>
+          <button onClick={() => setLastHandover(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', flexShrink: 0, padding: '2px' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Board View */}
       {view === 'board' && (<>
@@ -903,6 +935,17 @@ export default function DashboardPage() {
           </div>
         )
       })()}
+
+      {/* Shift Handover Modal */}
+      {showHandoverModal && session && (
+        <ShiftHandoverModal
+          restaurantId={session.restaurant.id}
+          staffId={session.staff.id}
+          staffName={session.staff.name}
+          onConfirm={() => { setShowHandoverModal(false); handleCheckOut() }}
+          onCancel={() => setShowHandoverModal(false)}
+        />
+      )}
     </div>
   )
 }
