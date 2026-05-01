@@ -483,7 +483,7 @@ export default function InventoryPage() {
           )}
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, scrollbarWidth: 'none' as never, msOverflowStyle: 'none' as never }}>
             {([
               { id: 'bestand', label: 'Bestand' },
               { id: 'lieferanten', label: 'Lieferanten' },
@@ -491,7 +491,7 @@ export default function InventoryPage() {
               { id: 'verluste', label: 'Verluste' },
             ] as { id: Tab; label: string }[]).map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
-                padding: '8px 16px', borderRadius: '8px 8px 0 0', border: 'none',
+                padding: '8px 16px', borderRadius: '8px 8px 0 0', border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
                 background: tab === t.id ? 'var(--bg)' : 'transparent',
                 color: tab === t.id ? 'var(--text)' : 'var(--text-muted)',
                 fontWeight: tab === t.id ? 700 : 500, cursor: 'pointer', fontSize: '0.875rem',

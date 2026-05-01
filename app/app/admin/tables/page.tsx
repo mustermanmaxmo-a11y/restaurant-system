@@ -156,13 +156,13 @@ export default function TablesPage() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', padding: '0 24px' }}>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', padding: '0 24px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, scrollbarWidth: 'none' as never, msOverflowStyle: 'none' as never }}>
         {([['tables', <><Armchair size={14} /> Tische</>], ['floorplan', <><Map size={14} /> Grundriss</>]] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setAdminTab(tab)}
             style={{
-              padding: '10px 16px', background: 'none', border: 'none',
+              padding: '10px 16px', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
               color: adminTab === tab ? 'var(--accent)' : 'var(--text-muted)',
               fontWeight: adminTab === tab ? 700 : 400,
               cursor: 'pointer', fontSize: '0.875rem',

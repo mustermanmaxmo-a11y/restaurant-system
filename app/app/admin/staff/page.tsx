@@ -104,13 +104,13 @@ export default function StaffPage() {
       </div>
 
       {/* Tab navigation */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '0', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '0', borderBottom: '1px solid var(--border)', padding: '0 24px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, scrollbarWidth: 'none' as never, msOverflowStyle: 'none' as never }}>
         {(['staff', 'planning'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: '8px 18px', borderRadius: '8px 8px 0 0', border: 'none',
+              padding: '8px 18px', borderRadius: '8px 8px 0 0', border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
               background: activeTab === tab ? 'var(--accent)' : 'transparent',
               color: activeTab === tab ? 'var(--accent-text)' : 'var(--text-muted)',
               fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
