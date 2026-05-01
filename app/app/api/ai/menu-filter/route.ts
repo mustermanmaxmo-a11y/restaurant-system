@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 interface MenuItem {
   id: string
@@ -20,6 +21,11 @@ export async function POST(request: NextRequest) {
 
   if (!restaurantId || !query || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'restaurantId, query, and items required' }, { status: 400 })
+  }
+
+  const ip = getClientIp(request.headers)
+  if (!await rateLimit(`menu-filter:${ip}`, 20, 60_000)) {
+    return NextResponse.json({ suitable: items.map(i => i.id), unsuitable: [] })
   }
 
   // Sanitize query input

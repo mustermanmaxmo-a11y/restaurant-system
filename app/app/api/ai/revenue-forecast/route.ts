@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit } from '@/lib/rate-limit'
 
 export interface ForecastDay {
   date: string       // YYYY-MM-DD
@@ -28,6 +29,10 @@ export async function POST(request: NextRequest) {
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { data: { user } } = await supabase.auth.getUser(token)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!await rateLimit(`revenue-forecast:${restaurantId}`, 10, 3_600_000)) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 })
+  }
 
   const apiKey = await resolveAiKey(restaurantId)
   if (!apiKey) {

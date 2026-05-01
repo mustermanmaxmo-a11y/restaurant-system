@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Security: Only inventory data (no customer PII) is sent to the Claude API.
 // Specifically: ingredient names, quantities, supplier names, aggregated movement data.
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
 
   if (!restaurant) {
     return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  }
+
+  if (!await rateLimit(`inventory-suggestions:${restaurantId}`, 10, 3_600_000)) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 })
   }
 
   // Fetch inventory data in parallel

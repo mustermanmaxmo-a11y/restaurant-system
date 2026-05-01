@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Security: Nur der hochgeladene Dateiinhalt (PDF/Foto der Speisekarte) wird
 // an Claude gesendet. Keine Kundendaten, keine PII.
@@ -75,6 +76,10 @@ export async function POST(request: NextRequest) {
     .single()
   if (!restaurant || restaurant.owner_id !== user.id) {
     return NextResponse.json({ error: 'Restaurant nicht gefunden' }, { status: 404 })
+  }
+
+  if (!await rateLimit(`menu-extract:${restaurantId}`, 5, 3_600_000)) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte in einer Stunde erneut versuchen.' }, { status: 429 })
   }
 
   const apiKey = await resolveAiKey(restaurantId)
