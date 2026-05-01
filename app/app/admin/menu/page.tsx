@@ -393,24 +393,26 @@ export default function MenuPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
-          <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Menü verwalten</h1>
+          <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap' }}>Menü verwalten</h1>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
           {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise' || restaurant?.plan === 'trial') && (
             <button
               onClick={() => setShowProfitability(true)}
+              title="Profitabilität"
               style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 16px', borderRadius: '10px',
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '7px 10px', borderRadius: '10px',
                 border: '1.5px solid var(--accent)', background: 'var(--accent-subtle)',
-                color: 'var(--accent)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+                color: 'var(--accent)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
-              <BarChart2 size={14} />
-              Profitabilität
+              <BarChart2 size={13} />
+              <span className="btn-label-hide">Profitabilität</span>
             </button>
           )}
           <button
@@ -418,21 +420,23 @@ export default function MenuPage() {
             disabled={!aiEnabled}
             title={aiEnabled ? 'Speisekarte per KI aus PDF/Foto einlesen' : 'Pro- oder Enterprise-Plan erforderlich'}
             style={{
-              background: aiEnabled ? 'transparent' : 'transparent',
+              background: 'transparent',
               border: '1px solid var(--border)',
-              borderRadius: '8px', padding: '8px 14px',
+              borderRadius: '8px', padding: '7px 10px',
               color: aiEnabled ? 'var(--accent)' : 'var(--text-muted)',
-              fontWeight: 600, fontSize: '0.875rem',
+              fontWeight: 600, fontSize: '0.78rem',
               cursor: aiEnabled ? 'pointer' : 'not-allowed',
               opacity: aiEnabled ? 1 : 0.5,
-              display: 'flex', alignItems: 'center', gap: '6px',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Sparkles size={14} /> KI-Import
+            <Sparkles size={13} />
+            <span className="btn-label-hide">KI-Import</span>
           </button>
           <button
             onClick={openAddCategory}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '7px 12px', color: 'var(--accent-text)', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             + Kategorie
           </button>
