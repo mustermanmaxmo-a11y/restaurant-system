@@ -178,7 +178,8 @@ REGELN:
 
     return NextResponse.json({ categories, items })
   } catch (err) {
-    console.error('Menu extraction failed:', err)
-    return NextResponse.json({ error: 'KI-Import momentan nicht verfügbar' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Menu extraction failed:', msg)
+    return NextResponse.json({ error: `KI-Import fehlgeschlagen: ${msg}` }, { status: 500 })
   }
 }

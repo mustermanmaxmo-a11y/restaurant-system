@@ -41,13 +41,20 @@ export async function POST(request: NextRequest) {
   }
   const admin = adminClient()
   const { data: row } = await admin.from('platform_settings').select('id').single()
+
   if (!row) {
-    return NextResponse.json({ error: 'Platform settings not initialized' }, { status: 500 })
+    // No seed row yet — insert one with the key
+    const { error } = await admin
+      .from('platform_settings')
+      .insert({ anthropic_api_key: apiKey.trim() })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  } else {
+    const { error } = await admin
+      .from('platform_settings')
+      .update({ anthropic_api_key: apiKey.trim(), updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  const { error } = await admin
-    .from('platform_settings')
-    .update({ anthropic_api_key: apiKey.trim(), updated_at: new Date().toISOString() })
-    .eq('id', row.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
   return NextResponse.json({ success: true })
 }
