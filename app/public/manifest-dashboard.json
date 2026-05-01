@@ -1,12 +1,13 @@
 {
-  "name": "RestaurantOS",
-  "short_name": "RestaurantOS",
-  "description": "Restaurant Management Dashboard",
-  "start_url": "/admin",
+  "name": "Staff Dashboard",
+  "short_name": "Staff",
+  "description": "RestaurantOS Personal-Dashboard",
+  "start_url": "/dashboard",
+  "scope": "/dashboard",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#00C9A7",
-  "orientation": "any",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icons/icon-192.png",
