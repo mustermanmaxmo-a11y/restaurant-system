@@ -142,6 +142,7 @@ function BentoContent() {
 
   return (
     <div
+      className="bento-root"
       style={{
         minHeight: '100vh',
         background: V2.bg,
@@ -284,6 +285,7 @@ function BentoContent() {
         <TrialBanner plan={restaurant.plan as RestaurantPlan} trialEndsAt={restaurant.trial_ends_at} />
 
         <div
+          className="bento-kpi-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -311,6 +313,7 @@ function BentoContent() {
           Bereiche
         </div>
         <div
+          className="bento-nav-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
@@ -378,6 +381,9 @@ function BentoContent() {
       <style>{`
         @media (max-width: 720px) {
           .bento-hero-grid { grid-template-columns: 1fr !important; }
+          .bento-root { padding: 16px !important; }
+          .bento-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .bento-nav-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </div>

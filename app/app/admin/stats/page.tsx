@@ -188,7 +188,7 @@ export default function StatsPage() {
         </div>
       </div>
 
-      <div style={{ padding: '24px', maxWidth: '960px', margin: '0 auto' }}>
+      <div style={{ padding: '16px', maxWidth: '960px', margin: '0 auto' }}>
         {!hasData ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><BarChart2 size={48} color="var(--text-muted)" /></div>
@@ -197,22 +197,22 @@ export default function StatsPage() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
               <StatCard label="Bestellungen" value={String(orders.length)} accent />
               <StatCard label="Gerichte" value={String(totalDishes)} />
               <StatCard label="Reservierungen" value={String(reservationCount)} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: bestsellers.length > 0 && pieData.length > 0 ? '1fr 1fr' : '1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '16px', marginBottom: '16px' }}>
               {/* Bestseller */}
               {bestsellers.length > 0 && (
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>Bestseller</p>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={bestsellers} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px' }}>
+                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '16px' }}>Bestseller</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={bestsellers} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                       <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" width={90} tick={{ fill: 'var(--text)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={72} tick={{ fill: 'var(--text)', fontSize: 10 }} axisLine={false} tickLine={false} />
                       <Tooltip
                         contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem' }}
                         formatter={(v: unknown) => [`${v}×`, 'Verkauft']}
@@ -225,9 +225,9 @@ export default function StatsPage() {
 
               {/* Bestelltypen Pie */}
               {pieData.length > 0 && (
-                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>Bestelltypen</p>
-                  <ResponsiveContainer width="100%" height={220}>
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px' }}>
+                  <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '16px' }}>Bestelltypen</p>
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie
                         data={pieData}
@@ -259,8 +259,8 @@ export default function StatsPage() {
 
             {/* Stoßzeiten */}
             {hourlyDistribution.length > 0 && (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-                <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>Stoßzeiten</p>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+                <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '16px' }}>Stoßzeiten</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={hourlyDistribution} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -279,9 +279,9 @@ export default function StatsPage() {
 
             {/* Nach Wochentag */}
             {orders.length > 0 && (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
                 <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '4px' }}>Nach Wochentag</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '20px' }}>Ø Bestellungen pro Tag</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '16px' }}>Ø Bestellungen pro Tag</p>
                 {DAYS.map((day, i) => (
                   <div key={day} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <div style={{ width: '24px', fontSize: '12px', color: '#888' }}>{day}</div>
@@ -304,8 +304,8 @@ export default function StatsPage() {
 
             {/* Tisch-Aktivität */}
             {tableChartData.length > 0 && (
-              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
-                <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>Tisch-Aktivität</p>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+                <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '16px' }}>Tisch-Aktivität</p>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -333,14 +333,10 @@ export default function StatsPage() {
 
         {/* KI-Wochenbericht — Pro/Enterprise only, always visible */}
         {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (
-          <div style={{ padding: '0 24px 24px' }}>
-            <WeeklyReport restaurantId={restaurant.id} />
-          </div>
+          <WeeklyReport restaurantId={restaurant.id} />
         )}
         {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise' || restaurant?.plan === 'trial') && (
-          <div style={{ padding: '0 24px 24px' }}>
-            <RevenueForecast restaurantId={restaurant.id} />
-          </div>
+          <RevenueForecast restaurantId={restaurant.id} />
         )}
       </div>
     </div>
@@ -349,9 +345,9 @@ export default function StatsPage() {
 
 function StatCard({ label, value, accent, warn }: { label: string; value: string; accent?: boolean; warn?: boolean }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px 24px' }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>{label}</p>
-      <p style={{ color: warn ? '#f87171' : accent ? 'var(--accent)' : 'var(--text)', fontWeight: 700, fontSize: '1.6rem', lineHeight: 1 }}>{value}</p>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 16px' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>{label}</p>
+      <p style={{ color: warn ? '#f87171' : accent ? 'var(--accent)' : 'var(--text)', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>{value}</p>
     </div>
   )
 }
