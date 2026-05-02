@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { KeyRound, CheckCircle2, Sparkles } from 'lucide-react'
+import { KeyRound, CheckCircle2, Sparkles, Bell } from 'lucide-react'
 
 export default function PlatformSettingsPage() {
   const [newPassword, setNewPassword] = useState('')
@@ -15,6 +15,25 @@ export default function PlatformSettingsPage() {
   const [aiKeySaving, setAiKeySaving] = useState(false)
   const [aiKeySuccess, setAiKeySuccess] = useState(false)
   const [aiKeyError, setAiKeyError] = useState('')
+
+  const [notifyEmail, setNotifyEmail] = useState('')
+  const [notifyEmailSaving, setNotifyEmailSaving] = useState(false)
+  const [notifyEmailSuccess, setNotifyEmailSuccess] = useState(false)
+  const [notifyEmailError, setNotifyEmailError] = useState('')
+
+  useEffect(() => {
+    async function loadNotifyEmail() {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/platform/notification-email', {
+        headers: { 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+      })
+      if (res.ok) {
+        const json = await res.json()
+        setNotifyEmail(json.email ?? '')
+      }
+    }
+    loadNotifyEmail()
+  }, [])
 
   async function handleAiKeySave() {
     if (!aiKey.trim()) { setAiKeyError('Bitte API Key eingeben.'); return }
@@ -42,6 +61,33 @@ export default function PlatformSettingsPage() {
       setAiKeyError('Speichern fehlgeschlagen.')
     }
     setAiKeySaving(false)
+  }
+
+  async function handleNotifyEmailSave() {
+    if (!notifyEmail.trim()) { setNotifyEmailError('Bitte E-Mail eingeben.'); return }
+    setNotifyEmailSaving(true)
+    setNotifyEmailError('')
+    setNotifyEmailSuccess(false)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/platform/notification-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ email: notifyEmail.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setNotifyEmailError('Fehler: ' + (json.error ?? 'Unbekannt'))
+      } else {
+        setNotifyEmailSuccess(true)
+      }
+    } catch {
+      setNotifyEmailError('Speichern fehlgeschlagen.')
+    }
+    setNotifyEmailSaving(false)
   }
 
   async function handlePasswordChange() {
@@ -116,6 +162,57 @@ export default function PlatformSettingsPage() {
               }}
             >
               {aiKeySaving ? 'Wird gespeichert...' : 'Key speichern'}
+            </button>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Benachrichtigungen">
+        <div style={{
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '12px', padding: '20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Bell size={18} color="#10b981" />
+            </div>
+            <div>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', marginBottom: '2px' }}>Benachrichtigungs-E-Mail</p>
+              <p style={{ color: '#888', fontSize: '0.78rem' }}>Wohin sollen Design-Anfragen von Betreibern gesendet werden?</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="email"
+              placeholder="deine@email.de"
+              value={notifyEmail}
+              onChange={e => { setNotifyEmail(e.target.value); setNotifyEmailError(''); setNotifyEmailSuccess(false) }}
+              style={{
+                padding: '10px 12px', borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.05)', color: '#fff',
+                fontSize: '0.875rem', outline: 'none',
+                width: '100%', boxSizing: 'border-box' as const,
+              }}
+            />
+            {notifyEmailError && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{notifyEmailError}</p>}
+            {notifyEmailSuccess && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem' }}>
+                <CheckCircle2 size={14} /> E-Mail gespeichert
+              </div>
+            )}
+            <button
+              onClick={handleNotifyEmailSave}
+              disabled={notifyEmailSaving || !notifyEmail}
+              style={{
+                alignSelf: 'flex-start', padding: '9px 18px', borderRadius: '8px',
+                border: 'none', background: '#10b981', color: '#fff',
+                fontSize: '0.82rem', fontWeight: 700,
+                cursor: notifyEmailSaving || !notifyEmail ? 'not-allowed' : 'pointer',
+                opacity: notifyEmailSaving || !notifyEmail ? 0.6 : 1,
+              }}
+            >
+              {notifyEmailSaving ? 'Wird gespeichert...' : 'E-Mail speichern'}
             </button>
           </div>
         </div>
