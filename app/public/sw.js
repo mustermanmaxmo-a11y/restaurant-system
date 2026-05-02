@@ -1,6 +1,5 @@
-const CACHE_NAME = 'restaurantos-v2'
-
-const APP_SHELL = ['/admin', '/dashboard']
+const CACHE_NAME = 'restaurantos-v3'
+const APP_SHELL = ['/admin', '/dashboard', '/platform']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,9 +20,42 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     const url = new URL(event.request.url)
-    const fallback = url.pathname.startsWith('/dashboard') ? '/dashboard' : '/admin'
+    let fallback = '/admin'
+    if (url.pathname.startsWith('/dashboard')) fallback = '/dashboard'
+    else if (url.pathname.startsWith('/platform')) fallback = '/platform'
     event.respondWith(
       fetch(event.request).catch(() => caches.match(fallback))
     )
   }
+})
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+  const data = event.data.json()
+  const options = {
+    body: data.body,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: data.tag || 'restaurantos',
+    data: { url: data.url || '/' },
+    requireInteraction: data.requireInteraction || false,
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/'
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(url) && 'focus' in client) {
+          return client.focus()
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(url)
+    })
+  )
 })
