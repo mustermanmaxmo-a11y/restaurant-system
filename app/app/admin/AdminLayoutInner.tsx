@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useTheme } from '@/components/providers/theme-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { useLanguage } from '@/components/providers/language-provider'
+import { PushNotificationBanner } from '@/components/PushNotificationBanner'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
   Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu, Settings,
@@ -17,6 +18,8 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
   const { theme, toggleTheme } = useTheme()
   const { t } = useLanguage()
   const [restaurantName, setRestaurantName] = useState('')
+  const [restaurantId, setRestaurantId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const NAV = [
@@ -38,8 +41,14 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push('/owner-login'); return }
-      supabase.from('restaurants').select('name').eq('owner_id', session.user.id).limit(1).maybeSingle()
-        .then(({ data }) => { if (data) setRestaurantName(data.name) })
+      setUserId(session.user.id)
+      supabase.from('restaurants').select('id, name').eq('owner_id', session.user.id).limit(1).maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setRestaurantName(data.name)
+            setRestaurantId(data.id)
+          }
+        })
     })
   }, [router])
 
@@ -197,6 +206,14 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
           .admin-main { padding-top: 56px; }
         }
       `}</style>
+
+      {restaurantId && userId && (
+        <PushNotificationBanner
+          appContext="admin"
+          restaurantId={restaurantId}
+          userId={userId}
+        />
+      )}
     </div>
   )
 }
