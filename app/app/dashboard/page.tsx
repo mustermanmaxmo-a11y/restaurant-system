@@ -12,6 +12,7 @@ import {
 import StaffOrderPanel from './StaffOrderPanel'
 import ShiftHandoverModal from './ShiftHandoverModal'
 import { timeAgo } from '@/lib/utils'
+import { PushNotificationBanner } from '@/components/PushNotificationBanner'
 
 type Session = { staff: Staff; restaurant: Restaurant }
 type Column = 'new' | 'cooking' | 'served'
@@ -354,6 +355,11 @@ export default function DashboardPage() {
 
     return (
       <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', flexDirection: 'column' }}>
+        <PushNotificationBanner
+          appContext="dashboard"
+          restaurantId={session.restaurant.id}
+          staffRole={session.staff.role}
+        />
         {/* Header */}
         <div style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -490,6 +496,11 @@ export default function DashboardPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', flexDirection: 'column' }}>
+      <PushNotificationBanner
+        appContext="dashboard"
+        restaurantId={session.restaurant.id}
+        staffRole={session.staff.role}
+      />
       {/* Header */}
       <div style={{ background: '#1a1a1a', borderBottom: '1px solid #2a2a2a', flexShrink: 0 }}>
         {/* Top row: name + logout */}
