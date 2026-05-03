@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Sparkles, X, Send } from 'lucide-react'
 
 interface Message {
@@ -27,11 +27,35 @@ export default function AdminChatWidget({ plan }: AdminChatWidgetProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const hasAI = AI_PLANS.includes(plan)
   const hasMessages = messages.length > 0
+
+  const handleViewportResize = useCallback(() => {
+    if (!window.visualViewport) return
+    const offset = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop)
+    setKeyboardOffset(offset)
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+  }, [])
+
+  useEffect(() => {
+    if (!open) { setKeyboardOffset(0); return }
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', handleViewportResize)
+      vv.addEventListener('scroll', handleViewportResize)
+    }
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', handleViewportResize)
+        vv.removeEventListener('scroll', handleViewportResize)
+      }
+      setKeyboardOffset(0)
+    }
+  }, [open, handleViewportResize])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -107,10 +131,10 @@ export default function AdminChatWidget({ plan }: AdminChatWidgetProps) {
         <div
           style={{
             position: 'fixed',
-            bottom: '24px',
+            bottom: `${24 + keyboardOffset}px`,
             right: '24px',
             width: 'min(360px, calc(100vw - 32px))',
-            height: 'min(500px, calc(100dvh - 80px))',
+            height: `min(500px, calc(100dvh - ${48 + keyboardOffset}px))`,
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: '20px',
@@ -120,6 +144,7 @@ export default function AdminChatWidget({ plan }: AdminChatWidgetProps) {
             boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
             animation: 'adminChatIn 0.2s ease-out',
             overflow: 'hidden',
+            transition: 'bottom 0.15s ease-out, height 0.15s ease-out',
           }}
         >
           {/* Header */}
