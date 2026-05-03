@@ -4,8 +4,14 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveDesignVersion } from '@/lib/design-version'
 import { DesignVersionProvider } from '@/components/providers/design-version-provider'
 import PlatformV2Banner from './_v2/PlatformV2Banner'
+import { PlatformPushSetup } from '@/components/PlatformPushSetup'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  manifest: '/manifest-platform.json',
+}
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   const { user, role } = await requirePlatformAccess()
@@ -42,6 +48,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           {version === 'v2' && <PlatformV2Banner />}
           {children}
         </main>
+        <PlatformPushSetup userId={user?.id} />
       </div>
     </DesignVersionProvider>
   )
