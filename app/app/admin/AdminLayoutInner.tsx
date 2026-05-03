@@ -43,7 +43,8 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
       if (!session) { router.push('/owner-login'); return }
       setUserId(session.user.id)
       supabase.from('restaurants').select('id, name').eq('owner_id', session.user.id).limit(1).maybeSingle()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) console.error('[AdminLayout] Failed to load restaurant:', error)
           if (data) {
             setRestaurantName(data.name)
             setRestaurantId(data.id)
