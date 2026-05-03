@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2, Smartphone } from 'lucide-react'
+import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2, Smartphone, Bell } from 'lucide-react'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  const [userId, setUserId] = useState<string | null>(null)
   const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
@@ -44,6 +46,7 @@ export default function SettingsPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/owner-login'); return }
       setEmail(session.user.email ?? '')
+      setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
         .select('id, plan, weekly_report_email, delivery_buffer_minutes')
@@ -198,6 +201,12 @@ export default function SettingsPage() {
     }
   }
 
+  const { permission: pushPermission, subscribed: pushSubscribed, loading: pushLoading, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications({
+    appContext: 'admin',
+    restaurantId: restaurant?.id,
+    userId: userId ?? undefined,
+  })
+
   if (loading) return null
 
   return (
@@ -246,6 +255,56 @@ export default function SettingsPage() {
           </p>
         </div>
       )}
+
+      {/* Push-Benachrichtigungen */}
+      <div style={{
+        background: 'var(--surface)', borderRadius: '16px',
+        border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+          <Bell size={16} color="var(--accent)" />
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem' }}>
+            Push-Benachrichtigungen
+          </h2>
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+          Erhalte sofortige Benachrichtigungen für neue Bestellungen und Reservierungen.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>
+            {pushPermission === 'denied' ? 'Vom Browser blockiert' : pushSubscribed ? 'Aktiviert' : 'Deaktiviert'}
+          </span>
+          {pushPermission === 'denied' ? (
+            <span style={{ color: '#f59e0b', fontSize: '0.78rem', fontWeight: 500 }}>In Browser-Einstellungen entsperren</span>
+          ) : (
+            <button
+              onClick={pushSubscribed ? unsubscribePush : subscribePush}
+              disabled={pushLoading}
+              style={{
+                width: '48px', height: '26px', borderRadius: '13px', border: 'none',
+                background: pushSubscribed ? 'var(--accent)' : 'var(--border)',
+                cursor: pushLoading ? 'wait' : 'pointer',
+                position: 'relative', transition: 'background 0.2s',
+                opacity: pushLoading ? 0.6 : 1,
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: '3px',
+                left: pushSubscribed ? '25px' : '3px',
+                width: '20px', height: '20px', borderRadius: '50%',
+                background: '#fff', transition: 'left 0.2s',
+              }} />
+            </button>
+          )}
+        </div>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '8px' }}>
+          {pushPermission === 'denied'
+            ? 'Benachrichtigungen wurden im Browser blockiert.'
+            : pushSubscribed
+              ? 'Du wirst bei neuen Bestellungen und Reservierungen informiert.'
+              : 'Aktiviere Benachrichtigungen um keine Events zu verpassen.'}
+        </p>
+      </div>
 
       {/* Liefer-Puffer */}
       <div style={{
