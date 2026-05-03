@@ -11,6 +11,7 @@ import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
   Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu, Settings,
 } from 'lucide-react'
+import AdminChatWidget from '@/components/AdminChatWidget'
 
 export default function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -19,6 +20,7 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
   const { t } = useLanguage()
   const [restaurantName, setRestaurantName] = useState('')
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
+  const [restaurantPlan, setRestaurantPlan] = useState<string>('starter')
   const [userId, setUserId] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -42,12 +44,13 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { router.push('/owner-login'); return }
       setUserId(session.user.id)
-      supabase.from('restaurants').select('id, name').eq('owner_id', session.user.id).limit(1).maybeSingle()
+      supabase.from('restaurants').select('id, name, plan').eq('owner_id', session.user.id).limit(1).maybeSingle()
         .then(({ data, error }) => {
           if (error) console.error('[AdminLayout] Failed to load restaurant:', error)
           if (data) {
             setRestaurantName(data.name)
             setRestaurantId(data.id)
+            setRestaurantPlan(data.plan || 'starter')
           }
         })
     })
@@ -214,6 +217,10 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
           restaurantId={restaurantId}
           userId={userId}
         />
+      )}
+
+      {restaurantId && (
+        <AdminChatWidget restaurantId={restaurantId} plan={restaurantPlan} />
       )}
     </div>
   )
