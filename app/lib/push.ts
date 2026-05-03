@@ -1,11 +1,14 @@
 import webpush from 'web-push'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+function getWebPush() {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  )
+  return webpush
+}
 
 export type PushPayload = {
   title: string
@@ -23,7 +26,7 @@ type Subscription = {
 
 export async function sendPushToSubscription(sub: Subscription, payload: PushPayload) {
   try {
-    await webpush.sendNotification(
+    await getWebPush().sendNotification(
       {
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth_key },
@@ -31,10 +34,11 @@ export async function sendPushToSubscription(sub: Subscription, payload: PushPay
       JSON.stringify(payload)
     )
   } catch (err: any) {
-    // 410 Gone = subscription expired, clean it up
     if (err.statusCode === 410) {
       const admin = createSupabaseAdmin()
       await admin.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+    } else {
+      console.error('[push] Failed to send notification:', err.statusCode, err.message)
     }
   }
 }
