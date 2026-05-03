@@ -9,6 +9,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
+  const VALID_CONTEXTS = ['dashboard', 'admin', 'platform'] as const
+  if (!VALID_CONTEXTS.includes(app_context)) {
+    return NextResponse.json({ error: 'Invalid app_context' }, { status: 400 })
+  }
+
   const admin = createSupabaseAdmin()
   const { error } = await admin.from('push_subscriptions').upsert(
     {

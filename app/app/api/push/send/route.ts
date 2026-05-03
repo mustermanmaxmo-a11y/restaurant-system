@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { sendPushToRestaurant, sendPushToPlatform } from '@/lib/push'
 
+function isValidSecret(header: string | null): boolean {
+  const expected = process.env.PUSH_WEBHOOK_SECRET
+  if (!expected || !header) return false
+  const provided = header.startsWith('Bearer ') ? header.slice(7) : ''
+  try {
+    return timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: NextRequest) {
-  // Verify webhook secret
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.PUSH_WEBHOOK_SECRET}`) {
+  if (!isValidSecret(req.headers.get('authorization'))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { type, table, record } = body  // Supabase webhook payload
+  const body = await req.json().catch(() => null)
+  if (!body) return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
 
-  if (!record) return NextResponse.json({ ok: true })
+  const { type, table, record } = body
+
+  if (!record || typeof type !== 'string' || typeof table !== 'string') {
+    return NextResponse.json({ ok: true })
+  }
 
   if (table === 'orders' && type === 'INSERT') {
     await sendPushToRestaurant(record.restaurant_id, ['dashboard', 'admin'], {
