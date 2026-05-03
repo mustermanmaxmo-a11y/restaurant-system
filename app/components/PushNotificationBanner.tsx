@@ -65,14 +65,13 @@ export function PushNotificationBanner({ appContext, restaurantId, userId, staff
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           onClick={handleDismiss}
-          disabled={loading}
           style={{
             background: 'transparent',
             border: '1px solid #374151',
             borderRadius: 8,
             color: '#9ca3af',
             padding: '6px 10px',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             fontSize: 12,
           }}
         >

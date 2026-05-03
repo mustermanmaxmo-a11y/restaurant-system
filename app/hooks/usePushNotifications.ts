@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type PushConfig = {
   appContext: 'dashboard' | 'admin' | 'platform'
@@ -13,6 +13,7 @@ export function usePushNotifications(config: PushConfig) {
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [subscribed, setSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
+  const inFlight = useRef(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -27,12 +28,20 @@ export function usePushNotifications(config: PushConfig) {
   }, [])
 
   async function subscribe() {
+    if (inFlight.current) return
     if (
       !('serviceWorker' in navigator) ||
       !('PushManager' in window) ||
       !('Notification' in window)
     ) return
 
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) {
+      console.error('[usePushNotifications] NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set')
+      return
+    }
+
+    inFlight.current = true
     setLoading(true)
     try {
       const result = await Notification.requestPermission()
@@ -43,7 +52,7 @@ export function usePushNotifications(config: PushConfig) {
       const existing = await reg.pushManager.getSubscription()
       const sub = existing ?? await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
 
       const key = sub.getKey('p256dh')
@@ -69,6 +78,7 @@ export function usePushNotifications(config: PushConfig) {
     } catch (err) {
       console.error('[usePushNotifications] subscribe failed:', err)
     } finally {
+      inFlight.current = false
       setLoading(false)
     }
   }
