@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { supabase } from '@/lib/supabase'
-import { darken } from '@/lib/color-utils'
+import { darken, buildColors, buildColorsFromRestaurant } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
 import { MenuItemCard } from '@/components/menu/MenuItemCard'
@@ -414,6 +414,10 @@ export default function BestellenV1() {
     new: ClipboardList, cooking: ChefHat, served: Bike, cancelled: XCircle,
   }
 
+  const C = restaurant ? buildColorsFromRestaurant(restaurant) : buildColors()
+  const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
+  const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
+
   const ALLERGEN_FILTERS = [
     'Gluten', 'Nüsse', 'Milch', 'Eier', 'Fisch',
     'Meeresfrüchte', 'Soja', 'Sellerie', 'Senf', 'Sesam',
@@ -697,74 +701,127 @@ export default function BestellenV1() {
     const StatusIcon = STATUS_ICONS[order.status] ?? STATUS_ICONS.new
     const isPickup = order.order_type === 'pickup'
     const statusIdx = ['new', 'cooking', 'served'].indexOf(order.status)
+    const isServed = order.status === 'served'
+    const confettiColors = [C.accent, '#f59e0b', '#10b981', '#3b82f6', '#ec4899']
+
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', width: '100%', overflowX: 'hidden' }}>
-        <div style={{ background: 'var(--btn-bg)', padding: '40px 20px 32px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><StatusIcon size={48} color="var(--surface)" /></div>
-          <h1 style={{ color: 'var(--surface)', fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.02em' }}>
-            {statusLabel}
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.82rem' }}>
+      <div style={{ minHeight: '100vh', background: C.bg, width: '100%', overflowX: 'hidden' }}>
+        <style>{`@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }`}</style>
+
+        {/* Confetti */}
+        <AnimatePresence>
+          {isServed && Array.from({ length: 18 }).map((_, i) => (
+            <motion.div key={`c-${i}`}
+              initial={{ y: 0, x: 0, opacity: 1, scale: 1, rotate: 0 }}
+              animate={{ y: -240 - Math.random() * 180, x: (Math.random() - 0.5) * 320, opacity: 0, scale: 0.2, rotate: 900 }}
+              transition={{ duration: 1.1 + Math.random() * 0.6, delay: i * 0.045, ease: 'easeOut' }}
+              style={{ position: 'fixed', top: '45%', left: '50%', width: '9px', height: '9px', borderRadius: '2px', background: confettiColors[i % confettiColors.length], pointerEvents: 'none', zIndex: 999 }}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Status hero */}
+        <div style={{ background: `linear-gradient(180deg, #0f0f0f 0%, ${C.bg} 100%)`, padding: '48px 24px 40px', textAlign: 'center', borderBottom: `1px solid ${C.border}` }}>
+          <AnimatePresence mode="wait">
+            <motion.div key={order.status}
+              initial={{ scale: 0.4, opacity: 0, rotate: -15 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0.4, opacity: 0 }}
+              transition={springBouncy}
+              style={{ marginBottom: '18px', display: 'flex', justifyContent: 'center' }}
+            ><StatusIcon size={72} color={C.accent} /></motion.div>
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.h1 key={order.status + 'l'}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
+              transition={spring}
+              style={{ color: C.text, fontSize: 'clamp(1.3rem, 5vw, 1.6rem)', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.02em' }}
+            >{statusLabel}</motion.h1>
+          </AnimatePresence>
+          <p style={{ color: C.muted, fontSize: '0.85rem' }}>
             {restaurant?.name} · {isPickup ? t('order.pickup') : t('order.delivery')}
           </p>
           {order.estimated_time != null && order.status !== 'served' && order.status !== 'cancelled' && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
-              background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
+              background: '#f59e0b20', color: '#f59e0b',
               borderRadius: '10px', padding: '6px 14px',
-              fontSize: '0.85rem', fontWeight: 600, marginTop: '8px',
+              fontSize: '0.85rem', fontWeight: 600, marginTop: '12px',
             }}>
               ⏱ Geschätzte Wartezeit: ~{order.estimated_time} Minuten
             </div>
           )}
         </div>
 
-        <div style={{ maxWidth: '480px', margin: '0 auto', padding: '24px 20px' }}>
+        <div style={{ maxWidth: '480px', margin: '0 auto', padding: '28px 20px' }}>
           {/* Progress */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0', marginBottom: '32px', background: 'var(--surface)', borderRadius: '16px', padding: '20px' }}>
-            {([{ label: 'Eingegangen', icon: ClipboardList }, { label: 'Zubereitung', icon: ChefHat }, { label: 'Fertig', icon: CheckCircle2 }] as { label: string; icon: LucideIcon }[]).map((step, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? '1' : 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                  <div style={{
-                    width: '40px', height: '40px', borderRadius: '50%',
-                    background: statusIdx >= i ? 'var(--text)' : 'var(--border)',
-                    color: statusIdx >= i ? 'var(--bg)' : 'var(--text-muted)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.5s',
-                    boxShadow: statusIdx === i ? '0 0 0 4px var(--border-accent)' : 'none',
-                  }}>
-                    {statusIdx > i ? <CheckCircle2 size={16} /> : <step.icon size={16} />}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '32px' }}>
+            {['new', 'cooking', 'served'].map((s, i) => {
+              const isActive = statusIdx === i
+              const isDone = statusIdx > i
+              return (
+                <div key={s} style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <motion.div
+                      animate={{ background: statusIdx >= i ? C.accent : C.surface2, scale: isActive ? 1.18 : 1 }}
+                      transition={spring}
+                      style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '0.75rem', fontWeight: 800,
+                        boxShadow: isActive ? `0 0 0 5px ${C.accentGlow}` : 'none',
+                      }}
+                    >
+                      <AnimatePresence mode="wait">
+                        {isDone ? (
+                          <motion.svg key="chk" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <motion.path d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.4 }} />
+                          </motion.svg>
+                        ) : (
+                          <motion.span key="n" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{i + 1}</motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                    <span style={{ fontSize: '0.64rem', color: statusIdx >= i ? C.text : C.muted, fontWeight: 700, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>
+                      {['Eingegangen', 'Zubereitung', 'Fertig'][i]}
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.65rem', color: statusIdx >= i ? 'var(--text)' : 'var(--text-muted)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{step.label}</span>
+                  {i < 2 && (
+                    <motion.div animate={{ background: statusIdx > i ? C.accent : C.border }} transition={{ duration: 0.5 }}
+                      style={{ width: '48px', height: '2px', margin: '0 4px 20px' }} />
+                  )}
                 </div>
-                {i < 2 && <div style={{ flex: 1, height: '2px', background: statusIdx > i ? 'var(--text)' : 'var(--border)', margin: '0 6px', marginBottom: '20px', transition: 'background 0.5s' }} />}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Order Summary */}
-          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '20px', marginBottom: '12px' }}>
-            <h3 style={{ color: 'var(--text)', fontWeight: 800, marginBottom: '14px', fontSize: '0.9rem' }}>Deine Bestellung</h3>
+          <div style={{ background: C.surface, borderRadius: '18px', padding: '20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
+            <h3 style={{ color: C.muted, fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>Deine Bestellung</h3>
             {order.items.map((item, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{item.qty}× {item.name}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{(item.price * item.qty).toFixed(2)} €</span>
+                <span style={{ color: C.text, fontSize: '0.875rem' }}>{item.qty}× {item.name}</span>
+                <span style={{ color: C.muted, fontSize: '0.875rem' }}>{(item.price * item.qty).toFixed(2)} €</span>
               </div>
             ))}
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text)', fontWeight: 800 }}>{t('order.total')}</span>
-              <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{order.total.toFixed(2)} €</span>
+            <div style={{ borderTop: `1px solid ${C.border}`, marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: C.text, fontWeight: 700 }}>{t('order.total')}</span>
+              <span style={{ color: C.accent, fontWeight: 800, fontSize: '1.05rem' }}>{order.total.toFixed(2)} €</span>
             </div>
           </div>
 
           {order.delivery_address && (
-            <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '16px 20px' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Lieferadresse</p>
-              <p style={{ color: 'var(--text)', fontSize: '0.875rem', fontWeight: 600 }}>
+            <div style={{ background: C.surface, borderRadius: '16px', padding: '16px 20px', marginBottom: '16px', border: `1px solid ${C.border}` }}>
+              <p style={{ color: C.muted, fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Lieferadresse</p>
+              <p style={{ color: C.text, fontSize: '0.875rem', fontWeight: 600 }}>
                 {order.delivery_address.street}, {order.delivery_address.zip} {order.delivery_address.city}
               </p>
             </div>
           )}
+
+          <motion.button
+            onClick={() => { setCart([]); setView('menu') }}
+            whileTap={{ scale: 0.98 }} transition={spring}
+            style={{ width: '100%', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: '12px', padding: '13px', color: C.muted, cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}
+          >Neue Bestellung</motion.button>
         </div>
       </div>
     )
