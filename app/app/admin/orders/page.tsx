@@ -338,7 +338,8 @@ export default function OrdersPage() {
       <ServiceCallBanner calls={calls} tables={tables} onResolve={resolveCall} />
 
       {/* Kanban columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', alignItems: 'start' }}>
+      <div style={{ overflowX: 'auto', marginLeft: '-24px', marginRight: '-24px', paddingLeft: '24px', paddingRight: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))', gap: '16px', alignItems: 'start', minWidth: '920px' }}>
         {cols.map(col => (
           <div key={col.status}>
             {/* Column header */}
@@ -384,6 +385,7 @@ export default function OrdersPage() {
             </div>
           </div>
         ))}
+      </div>
       </div>
 
       {/* Mobile note */}

@@ -40,7 +40,7 @@ export async function GET(
   const clientId = process.env[config.clientIdEnv]
   if (!clientId) {
     console.error(`Missing env var: ${config.clientIdEnv}`)
-    return NextResponse.redirect(new URL('/admin/integrations?status=error', request.url))
+    return NextResponse.redirect(new URL(`/admin/integrations?status=not_configured&provider=${provider}`, request.url))
   }
 
   // Session prüfen: Nur eingeloggte Owner können verbinden

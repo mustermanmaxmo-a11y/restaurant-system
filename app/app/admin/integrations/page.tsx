@@ -20,6 +20,8 @@ const PROVIDERS = [
     color: '#6c63ff',
     manual: true,
     docsUrl: 'https://stripe.com/docs/terminal',
+    devUrl: 'https://stripe.com/docs/terminal',
+    envVar: 'STRIPE_SECRET_KEY (bereits konfiguriert)',
   },
   {
     id: 'sumup',
@@ -27,6 +29,8 @@ const PROVIDERS = [
     desc: 'Verbinde deinen SumUp-Account und alle Kartenzahlungen fließen automatisch in die Statistik.',
     color: '#00d4aa',
     manual: false,
+    devUrl: 'https://developer.sumup.com/docs/online-payments/introduction/',
+    envVar: 'SUMUP_CLIENT_ID + SUMUP_CLIENT_SECRET',
   },
   {
     id: 'zettle',
@@ -34,6 +38,8 @@ const PROVIDERS = [
     desc: 'Verbinde deinen Zettle-Account für automatischen Umsatz-Sync.',
     color: '#009cde',
     manual: false,
+    devUrl: 'https://developer.zettle.com/docs/api/getting-started',
+    envVar: 'ZETTLE_CLIENT_ID + ZETTLE_CLIENT_SECRET',
   },
   {
     id: 'square',
@@ -41,6 +47,8 @@ const PROVIDERS = [
     desc: 'Verbinde deinen Square-Account und verwalte alle Einnahmen zentral.',
     color: '#3e4348',
     manual: false,
+    devUrl: 'https://developer.squareup.com/docs/oauth-api/overview',
+    envVar: 'SQUARE_APP_ID + SQUARE_APP_SECRET',
   },
 ]
 
@@ -52,6 +60,7 @@ function IntegrationsContent() {
   const [loading, setLoading] = useState(true)
   const [disconnecting, setDisconnecting] = useState<string | null>(null)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  const [setupModal, setSetupModal] = useState<string | null>(null)
   // KI-Einstellungen
   const [aiKey, setAiKey] = useState('')
   const [aiKeyMasked, setAiKeyMasked] = useState<string | null>(null)
@@ -89,6 +98,8 @@ function IntegrationsContent() {
     if (status === 'connected' && provider) {
       setStatusMsg(`${PROVIDERS.find(p => p.id === provider)?.name || provider} erfolgreich verbunden.`)
       setTimeout(() => setStatusMsg(null), 4000)
+    } else if (status === 'not_configured' && provider) {
+      setSetupModal(provider)
     } else if (status === 'error') {
       setStatusMsg('Verbindung fehlgeschlagen. Bitte erneut versuchen.')
       setTimeout(() => setStatusMsg(null), 5000)
@@ -481,6 +492,59 @@ function IntegrationsContent() {
           </div>
         </div>
       </div>
+
+      {/* Setup Required Modal */}
+      {setupModal && (() => {
+        const p = PROVIDERS.find(x => x.id === setupModal)
+        if (!p) return null
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+            onClick={() => setSetupModal(null)}
+          >
+            <div
+              style={{ background: 'var(--surface)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '480px', border: '1px solid var(--border)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                <h3 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>{p.name} verbinden</h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '20px' }}>
+                Diese Integration benötigt OAuth-Zugangsdaten, die noch nicht in den Umgebungsvariablen eingetragen sind. Um sie zu aktivieren:
+              </p>
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.85rem', marginBottom: '8px' }}>Benötigte Env-Variablen:</p>
+                <code style={{ color: 'var(--accent)', fontSize: '0.82rem', fontFamily: 'monospace' }}>{p.envVar}</code>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <a
+                  href={p.devUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block', padding: '12px 18px', borderRadius: '12px',
+                    background: p.color, color: '#fff',
+                    fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', textAlign: 'center',
+                  }}
+                >
+                  Developer-Portal öffnen →
+                </a>
+                <button
+                  onClick={() => setSetupModal(null)}
+                  style={{
+                    padding: '12px 18px', borderRadius: '12px',
+                    border: '1px solid var(--border)', background: 'transparent',
+                    color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+                  }}
+                >
+                  Schließen
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

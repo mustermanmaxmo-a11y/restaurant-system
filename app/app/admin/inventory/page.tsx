@@ -10,7 +10,7 @@ import type {
   WasteReason, PurchaseOrderStatus,
 } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
-import { Package, AlertTriangle, Truck, Sparkles, Link2, Pencil, X, CheckCircle2, BarChart2, Lightbulb, Siren } from 'lucide-react'
+import { Package, AlertTriangle, Truck, Sparkles, Link2, Pencil, X, CheckCircle2, BarChart2, Lightbulb, Siren, Trash2, TrendingDown } from 'lucide-react'
 
 type Tab = 'bestand' | 'lieferanten' | 'bestellungen' | 'verluste'
 
@@ -559,6 +559,45 @@ export default function InventoryPage() {
                 })}
               </div>
             )}
+
+            {/* Verluste-Snapshot: aktuelle Woche */}
+            {(() => {
+              const currentWeek = getISOWeek(new Date())
+              const thisWeekLogs = wasteByWeek[currentWeek] || []
+              const thisWeekCost = thisWeekLogs.reduce((s, l) => s + (l.purchase_price != null ? l.quantity * l.purchase_price : 0), 0)
+              return (
+                <div style={{
+                  marginTop: '20px', background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: '12px', padding: '16px 20px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#f8717115', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <TrendingDown size={18} color="#f87171" />
+                    </div>
+                    <div>
+                      <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>Verluste diese Woche</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, marginTop: '2px' }}>
+                        {thisWeekLogs.length === 0
+                          ? 'Keine Verluste erfasst'
+                          : `${thisWeekLogs.length} Eintrag${thisWeekLogs.length !== 1 ? 'träge' : ''} · ${thisWeekCost > 0 ? `~${thisWeekCost.toFixed(2)} € Verlust` : 'Kosten unbekannt'}`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setTab('verluste')}
+                    style={{
+                      padding: '8px 16px', borderRadius: '8px',
+                      border: '1px solid #f8717144', background: '#f8717110',
+                      color: '#f87171', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0,
+                    }}
+                  >
+                    Verluste verwalten →
+                  </button>
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -721,88 +760,151 @@ export default function InventoryPage() {
         )}
 
         {/* ── TAB: VERLUSTE ─────────────────────────────────────────────────── */}
-        {tab === 'verluste' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
-            {/* Form */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
-              <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '16px' }}>Verlust erfassen</p>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={labelStyle}>Zutat</label>
-                <select value={wasteIngredient} onChange={e => setWasteIngredient(e.target.value)} style={inputStyle}>
-                  <option value="">Zutat wählen...</option>
-                  {ingredients.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={labelStyle}>Menge</label>
-                <input type="number" step="0.01" min="0" value={wasteQty} onChange={e => setWasteQty(e.target.value)} style={inputStyle} placeholder="z.B. 0.5" />
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={labelStyle}>Grund</label>
-                <select value={wasteReason} onChange={e => setWasteReason(e.target.value as WasteReason)} style={inputStyle}>
-                  <option value="spoiled">Verdorben</option>
-                  <option value="overcooked">Verkocht</option>
-                  <option value="dropped">Heruntergefallen</option>
-                  <option value="other">Sonstiges</option>
-                </select>
-              </div>
-              <div style={{ marginBottom: '12px' }}>
-                <label style={labelStyle}>Datum</label>
-                <input type="date" value={wasteDate} onChange={e => setWasteDate(e.target.value)} style={inputStyle} />
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={labelStyle}>Notiz (optional)</label>
-                <input type="text" value={wasteNote} onChange={e => setWasteNote(e.target.value)} style={inputStyle} placeholder="z.B. zu lange gelagert" />
-              </div>
-              <button onClick={saveWaste} disabled={wasteSaving || !wasteIngredient || !wasteQty} style={{ ...btnPrimary, width: '100%', opacity: wasteSaving || !wasteIngredient || !wasteQty ? 0.5 : 1 }}>
-                {wasteSaving ? '...' : 'Verlust buchen'}
-              </button>
-            </div>
-
-            {/* Weekly report */}
+        {tab === 'verluste' && (() => {
+          const REASON_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+            spoiled:    { label: 'Verdorben',       emoji: '🤢', color: '#f87171' },
+            overcooked: { label: 'Verkocht',         emoji: '🔥', color: '#fb923c' },
+            dropped:    { label: 'Heruntergefallen', emoji: '💥', color: '#facc15' },
+            other:      { label: 'Sonstiges',        emoji: '📦', color: '#94a3b8' },
+          }
+          const totalLossCost = wasteLogs.reduce((s, l) => s + (l.purchase_price != null ? l.quantity * l.purchase_price : 0), 0)
+          return (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ color: 'var(--text)', fontWeight: 700 }}>Wochenbericht</p>
-                <button onClick={() => {
-                  const week = Object.keys(wasteByWeek)[0]
-                  if (!week) return
-                  exportCSV(wasteByWeek[week].map(l => ({
-                    datum: new Date(l.logged_at).toLocaleDateString('de'),
-                    zutat: l.ingredient_name, menge: l.quantity, einheit: l.unit,
-                    grund: l.reason, kosten: l.purchase_price != null ? (l.quantity * l.purchase_price).toFixed(2) : '–',
-                    notiz: l.note || '',
-                  })), `verluste-${week.replace(' ', '-')}.csv`)
-                }} style={btnSmall}>⬇ CSV Export</button>
-              </div>
-
-              {Object.keys(wasteByWeek).length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: '12px' }}>
-                  <p>Noch keine Verluste erfasst</p>
+              {/* Summary KPIs */}
+              {wasteLogs.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{ background: 'var(--surface)', border: '1px solid #f8717133', borderRadius: '12px', padding: '16px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Gesamt erfasst</p>
+                    <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>{wasteLogs.length}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Einträge</p>
+                  </div>
+                  <div style={{ background: 'var(--surface)', border: '1px solid #f8717133', borderRadius: '12px', padding: '16px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Geschätzte Kosten</p>
+                    <p style={{ color: '#f87171', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>{totalLossCost > 0 ? `~${totalLossCost.toFixed(2)} €` : '–'}</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Gesamtverlust</p>
+                  </div>
+                  <div style={{ background: 'var(--surface)', border: '1px solid #f8717133', borderRadius: '12px', padding: '16px' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Häufigster Grund</p>
+                    {(() => {
+                      const counts = wasteLogs.reduce<Record<string, number>>((a, l) => { a[l.reason] = (a[l.reason] || 0) + 1; return a }, {})
+                      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+                      const info = top ? REASON_LABELS[top[0]] : null
+                      return info
+                        ? <><p style={{ color: info.color, fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>{info.emoji} {info.label}</p><p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>{top[1]}× erfasst</p></>
+                        : <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>–</p>
+                    })()}
+                  </div>
                 </div>
-              ) : (
-                Object.entries(wasteByWeek).slice(0, 4).map(([week, logs]) => {
-                  const totalCost = logs.reduce((s, l) => s + (l.purchase_price != null ? l.quantity * l.purchase_price : 0), 0)
-                  return (
-                    <div key={week} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <span style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem' }}>{week}</span>
-                        {totalCost > 0 && <span style={{ color: '#f87171', fontWeight: 600, fontSize: '0.875rem' }}>~{totalCost.toFixed(2)} € Verlust</span>}
-                      </div>
-                      {logs.map(l => (
-                        <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '5px 0', borderBottom: '1px solid var(--border)', fontSize: '0.8rem' }}>
-                          <span style={{ color: 'var(--text)' }}>{l.ingredient_name}</span>
-                          <span style={{ color: '#f87171' }}>{l.quantity} {l.unit}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{{ spoiled: 'Verdorben', overcooked: 'Verkocht', dropped: 'Gefallen', other: 'Sonstiges' }[l.reason]}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>{new Date(l.logged_at).toLocaleDateString('de')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })
               )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+                {/* Form */}
+                <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <Trash2 size={16} color="#f87171" />
+                    <p style={{ color: 'var(--text)', fontWeight: 700, margin: 0 }}>Verlust erfassen</p>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>Zutat</label>
+                    <select value={wasteIngredient} onChange={e => setWasteIngredient(e.target.value)} style={inputStyle}>
+                      <option value="">Zutat wählen...</option>
+                      {ingredients.map(i => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>Menge</label>
+                    <input type="number" step="0.01" min="0" value={wasteQty} onChange={e => setWasteQty(e.target.value)} style={inputStyle} placeholder="z.B. 0.5" />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>Grund</label>
+                    <select value={wasteReason} onChange={e => setWasteReason(e.target.value as WasteReason)} style={inputStyle}>
+                      <option value="spoiled">🤢 Verdorben</option>
+                      <option value="overcooked">🔥 Verkocht</option>
+                      <option value="dropped">💥 Heruntergefallen</option>
+                      <option value="other">📦 Sonstiges</option>
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>Datum</label>
+                    <input type="date" value={wasteDate} onChange={e => setWasteDate(e.target.value)} style={inputStyle} />
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={labelStyle}>Notiz (optional)</label>
+                    <input type="text" value={wasteNote} onChange={e => setWasteNote(e.target.value)} style={inputStyle} placeholder="z.B. zu lange gelagert" />
+                  </div>
+                  <button onClick={saveWaste} disabled={wasteSaving || !wasteIngredient || !wasteQty} style={{ ...btnPrimary, width: '100%', opacity: wasteSaving || !wasteIngredient || !wasteQty ? 0.5 : 1 }}>
+                    {wasteSaving ? '...' : 'Verlust buchen'}
+                  </button>
+                </div>
+
+                {/* Weekly report */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <p style={{ color: 'var(--text)', fontWeight: 700, margin: 0 }}>Wochenbericht</p>
+                    <button onClick={() => {
+                      const week = Object.keys(wasteByWeek)[0]
+                      if (!week) return
+                      exportCSV(wasteByWeek[week].map(l => ({
+                        datum: new Date(l.logged_at).toLocaleDateString('de'),
+                        zutat: l.ingredient_name, menge: l.quantity, einheit: l.unit,
+                        grund: l.reason, kosten: l.purchase_price != null ? (l.quantity * l.purchase_price).toFixed(2) : '–',
+                        notiz: l.note || '',
+                      })), `verluste-${week.replace(' ', '-')}.csv`)
+                    }} style={btnSmall}>⬇ CSV Export</button>
+                  </div>
+
+                  {Object.keys(wasteByWeek).length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-muted)', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+                      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Trash2 size={36} color="var(--text-muted)" /></div>
+                      <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>Keine Verluste erfasst</p>
+                      <p style={{ fontSize: '0.85rem' }}>Trage deinen ersten Verlust links ein.</p>
+                    </div>
+                  ) : (
+                    Object.entries(wasteByWeek).slice(0, 4).map(([week, logs]) => {
+                      const totalCost = logs.reduce((s, l) => s + (l.purchase_price != null ? l.quantity * l.purchase_price : 0), 0)
+                      return (
+                        <div key={week} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.9rem' }}>{week}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{logs.length} Einträge</span>
+                              {totalCost > 0 && (
+                                <span style={{
+                                  background: '#f8717115', border: '1px solid #f8717133',
+                                  borderRadius: '8px', padding: '3px 10px',
+                                  color: '#f87171', fontWeight: 700, fontSize: '0.8rem',
+                                }}>
+                                  ~{totalCost.toFixed(2)} €
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Column headers */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '4px 0 6px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
+                            {['Zutat', 'Menge', 'Grund', 'Datum'].map(h => (
+                              <span key={h} style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{h}</span>
+                            ))}
+                          </div>
+                          {logs.map(l => {
+                            const reasonInfo = REASON_LABELS[l.reason] || { label: l.reason, emoji: '?', color: 'var(--text-muted)' }
+                            return (
+                              <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '6px 0', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text)', fontSize: '0.82rem', fontWeight: 500 }}>{l.ingredient_name}</span>
+                                <span style={{ color: '#f87171', fontSize: '0.82rem', fontWeight: 600 }}>{l.quantity} {l.unit}</span>
+                                <span style={{ color: reasonInfo.color, fontSize: '0.8rem' }}>{reasonInfo.emoji} {reasonInfo.label}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{new Date(l.logged_at).toLocaleDateString('de')}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* ── MODALS ──────────────────────────────────────────────────────────── */}

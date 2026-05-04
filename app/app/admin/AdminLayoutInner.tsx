@@ -196,7 +196,7 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
       )}
 
       {/* Main Content */}
-      <main style={{ flex: 1, height: '100vh', overflowY: 'auto' }} className="admin-main">
+      <main style={{ flex: 1, height: '100vh', overflowY: 'auto', overflowX: 'auto', minWidth: 0 }} className="admin-main">
         {children}
       </main>
 

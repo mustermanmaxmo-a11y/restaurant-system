@@ -106,7 +106,7 @@ export default function RevenueForecast({ restaurantId }: Props) {
                 <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>{day.dayName}</p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', margin: 0 }}>{day.date}</p>
               </div>
-              <div style={{ position: 'relative', height: '28px' }}>
+              <div style={{ position: 'relative', height: '28px', overflow: 'hidden' }}>
                 <div style={{
                   position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
                   height: '8px', borderRadius: '4px',
@@ -115,13 +115,17 @@ export default function RevenueForecast({ restaurantId }: Props) {
                   minWidth: '4px',
                   transition: 'width 0.4s ease',
                 }} />
-                <p style={{
-                  position: 'absolute', left: `calc(${Math.round((day.predictedRevenue / maxRevenue) * 100)}% + 8px)`,
-                  top: '50%', transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0, whiteSpace: 'nowrap',
-                }}>
-                  {day.note}
-                </p>
+                {Math.round((day.predictedRevenue / maxRevenue) * 100) < 80 && (
+                  <p style={{
+                    position: 'absolute', left: `calc(${Math.round((day.predictedRevenue / maxRevenue) * 100)}% + 8px)`,
+                    top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    maxWidth: `calc(${100 - Math.round((day.predictedRevenue / maxRevenue) * 100)}% - 12px)`,
+                  }}>
+                    {day.note}
+                  </p>
+                )}
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>
