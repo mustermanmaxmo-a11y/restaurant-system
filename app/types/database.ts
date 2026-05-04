@@ -141,6 +141,8 @@ export interface Order {
   } | null
   estimated_time: number | null
   source: 'guest' | 'staff'
+  claimed_by: string | null
+  claimed_at: string | null
   created_at: string
 }
 

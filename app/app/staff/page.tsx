@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
+  const [claimingOrder, setClaimingOrder] = useState<string | null>(null)
+  const [staffMap, setStaffMap] = useState<Record<string, string>>({})
   const [view, setView] = useState<'board' | 'calls' | 'tables' | 'reservations'>('board')
   const [mobileCol, setMobileCol] = useState<Column>('new')
   const [reservations, setReservations] = useState<Reservation[]>([])
@@ -133,6 +135,11 @@ export default function DashboardPage() {
     loadCalls(rId)
     loadReservations(rId)
 
+    supabase.from('staff').select('id, name').eq('restaurant_id', rId).eq('active', true)
+      .then(({ data }) => {
+        if (data) setStaffMap(Object.fromEntries(data.map(s => [s.id, s.name])))
+      })
+
     const ordersChannel = supabase
       .channel(`dashboard-orders-${rId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${rId}` },
@@ -217,6 +224,19 @@ export default function DashboardPage() {
     setUpdatingOrder(orderId)
     await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
     setUpdatingOrder(null)
+  }
+
+  async function claimOrder(orderId: string) {
+    if (!session) return
+    setClaimingOrder(orderId)
+    await supabase.from('orders').update({ claimed_by: session.staff.id, claimed_at: new Date().toISOString() }).eq('id', orderId)
+    setClaimingOrder(null)
+  }
+
+  async function releaseOrder(orderId: string) {
+    setClaimingOrder(orderId)
+    await supabase.from('orders').update({ claimed_by: null, claimed_at: null }).eq('id', orderId)
+    setClaimingOrder(null)
   }
 
   async function resolveCall(callId: string) {
@@ -693,6 +713,38 @@ export default function DashboardPage() {
                           <p style={{ color: '#f59e0b', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={11} /> {order.note}</p>
                         </div>
                       )}
+
+                      {/* Claim row */}
+                      {(col.key === 'new' || col.key === 'cooking') && (() => {
+                        const isClaimedByMe = order.claimed_by === session.staff.id
+                        const isClaimedByOther = order.claimed_by !== null && !isClaimedByMe
+                        const claimerName = order.claimed_by ? (staffMap[order.claimed_by] ?? 'Jemand') : null
+                        const busy = claimingOrder === order.id
+                        if (isClaimedByMe) return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <span style={{ background: '#10b98120', color: '#10b981', fontSize: '0.73rem', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <ChefHat size={11} /> Ich koche das
+                            </span>
+                            <button onClick={() => releaseOrder(order.id)} disabled={busy} style={{ background: 'none', border: 'none', color: '#555', fontSize: '0.72rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                              {busy ? '…' : 'Freigeben'}
+                            </button>
+                          </div>
+                        )
+                        if (isClaimedByOther) return (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ background: '#6c63ff20', color: '#a09cf7', fontSize: '0.73rem', fontWeight: 700, padding: '3px 9px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <ChefHat size={11} /> {claimerName} kocht das
+                            </span>
+                          </div>
+                        )
+                        return (
+                          <div style={{ marginBottom: '10px' }}>
+                            <button onClick={() => claimOrder(order.id)} disabled={busy} style={{ background: '#1f1f1f', border: '1px solid #3a3a3a', borderRadius: '6px', color: '#aaa', fontSize: '0.73rem', fontWeight: 600, padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              <ChefHat size={11} /> {busy ? '…' : 'Ich übernehme das'}
+                            </button>
+                          </div>
+                        )
+                      })()}
 
                       {/* Total + Action */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
