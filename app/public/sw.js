@@ -1,5 +1,5 @@
 const CACHE_NAME = 'restaurantos-v3'
-const APP_SHELL = ['/admin', '/dashboard', '/platform']
+const APP_SHELL = ['/admin', '/staff', '/platform']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,7 +21,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     const url = new URL(event.request.url)
     let fallback = '/admin'
-    if (url.pathname.startsWith('/dashboard')) fallback = '/dashboard'
+    if (url.pathname.startsWith('/staff')) fallback = '/staff'
     else if (url.pathname.startsWith('/platform')) fallback = '/platform'
     event.respondWith(
       fetch(event.request).catch(() => caches.match(fallback))

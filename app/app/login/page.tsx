@@ -54,7 +54,7 @@ export default function LoginPage() {
     }
 
     localStorage.setItem('staff', JSON.stringify(data[0]))
-    router.push('/dashboard')
+    router.push('/staff')
   }
 
   return (

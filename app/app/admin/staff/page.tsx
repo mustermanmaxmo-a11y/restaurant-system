@@ -172,7 +172,7 @@ export default function StaffPage() {
           <div style={{ marginTop: '24px', background: 'var(--surface)', borderRadius: '10px', padding: '16px 18px', border: '1px solid var(--border)' }}>
             <p style={{ color: 'var(--text)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}><Lightbulb size={15} color="var(--accent)" /> So loggt sich dein Team ein</p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.6 }}>
-              Gerät öffnet: <strong style={{ color: 'var(--accent)' }}>/dashboard</strong><br />
+              Gerät öffnet: <strong style={{ color: 'var(--accent)' }}>/staff</strong><br />
               Restaurant-ID: <strong style={{ color: 'var(--text)' }}>{restaurant?.slug}</strong><br />
               PIN: individuell pro Mitarbeiter (oben sichtbar)
             </p>

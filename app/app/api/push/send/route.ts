@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     await sendPushToRestaurant(record.restaurant_id, ['dashboard', 'admin'], {
       title: '🆕 Neue Bestellung',
       body: `Tisch ${record.table_number || '–'} • ${record.order_type || 'Dine-in'}`,
-      url: '/dashboard',
+      url: '/staff',
       tag: `order-${record.id}`,
     })
   }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     await sendPushToRestaurant(record.restaurant_id, ['dashboard'], {
       title: isCheckout ? '💸 Rechnungsanfrage' : '🔔 Serviceruf',
       body: `Tisch ${record.table_number || record.table_id || '–'}`,
-      url: '/dashboard',
+      url: '/staff',
       tag: `call-${record.id}`,
       requireInteraction: true,
     })
