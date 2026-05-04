@@ -222,7 +222,12 @@ export default function DashboardPage() {
 
   async function updateOrderStatus(orderId: string, newStatus: Column | 'out_for_delivery') {
     setUpdatingOrder(orderId)
-    await supabase.from('orders').update({ status: newStatus }).eq('id', orderId)
+    const update: Record<string, unknown> = { status: newStatus }
+    if (newStatus === 'cooking' && session) {
+      update.claimed_by = session.staff.id
+      update.claimed_at = new Date().toISOString()
+    }
+    await supabase.from('orders').update(update).eq('id', orderId)
     setUpdatingOrder(null)
   }
 
