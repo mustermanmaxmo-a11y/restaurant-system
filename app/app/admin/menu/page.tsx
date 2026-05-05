@@ -7,6 +7,7 @@ import type { MenuCategory, MenuItem, Restaurant, ExtractedMenuItem } from '@/ty
 import { useLanguage } from '@/components/providers/language-provider'
 import { Pencil, FolderOpen, Trash2, Globe, AlertTriangle, UtensilsCrossed, Camera, Loader2, Sparkles, Upload, FileText, BarChart2 } from 'lucide-react'
 import ProfitabilityPanel from './_components/ProfitabilityPanel'
+import SocialPostGenerator from '@/components/admin/SocialPostGenerator'
 
 type ModalType = 'add-category' | 'edit-category' | 'add-item' | 'edit-item' | 'ai-import' | null
 type AiPhase = 'upload' | 'extracting' | 'review'
@@ -56,6 +57,7 @@ export default function MenuPage() {
   const [itemAvailable, setItemAvailable] = useState(true)
   const [itemPrepTime, setItemPrepTime] = useState<string>('')
   const [itemStockCount, setItemStockCount] = useState<string>('')
+  const [showSocialPost, setShowSocialPost] = useState(false)
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
@@ -421,6 +423,23 @@ export default function MenuPage() {
               <span className="btn-label-hide">Profitabilität</span>
             </button>
           )}
+          <button
+            onClick={() => setShowSocialPost(true)}
+            title="Social-Media-Post per KI generieren"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: '8px', padding: '7px 10px',
+              color: 'var(--accent)',
+              fontWeight: 600, fontSize: '0.78rem',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Sparkles size={13} />
+            <span className="btn-label-hide">Social Post</span>
+          </button>
           <button
             onClick={openAiImport}
             disabled={!aiEnabled}
@@ -968,6 +987,14 @@ export default function MenuPage() {
           restaurantId={restaurant.id}
           items={items}
           onClose={() => setShowProfitability(false)}
+        />
+      )}
+
+      {showSocialPost && restaurant && (
+        <SocialPostGenerator
+          restaurantId={restaurant.id}
+          items={items}
+          onClose={() => setShowSocialPost(false)}
         />
       )}
     </div>
