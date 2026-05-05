@@ -7,7 +7,7 @@ import { Restaurant } from '@/types/database'
 import type { RestaurantPlan } from '@/types/database'
 import { TrialBanner } from '@/components/TrialBanner'
 import type { LucideIcon } from 'lucide-react'
-import { ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays, Clock, BarChart2, Package, Plug, CreditCard, PartyPopper, AlertTriangle, Mail, Building2 } from 'lucide-react'
+import { ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays, Clock, BarChart2, Package, Plug, CreditCard, PartyPopper, AlertTriangle, Mail, Building2, Truck } from 'lucide-react'
 
 function AdminContent() {
   const router = useRouter()
@@ -146,6 +146,7 @@ function AdminContent() {
             { icon: BarChart2, label: 'Statistik', href: '/admin/stats', available: true },
             { icon: Package, label: 'Lagerbestand', href: '/admin/inventory', available: true },
             { icon: Mail, label: 'Marketing', href: '/admin/marketing', available: true },
+            { icon: Truck, label: 'Lieferanten', href: '/admin/suppliers', available: true },
             ...(restaurantCount > 1 ? [{ icon: Building2, label: 'Alle Standorte', href: '/admin/overview', available: true }] : []),
             { icon: Plug, label: 'Integrationen', href: '/admin/integrations', available: true },
             { icon: CreditCard, label: 'Billing', href: '/admin/billing', available: true },
