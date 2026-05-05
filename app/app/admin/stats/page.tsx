@@ -31,6 +31,8 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState<'today' | 'week' | 'month'>('week')
   const [ratings, setRatings] = useState<{ stars: number; feedback: string | null; created_at: string }[]>([])
+  const [wasteThisWeek, setWasteThisWeek] = useState<number | null>(null)
+  const [wasteLastWeek, setWasteLastWeek] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -89,6 +91,24 @@ export default function StatsPage() {
       setReservationCount(((resData as Reservation[]) || []).length)
       setTables((tableData as Table[]) || [])
       setRatings((ratingsData as { stars: number; feedback: string | null; created_at: string }[]) || [])
+
+      // Waste this week vs last week
+      const thisWeekStart = new Date(now.getTime() - 6 * 24 * 3600 * 1000).toISOString()
+      const lastWeekStart = new Date(now.getTime() - 13 * 24 * 3600 * 1000).toISOString()
+      const [{ data: wasteNow }, { data: wastePrev }] = await Promise.all([
+        supabase.from('waste_log').select('quantity, ingredients(purchase_price)').eq('restaurant_id', restaurant!.id).gte('logged_at', thisWeekStart),
+        supabase.from('waste_log').select('quantity, ingredients(purchase_price)').eq('restaurant_id', restaurant!.id).gte('logged_at', lastWeekStart).lt('logged_at', thisWeekStart),
+      ])
+      if (wasteNow) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cost = (wasteNow as any[]).reduce((s: number, l: any) => s + l.quantity * (Array.isArray(l.ingredients) ? (l.ingredients[0]?.purchase_price ?? 0) : (l.ingredients?.purchase_price ?? 0)), 0)
+        setWasteThisWeek(cost)
+      }
+      if (wastePrev) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cost = (wastePrev as any[]).reduce((s: number, l: any) => s + l.quantity * (Array.isArray(l.ingredients) ? (l.ingredients[0]?.purchase_price ?? 0) : (l.ingredients?.purchase_price ?? 0)), 0)
+        setWasteLastWeek(cost)
+      }
     }
     loadData()
   }, [restaurant, range])
@@ -220,6 +240,14 @@ export default function StatsPage() {
                 value={avgStars != null ? `${avgStars.toFixed(1)} ⭐` : '—'}
                 accent={avgStars != null && avgStars >= 4}
                 warn={avgStars != null && avgStars < 3}
+              />
+              <StatCard
+                label="Verluste (Woche)"
+                value={wasteThisWeek != null ? `${wasteThisWeek.toFixed(2)} €` : '—'}
+                warn={wasteThisWeek != null && wasteLastWeek != null && wasteThisWeek > wasteLastWeek}
+                sub={wasteThisWeek != null && wasteLastWeek != null && wasteLastWeek > 0
+                  ? (wasteThisWeek <= wasteLastWeek ? `↓ ${((1 - wasteThisWeek / wasteLastWeek) * 100).toFixed(0)}% zur Vorwoche` : `↑ ${((wasteThisWeek / wasteLastWeek - 1) * 100).toFixed(0)}% zur Vorwoche`)
+                  : undefined}
               />
             </div>
 
@@ -421,11 +449,12 @@ export default function StatsPage() {
   )
 }
 
-function StatCard({ label, value, accent, warn }: { label: string; value: string; accent?: boolean; warn?: boolean }) {
+function StatCard({ label, value, accent, warn, sub }: { label: string; value: string; accent?: boolean; warn?: boolean; sub?: string }) {
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px 16px' }}>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>{label}</p>
       <p style={{ color: warn ? '#f87171' : accent ? 'var(--accent)' : 'var(--text)', fontWeight: 700, fontSize: '1.4rem', lineHeight: 1 }}>{value}</p>
+      {sub && <p style={{ color: warn ? '#f87171' : 'var(--text-muted)', fontSize: '0.65rem', marginTop: '4px' }}>{sub}</p>}
     </div>
   )
 }

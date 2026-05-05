@@ -11,6 +11,7 @@ import type {
 } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { Package, AlertTriangle, Truck, Sparkles, Link2, Pencil, X, CheckCircle2, BarChart2, Lightbulb, Siren, Trash2, TrendingDown } from 'lucide-react'
+import WasteInsights from '@/components/admin/WasteInsights'
 
 type Tab = 'bestand' | 'lieferanten' | 'bestellungen' | 'verluste'
 
@@ -797,7 +798,11 @@ export default function InventoryPage() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+              {restaurant && (
+                <WasteInsights restaurantId={restaurant.id} />
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px', marginTop: '24px' }}>
                 {/* Form */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
