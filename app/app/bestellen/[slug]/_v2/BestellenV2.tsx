@@ -94,6 +94,8 @@ export default function BestellenV2() {
       setCategories(cats || [])
       setItems(menuItems || [])
       if (cats && cats.length > 0) setActiveCategory(cats[0].id)
+      const { data: as_ } = await supabase.from('alert_settings').select('show_sold_out_label,auto_hide_item').eq('restaurant_id', resto.id).single()
+      if (as_) setAlertSettings(as_)
       setLoading(false)
     }
     load()
@@ -149,6 +151,8 @@ export default function BestellenV2() {
 
   const loyaltyRestaurantId = restaurant?.id ?? ''
   const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
+
+  const [alertSettings, setAlertSettings] = useState<{ show_sold_out_label: boolean; auto_hide_item: boolean } | null>(null)
 
   function scrollToCategory(id: string) {
     setActiveCategory(id)
@@ -368,7 +372,11 @@ export default function BestellenV2() {
           {/* Menu grid by category */}
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {categories.map(cat => {
-              const catItems = items.filter(i => i.category_id === cat.id)
+              const catItems = items.filter(i => {
+                if (i.category_id !== cat.id) return false
+                if (alertSettings?.auto_hide_item && i.stock_count !== null && i.stock_count <= 0) return false
+                return true
+              })
               if (catItems.length === 0) return null
               return (
                 <div key={cat.id} ref={el => { categoryRefs.current[cat.id] = el }}>
@@ -380,11 +388,21 @@ export default function BestellenV2() {
                         <div
                           key={item.id}
                           style={{
-                            opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : 1,
+                            opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : (alertSettings?.show_sold_out_label && item.stock_count !== null && item.stock_count <= 0 ? 0.5 : 1),
                             transition: 'opacity 0.3s',
                             position: 'relative',
                           }}
                         >
+                          {alertSettings?.show_sold_out_label && item.stock_count !== null && item.stock_count <= 0 && (
+                            <div style={{
+                              position: 'absolute', top: '8px', left: '8px', zIndex: 10,
+                              background: '#6b7280', color: '#fff', fontSize: '0.7rem',
+                              padding: '2px 8px', borderRadius: '20px', fontWeight: 600,
+                              pointerEvents: 'none',
+                            }}>
+                              Ausverkauft
+                            </div>
+                          )}
                           {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (
                             <div style={{
                               position: 'absolute', top: '8px', right: '8px', zIndex: 10,

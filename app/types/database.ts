@@ -102,6 +102,8 @@ export interface MenuItem {
   prep_time: number | null
   created_at: string
   translations?: Record<string, { name: string; description: string }> | null
+  stock_count: number | null
+  alert_threshold: number | null
 }
 
 export interface ExtractedMenuItem {

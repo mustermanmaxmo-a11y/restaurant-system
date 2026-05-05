@@ -137,6 +137,9 @@ export default function BestellenV1() {
     unsuitable: { id: string; reason: string }[]
   } | null>(null)
 
+  // Alert settings for sold-out logic
+  const [alertSettings, setAlertSettings] = useState<{ show_sold_out_label: boolean; auto_hide_item: boolean } | null>(null)
+
   // Loyalty — only active once restaurant is loaded (restaurantId known)
   const loyaltyRestaurantId = restaurant?.id ?? ''
   const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
@@ -168,6 +171,8 @@ export default function BestellenV1() {
       setAllReservations((resData as ResInfo[]) || [])
       setSpecials(Object.fromEntries((specialsData || []).map(s => [s.menu_item_id, { label: s.label, special_price: s.special_price }])))
       if (cats && cats.length > 0) setActiveCategory(cats[0].id)
+      const { data: as_ } = await supabase.from('alert_settings').select('show_sold_out_label,auto_hide_item').eq('restaurant_id', resto.id).single()
+      if (as_) setAlertSettings(as_)
       setLoading(false)
     }
     load()
@@ -389,6 +394,7 @@ export default function BestellenV1() {
 
   function filterItems(source: MenuItem[]) {
     return source.filter(item => {
+      if (alertSettings?.auto_hide_item && item.stock_count !== null && item.stock_count <= 0) return false
       if (activeDietary.length > 0 && !activeDietary.every(d => item.tags.includes(d))) return false
       if (excludedAllergens.length > 0 && item.allergens.some(a => excludedAllergens.includes(a))) return false
       return true
@@ -1458,11 +1464,21 @@ export default function BestellenV1() {
                     <div
                       key={item.id}
                       style={{
-                        opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : 1,
+                        opacity: getItemSuitability(item.id) === 'unsuitable' ? 0.4 : (alertSettings?.show_sold_out_label && item.stock_count !== null && item.stock_count <= 0 ? 0.5 : 1),
                         transition: 'opacity 0.3s',
                         position: 'relative',
                       }}
                     >
+                      {alertSettings?.show_sold_out_label && item.stock_count !== null && item.stock_count <= 0 && (
+                        <div style={{
+                          position: 'absolute', top: '8px', left: '8px', zIndex: 10,
+                          background: '#6b7280', color: '#fff', fontSize: '0.7rem',
+                          padding: '2px 8px', borderRadius: '20px', fontWeight: 600,
+                          pointerEvents: 'none',
+                        }}>
+                          Ausverkauft
+                        </div>
+                      )}
                       {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (
                         <div style={{
                           position: 'absolute', top: '8px', right: '8px', zIndex: 10,

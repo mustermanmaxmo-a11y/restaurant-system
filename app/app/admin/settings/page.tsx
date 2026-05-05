@@ -38,6 +38,19 @@ export default function SettingsPage() {
   const [loyaltySaving, setLoyaltySaving] = useState(false)
   const [loyaltySaved, setLoyaltySaved] = useState(false)
 
+  const [alerts, setAlerts] = useState<{
+    id?: string
+    alerts_enabled: boolean
+    push_kitchen: boolean
+    push_admin: boolean
+    kds_visual: boolean
+    show_sold_out_label: boolean
+    auto_hide_item: boolean
+    default_threshold: number
+  }>({ alerts_enabled: false, push_kitchen: false, push_admin: false, kds_visual: false, show_sold_out_label: false, auto_hide_item: false, default_threshold: 5 })
+  const [alertsSaving, setAlertsSaving] = useState(false)
+  const [alertsSaved, setAlertsSaved] = useState(false)
+
   // Password change state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -79,6 +92,8 @@ export default function SettingsPage() {
           .eq('restaurant_id', resto.id)
           .single()
         if (lp) setLoyalty({ id: lp.id, enabled: lp.enabled, mechanic: lp.mechanic, goal: lp.goal, points_per_euro: lp.points_per_euro, reward_text: lp.reward_text, show_banner: lp.show_banner, email_link_enabled: lp.email_link_enabled })
+        const { data: as_ } = await supabase.from('alert_settings').select('*').eq('restaurant_id', resto.id).single()
+        if (as_) setAlerts({ id: as_.id, alerts_enabled: as_.alerts_enabled, push_kitchen: as_.push_kitchen, push_admin: as_.push_admin, kds_visual: as_.kds_visual, show_sold_out_label: as_.show_sold_out_label, auto_hide_item: as_.auto_hide_item, default_threshold: as_.default_threshold })
       }
       const { data: factors } = await supabase.auth.mfa.listFactors()
       const totpFactor = factors?.totp?.find((f: { status: string }) => f.status === 'verified')
@@ -256,6 +271,23 @@ export default function SettingsPage() {
     setLoyaltySaving(false)
   }
 
+  async function handleAlertsSave() {
+    if (!restaurant) return
+    setAlertsSaving(true)
+    setAlertsSaved(false)
+    const payload = { restaurant_id: restaurant.id, ...alerts }
+    const { error } = alerts.id
+      ? await supabase.from('alert_settings').update(payload).eq('id', alerts.id)
+      : await supabase.from('alert_settings').upsert(payload, { onConflict: 'restaurant_id' })
+    if (error) {
+      alert('Speichern fehlgeschlagen.')
+    } else {
+      setAlertsSaved(true)
+      setTimeout(() => setAlertsSaved(false), 2500)
+    }
+    setAlertsSaving(false)
+  }
+
   async function handleDelete() {
     if (deleteInput !== 'LÖSCHEN') return
     setDeleting(true)
@@ -407,6 +439,52 @@ export default function SettingsPage() {
 
           <button onClick={handleLoyaltySave} disabled={loyaltySaving} style={{ marginTop: '16px', background: loyaltySaved ? '#22c55e' : 'var(--accent)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: loyaltySaving ? 'wait' : 'pointer', transition: 'background 0.2s' }}>
             {loyaltySaving ? 'Speichert…' : loyaltySaved ? '✓ Gespeichert' : 'Speichern'}
+          </button>
+        </div>
+      )}
+
+      {/* Engpass-Alerts */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>⚠️ Engpass-Alerts</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Automatische Meldungen wenn Menü-Items knapp werden.</p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>Engpass-Alerts aktiv</span>
+            <button onClick={() => setAlerts(p => ({ ...p, alerts_enabled: !p.alerts_enabled }))} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: alerts.alerts_enabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <span style={{ position: 'absolute', top: '3px', left: alerts.alerts_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
+
+          {alerts.alerts_enabled && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Globaler Schwellwert (Bestand unter X → Alert)</label>
+                <input type="number" min={1} max={100} value={alerts.default_threshold} onChange={e => setAlerts(p => ({ ...p, default_threshold: parseInt(e.target.value) || 1 }))} style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
+              </div>
+
+              {([
+                { key: 'push_kitchen', label: 'Push-Benachrichtigung an Küche', desc: 'Notification im KDS wenn Schwellwert unterschritten' },
+                { key: 'push_admin', label: 'Push-Benachrichtigung an Admin', desc: 'Notification im Admin-Dashboard' },
+                { key: 'kds_visual', label: 'Visueller Alert im KDS', desc: 'Rote/orange Hervorhebung im Küchen-Display' },
+                { key: 'show_sold_out_label', label: '"Ausverkauft"-Label', desc: 'Item grau + Label wenn Bestand = 0' },
+                { key: 'auto_hide_item', label: 'Item automatisch ausblenden', desc: 'Item verschwindet komplett wenn Bestand = 0' },
+              ] as { key: keyof typeof alerts; label: string; desc: string }[]).map(({ key, label, desc }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>{label}</span>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>{desc}</p>
+                  </div>
+                  <button onClick={() => setAlerts(p => ({ ...p, [key]: !p[key] }))} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: (alerts[key] as boolean) ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                    <span style={{ position: 'absolute', top: '3px', left: (alerts[key] as boolean) ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button onClick={handleAlertsSave} disabled={alertsSaving} style={{ marginTop: '16px', background: alertsSaved ? '#22c55e' : 'var(--accent)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: alertsSaving ? 'wait' : 'pointer', transition: 'background 0.2s' }}>
+            {alertsSaving ? 'Speichert…' : alertsSaved ? '✓ Gespeichert' : 'Speichern'}
           </button>
         </div>
       )}
