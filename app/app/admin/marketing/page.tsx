@@ -29,7 +29,7 @@ export default function MarketingPage() {
   const router = useRouter()
   const [restaurantId, setRestaurantId] = useState('')
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'subscribers' | 'campaigns'>('campaigns')
+  const [tab, setTab] = useState<'subscribers' | 'campaigns' | 'guests'>('campaigns')
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [sending, setSending] = useState<string | null>(null)
@@ -58,12 +58,14 @@ export default function MarketingPage() {
   }, [router])
 
   async function loadData(rid: string) {
-    const [{ data: subs }, { data: camps }] = await Promise.all([
+    const [{ data: subs }, { data: camps }, { data: members }] = await Promise.all([
       supabase.from('marketing_subscribers').select('*').eq('restaurant_id', rid).order('opted_in_at', { ascending: false }),
       supabase.from('marketing_campaigns').select('*').eq('restaurant_id', rid).order('created_at', { ascending: false }),
+      supabase.from('loyalty_members').select('id, user_id, stamp_count, created_at').eq('restaurant_id', rid).order('created_at', { ascending: false }),
     ])
     setSubscribers((subs ?? []) as Subscriber[])
     setCampaigns((camps ?? []) as Campaign[])
+    setLoyaltyMembers((members ?? []) as LoyaltyMemberCRM[])
   }
 
   async function saveCampaign() {
@@ -110,6 +112,9 @@ export default function MarketingPage() {
     setCampaigns(prev => prev.filter(c => c.id !== id))
   }
 
+  interface LoyaltyMemberCRM { id: string; user_id: string; stamp_count: number; created_at: string; email?: string }
+  const [loyaltyMembers, setLoyaltyMembers] = useState<LoyaltyMemberCRM[]>([])
+
   const activeSubscribers = subscribers.filter(s => !s.unsubscribed_at).length
 
   const s = {
@@ -154,10 +159,14 @@ export default function MarketingPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: 'var(--surface)', borderRadius: '12px', padding: '4px', width: 'fit-content' }}>
-          {(['campaigns', 'subscribers'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '8px 16px', borderRadius: '9px', border: 'none', background: tab === t ? 'var(--accent)' : 'transparent', color: tab === t ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
-              {t === 'campaigns' ? 'Kampagnen' : 'Abonnenten'}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: 'var(--surface)', borderRadius: '12px', padding: '4px', width: 'fit-content', flexWrap: 'wrap' }}>
+          {([
+            { key: 'campaigns', label: 'Kampagnen' },
+            { key: 'subscribers', label: 'Abonnenten' },
+            { key: 'guests', label: 'Gäste (CRM)' },
+          ] as const).map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '8px 16px', borderRadius: '9px', border: 'none', background: tab === t.key ? 'var(--accent)' : 'transparent', color: tab === t.key ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {t.label}
             </button>
           ))}
         </div>
@@ -229,6 +238,43 @@ export default function MarketingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+        {tab === 'guests' && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+              {[
+                { label: 'Gesamt', value: loyaltyMembers.length },
+                { label: 'Aktiv (≤30T)', value: loyaltyMembers.filter(m => (Date.now() - new Date(m.created_at).getTime()) / 86400000 <= 30).length },
+                { label: 'Inaktiv (>30T)', value: loyaltyMembers.filter(m => (Date.now() - new Date(m.created_at).getTime()) / 86400000 > 30).length },
+              ].map(stat => (
+                <div key={stat.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>{stat.label}</p>
+                  <p style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.5rem' }}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+            {loyaltyMembers.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Noch keine Loyalty-Gäste. Aktiviere das Loyalty-Programm in den Einstellungen.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {loyaltyMembers.map(member => {
+                  const daysSince = Math.floor((Date.now() - new Date(member.created_at).getTime()) / 86400000)
+                  const statusColor = daysSince <= 14 ? '#22c55e' : daysSince <= 30 ? '#f59e0b' : '#ef4444'
+                  return (
+                    <div key={member.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: statusColor, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.875rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.user_id.slice(0, 8)}…</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
+                          {member.stamp_count} Stempel · beigetreten vor {daysSince}T
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

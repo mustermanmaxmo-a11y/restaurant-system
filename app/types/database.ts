@@ -49,6 +49,9 @@ export interface Restaurant {
   benchmark_opt_in: boolean | null
   restaurant_category: string | null
   seating_capacity: number | null
+  crm_rule_inactive: boolean | null
+  crm_rule_almost_goal: boolean | null
+  crm_rule_welcome: boolean | null
 }
 
 export interface PlatformSettings {

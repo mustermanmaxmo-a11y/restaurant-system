@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null; crm_rule_inactive: boolean; crm_rule_almost_goal: boolean; crm_rule_welcome: boolean } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -552,6 +552,40 @@ export default function SettingsPage() {
                 <span style={{ position: 'absolute', top: '3px', left: restaurant.prep_push_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRM Re-Engagement Regeln */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🔄 Re-Engagement Regeln</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Automatische Emails an Loyalty-Gäste. Versand täglich via n8n. Verwalte Gäste unter <a href="/admin/marketing" style={{ color: 'var(--accent)' }}>Marketing → Gäste</a>.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {([
+              { key: 'crm_rule_welcome', label: 'Willkommens-Email', desc: '24h nach erstem Besuch automatisch senden' },
+              { key: 'crm_rule_inactive', label: 'Inaktiv seit 30 Tagen', desc: '"Wir vermissen dich!" mit aktuellem Stempel-Stand' },
+              { key: 'crm_rule_almost_goal', label: 'Fast am Ziel', desc: 'Bei 8+ Stempeln + 14T inaktiv — Motivation zur Rückkehr' },
+            ] as const).map(rule => (
+              <div key={rule.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <p style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600, margin: 0 }}>{rule.label}</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>{rule.desc}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const newVal = !restaurant[rule.key]
+                    const { error } = await supabase.from('restaurants').update({ [rule.key]: newVal }).eq('id', restaurant.id)
+                    if (!error) setRestaurant(prev => prev ? { ...prev, [rule.key]: newVal } : prev)
+                  }}
+                  style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: restaurant[rule.key] ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+                >
+                  <span style={{ position: 'absolute', top: '3px', left: restaurant[rule.key] ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
