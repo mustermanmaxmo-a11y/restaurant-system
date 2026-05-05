@@ -36,6 +36,7 @@ export default function StatsPage() {
   const [prepPlan, setPrepPlan] = useState<{ shifts: { name: string; time: string; items: { name: string; qty: number; confidence: string }[] }[]; insight: string } | null>(null)
   const [prepLoading, setPrepLoading] = useState(false)
   const [prepGenerated, setPrepGenerated] = useState(false)
+  const [benchmark, setBenchmark] = useState<{ own: { avgRevenue: number | null; avgOrders: number | null; avgOrderValue: number | null }; peer: { avgRevenue: number | null; avgOrders: number | null; avgOrderValue: number | null; poolSize: number } | null; insufficient_pool: boolean; opted_out?: boolean } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -51,17 +52,21 @@ export default function StatsPage() {
 
   useEffect(() => {
     if (!restaurant) return
-    async function loadPrepPlan() {
+    async function loadExtras() {
       const today = new Date().toISOString().split('T')[0]
-      const { data } = await supabase
-        .from('daily_prep_plans')
-        .select('plan_data')
-        .eq('restaurant_id', restaurant!.id)
-        .eq('plan_date', today)
-        .single()
-      if (data?.plan_data) setPrepPlan(data.plan_data as typeof prepPlan)
+      const [{ data: prepData }, { data: { session } }] = await Promise.all([
+        supabase.from('daily_prep_plans').select('plan_data').eq('restaurant_id', restaurant!.id).eq('plan_date', today).single(),
+        supabase.auth.getSession(),
+      ])
+      if (prepData?.plan_data) setPrepPlan(prepData.plan_data as typeof prepPlan)
+      if (session) {
+        const res = await fetch(`/api/benchmark?restaurantId=${restaurant!.id}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+        if (res.ok) setBenchmark(await res.json())
+      }
     }
-    loadPrepPlan()
+    loadExtras()
   }, [restaurant])
 
   useEffect(() => {
@@ -472,6 +477,53 @@ export default function StatsPage() {
                   ))}
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* Benchmark */}
+        {benchmark && !benchmark.opted_out && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <p style={{ color: 'var(--text)', fontWeight: 700 }}>📊 Branchenvergleich (letzte 7 Tage)</p>
+              {benchmark.peer && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{benchmark.peer.poolSize} Restaurants im Pool</span>
+              )}
+            </div>
+            {benchmark.insufficient_pool ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Noch zu wenig Daten im Pool — mindestens 5 Restaurants nötig.</p>
+            ) : benchmark.peer ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+                {[
+                  { label: 'Ø Tagesumsatz', own: benchmark.own.avgRevenue, peer: benchmark.peer.avgRevenue, unit: '€' },
+                  { label: 'Bestellungen / Tag', own: benchmark.own.avgOrders, peer: benchmark.peer.avgOrders, unit: '' },
+                  { label: 'Ø Bestellwert', own: benchmark.own.avgOrderValue, peer: benchmark.peer.avgOrderValue, unit: '€' },
+                ].map(metric => {
+                  const diff = metric.own != null && metric.peer != null && metric.peer > 0
+                    ? ((metric.own - metric.peer) / metric.peer) * 100
+                    : null
+                  return (
+                    <div key={metric.label} style={{ background: 'var(--bg)', borderRadius: '12px', padding: '12px 14px', border: '1px solid var(--border)' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>{metric.label}</p>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.3rem' }}>
+                          {metric.own != null ? `${metric.own.toFixed(0)}${metric.unit}` : '—'}
+                        </span>
+                        {diff != null && (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: diff >= 0 ? '#22c55e' : '#ef4444', marginBottom: '3px' }}>
+                            {diff >= 0 ? `+${diff.toFixed(0)}%` : `${diff.toFixed(0)}%`}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                        Branche: {metric.peer != null ? `${metric.peer.toFixed(0)}${metric.unit}` : '—'}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Noch keine Snapshot-Daten — werden täglich um 00:00 erfasst.</p>
             )}
           </div>
         )}

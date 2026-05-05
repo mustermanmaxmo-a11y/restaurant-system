@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -551,6 +551,67 @@ export default function SettingsPage() {
               >
                 <span style={{ position: 'absolute', top: '3px', left: restaurant.prep_push_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Branchenvergleich / Benchmarking */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>📊 Branchenvergleich</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Vergleiche deine Kennzahlen anonym mit ähnlichen Restaurants. Nur aggregierte Durchschnitte — kein Restaurant sieht individuelle Daten.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>Am Branchenvergleich teilnehmen</span>
+              <button
+                onClick={async () => {
+                  const newVal = !restaurant.benchmark_opt_in
+                  const { error } = await supabase.from('restaurants').update({ benchmark_opt_in: newVal }).eq('id', restaurant.id)
+                  if (!error) setRestaurant(prev => prev ? { ...prev, benchmark_opt_in: newVal } : prev)
+                }}
+                style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: restaurant.benchmark_opt_in ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <span style={{ position: 'absolute', top: '3px', left: restaurant.benchmark_opt_in ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Restaurantkategorie</label>
+              <select
+                value={restaurant.restaurant_category ?? ''}
+                onChange={async (e) => {
+                  const val = e.target.value || null
+                  const { error } = await supabase.from('restaurants').update({ restaurant_category: val }).eq('id', restaurant.id)
+                  if (!error) setRestaurant(prev => prev ? { ...prev, restaurant_category: val } : prev)
+                }}
+                style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem' }}
+              >
+                <option value="">— Auswählen —</option>
+                <option value="italian">Italienisch</option>
+                <option value="burger">Burger</option>
+                <option value="cafe">Café</option>
+                <option value="asian">Asiatisch</option>
+                <option value="pizza">Pizza</option>
+                <option value="german">Deutsch</option>
+                <option value="other">Sonstiges</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Sitzkapazität (Plätze)</label>
+              <input
+                type="number"
+                min={1}
+                value={restaurant.seating_capacity ?? ''}
+                onChange={async (e) => {
+                  const val = e.target.value ? parseInt(e.target.value) : null
+                  const { error } = await supabase.from('restaurants').update({ seating_capacity: val }).eq('id', restaurant.id)
+                  if (!error) setRestaurant(prev => prev ? { ...prev, seating_capacity: val } : prev)
+                }}
+                placeholder="z.B. 40"
+                style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none' }}
+              />
             </div>
           </div>
         </div>

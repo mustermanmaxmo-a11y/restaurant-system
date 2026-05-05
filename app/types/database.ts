@@ -46,6 +46,9 @@ export interface Restaurant {
   email_marketing_enabled: boolean | null
   prep_show_in_kds: boolean | null
   prep_push_enabled: boolean | null
+  benchmark_opt_in: boolean | null
+  restaurant_category: string | null
+  seating_capacity: number | null
 }
 
 export interface PlatformSettings {
