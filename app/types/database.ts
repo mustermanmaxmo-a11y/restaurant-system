@@ -41,6 +41,8 @@ export interface Restaurant {
   admin_design_version: 'v1' | 'v2' | null
   guest_design_version: 'v1' | 'v2' | null
   delivery_buffer_minutes: number
+  google_review_url: string | null
+  weekly_report_email: boolean | null
 }
 
 export interface PlatformSettings {

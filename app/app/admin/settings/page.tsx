@@ -17,10 +17,13 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [googleReviewSaving, setGoogleReviewSaving] = useState(false)
+  const [googleReviewSaved, setGoogleReviewSaved] = useState(false)
 
   // Password change state
   const [newPassword, setNewPassword] = useState('')
@@ -49,13 +52,14 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
       if (resto) {
         setRestaurant(resto)
         setDeliveryBuffer(String(resto.delivery_buffer_minutes ?? 25))
+        setGoogleReviewUrl(resto.google_review_url ?? '')
       }
       const { data: factors } = await supabase.auth.mfa.listFactors()
       const totpFactor = factors?.totp?.find((f: { status: string }) => f.status === 'verified')
@@ -173,6 +177,24 @@ export default function SettingsPage() {
     setEmailToggleLoading(false)
   }
 
+  async function handleGoogleReviewSave() {
+    if (!restaurant) return
+    setGoogleReviewSaving(true)
+    setGoogleReviewSaved(false)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ google_review_url: googleReviewUrl || null })
+      .eq('id', restaurant.id)
+    if (error) {
+      alert('Speichern fehlgeschlagen.')
+    } else {
+      setGoogleReviewSaved(true)
+      setRestaurant(prev => prev ? { ...prev, google_review_url: googleReviewUrl || null } : prev)
+      setTimeout(() => setGoogleReviewSaved(false), 2500)
+    }
+    setGoogleReviewSaving(false)
+  }
+
   async function handleDeliveryBufferSave() {
     if (!restaurant) return
     const val = parseInt(deliveryBuffer, 10)
@@ -217,6 +239,50 @@ export default function SettingsPage() {
       <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '40px' }}>
         Konto & Datenschutz
       </p>
+
+      {/* Google Review URL */}
+      {restaurant && (
+        <div style={{
+          background: 'var(--surface)', borderRadius: '16px',
+          border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
+        }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
+            ⭐ Google Bewertungen
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
+            Wenn Gäste 4–5 Sterne geben, werden sie direkt zu Google weitergeleitet.
+          </p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginBottom: '16px' }}>
+            Deinen Google Review-Link findest du in Google Maps → dein Restaurant → &quot;Bewertung schreiben&quot; → Link kopieren.
+          </p>
+          <input
+            type="url"
+            value={googleReviewUrl}
+            onChange={e => setGoogleReviewUrl(e.target.value)}
+            placeholder="https://g.page/r/..."
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)',
+              borderRadius: '10px', padding: '10px 14px',
+              color: 'var(--text)', fontSize: '0.875rem', marginBottom: '12px',
+              fontFamily: 'inherit', outline: 'none',
+            }}
+          />
+          <button
+            onClick={handleGoogleReviewSave}
+            disabled={googleReviewSaving}
+            style={{
+              background: googleReviewSaved ? '#22c55e' : 'var(--accent)',
+              border: 'none', borderRadius: '10px', padding: '10px 20px',
+              color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+              cursor: googleReviewSaving ? 'wait' : 'pointer',
+              transition: 'background 0.2s',
+            }}
+          >
+            {googleReviewSaving ? 'Speichert…' : googleReviewSaved ? '✓ Gespeichert' : 'Speichern'}
+          </button>
+        </div>
+      )}
 
       {/* KI-Wochenbericht E-Mail — Pro/Enterprise only */}
       {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise') && (

@@ -11,6 +11,7 @@ import { MenuItemCard } from '@/components/menu/MenuItemCard'
 import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
+import { OrderRating } from '@/components/order/OrderRating'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import type { LucideIcon } from 'lucide-react'
@@ -634,6 +635,16 @@ export default function OrderPage() {
               </motion.button>
             ))}
           </div>
+
+          {/* Rating — nur wenn Bestellung serviert wurde */}
+          {isServed && (
+            <OrderRating
+              orderId={order.id}
+              restaurantId={order.restaurant_id}
+              googleReviewUrl={restaurant?.google_review_url ?? null}
+              C={C}
+            />
+          )}
 
           <motion.button
             onClick={() => { setCart([]); setNote(''); setView('menu') }}

@@ -30,6 +30,7 @@ export default function StatsPage() {
   const [reservationCount, setReservationCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState<'today' | 'week' | 'month'>('week')
+  const [ratings, setRatings] = useState<{ stars: number; feedback: string | null; created_at: string }[]>([])
 
   useEffect(() => {
     async function load() {
@@ -58,7 +59,7 @@ export default function StatsPage() {
       const fromDateStr = from.toISOString().split('T')[0]
       const todayStr = now.toISOString().split('T')[0]
 
-      const [{ data }, { data: resData }, { data: tableData }] = await Promise.all([
+      const [{ data }, { data: resData }, { data: tableData }, { data: ratingsData }] = await Promise.all([
         supabase
           .from('orders')
           .select('*')
@@ -77,10 +78,17 @@ export default function StatsPage() {
           .from('tables')
           .select('id, label, table_num')
           .eq('restaurant_id', restaurant!.id),
+        supabase
+          .from('order_ratings')
+          .select('stars, feedback, created_at')
+          .eq('restaurant_id', restaurant!.id)
+          .gte('created_at', from.toISOString())
+          .order('created_at', { ascending: false }),
       ])
       setOrders((data as Order[]) || [])
       setReservationCount(((resData as Reservation[]) || []).length)
       setTables((tableData as Table[]) || [])
+      setRatings((ratingsData as { stars: number; feedback: string | null; created_at: string }[]) || [])
     }
     loadData()
   }, [restaurant, range])
@@ -147,6 +155,12 @@ export default function StatsPage() {
 
   const hasData = orders.length > 0
 
+  // Ratings
+  const avgStars = ratings.length > 0
+    ? ratings.reduce((s, r) => s + r.stars, 0) / ratings.length
+    : null
+  const negativeFeedback = ratings.filter(r => r.stars <= 3 && r.feedback)
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
@@ -197,10 +211,16 @@ export default function StatsPage() {
         ) : (
           <>
             {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px', marginBottom: '20px' }}>
               <StatCard label="Bestellungen" value={String(orders.length)} accent />
               <StatCard label="Gerichte" value={String(totalDishes)} />
               <StatCard label="Reservierungen" value={String(reservationCount)} />
+              <StatCard
+                label="Ø Bewertung"
+                value={avgStars != null ? `${avgStars.toFixed(1)} ⭐` : '—'}
+                accent={avgStars != null && avgStars >= 4}
+                warn={avgStars != null && avgStars < 3}
+              />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '16px', marginBottom: '16px' }}>
@@ -329,6 +349,64 @@ export default function StatsPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Bewertungen */}
+        {ratings.length > 0 && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <p style={{ color: 'var(--text)', fontWeight: 700 }}>Bewertungen ({ratings.length})</p>
+              {avgStars != null && (
+                <span style={{
+                  background: avgStars >= 4 ? '#1a3a1a' : '#3a1a1a',
+                  color: avgStars >= 4 ? '#4ade80' : '#f87171',
+                  borderRadius: '6px', padding: '3px 10px', fontSize: '0.8rem', fontWeight: 700,
+                }}>
+                  {avgStars.toFixed(1)} ⭐ Ø
+                </span>
+              )}
+            </div>
+            {/* Sternen-Verteilung */}
+            <div style={{ marginBottom: negativeFeedback.length > 0 ? '16px' : '0' }}>
+              {[5, 4, 3, 2, 1].map(star => {
+                const count = ratings.filter(r => r.stars === star).length
+                const pct = ratings.length > 0 ? (count / ratings.length) * 100 : 0
+                return (
+                  <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', width: '32px' }}>{star} ⭐</span>
+                    <div style={{ flex: 1, background: 'var(--border)', borderRadius: '3px', height: '8px' }}>
+                      <div style={{
+                        background: star >= 4 ? '#22c55e' : star === 3 ? '#f59e0b' : '#ef4444',
+                        width: `${pct}%`, height: '100%', borderRadius: '3px', transition: 'width 0.3s',
+                      }} />
+                    </div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', width: '20px', textAlign: 'right' }}>{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Negatives Feedback */}
+            {negativeFeedback.length > 0 && (
+              <>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
+                  Internes Feedback (1–3 ⭐)
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {negativeFeedback.slice(0, 5).map((r, i) => (
+                    <div key={i} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{ color: '#f87171', fontWeight: 700, fontSize: '0.8rem' }}>{'⭐'.repeat(r.stars)}</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                          {new Date(r.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                      </div>
+                      <p style={{ color: 'var(--text)', fontSize: '0.85rem', margin: 0 }}>{r.feedback}</p>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {/* KI-Wochenbericht — Pro/Enterprise only, always visible */}
