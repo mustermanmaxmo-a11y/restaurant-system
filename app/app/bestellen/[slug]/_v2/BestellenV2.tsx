@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import BestellenV1 from '../_v1/BestellenV1'
 import SmartFilter from '../_components/SmartFilter'
+import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'pickup' | 'delivery'
@@ -146,6 +147,9 @@ export default function BestellenV2() {
   const total = cart.reduce((s, c) => s + c.item.price * c.qty, 0)
   const cartCount = cart.reduce((s, c) => s + c.qty, 0)
 
+  const loyaltyRestaurantId = restaurant?.id ?? ''
+  const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
+
   function scrollToCategory(id: string) {
     setActiveCategory(id)
     categoryRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -185,6 +189,9 @@ export default function BestellenV2() {
     setView('status')
     setCart([])
     setSubmitting(false)
+    if (loyaltyProgram?.enabled) {
+      creditStamp(total)
+    }
     // After successful insert, calculate ETA (non-blocking)
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
@@ -284,13 +291,23 @@ export default function BestellenV2() {
               position: 'relative',
               overflow: 'hidden',
             }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', background: 'rgba(255,255,255,0.15)', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '12px' }}>
-                <Sparkles size={11} /> Bestellen
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', background: 'rgba(255,255,255,0.15)', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                  <Sparkles size={11} /> Bestellen
+                </div>
+                {restaurant && (
+                  <LoyaltyButton restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? V2.accent} />
+                )}
               </div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>{restaurant?.name}</h1>
               <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', marginTop: '6px', marginBottom: 0 }}>Abholung oder Lieferung · Live-Status</p>
             </div>
           </div>
+
+          {/* Loyalty Banner */}
+          {restaurant && (
+            <LoyaltyBanner restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? V2.accent} />
+          )}
 
           {/* Sticky category tabs */}
           <div style={{

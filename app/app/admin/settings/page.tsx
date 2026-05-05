@@ -25,6 +25,19 @@ export default function SettingsPage() {
   const [googleReviewSaving, setGoogleReviewSaving] = useState(false)
   const [googleReviewSaved, setGoogleReviewSaved] = useState(false)
 
+  const [loyalty, setLoyalty] = useState<{
+    id?: string
+    enabled: boolean
+    mechanic: 'stamps' | 'points'
+    goal: number
+    points_per_euro: number
+    reward_text: string
+    show_banner: boolean
+    email_link_enabled: boolean
+  }>({ enabled: false, mechanic: 'stamps', goal: 10, points_per_euro: 10, reward_text: 'Gratis-Getränk', show_banner: false, email_link_enabled: true })
+  const [loyaltySaving, setLoyaltySaving] = useState(false)
+  const [loyaltySaved, setLoyaltySaved] = useState(false)
+
   // Password change state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -60,6 +73,12 @@ export default function SettingsPage() {
         setRestaurant(resto)
         setDeliveryBuffer(String(resto.delivery_buffer_minutes ?? 25))
         setGoogleReviewUrl(resto.google_review_url ?? '')
+        const { data: lp } = await supabase
+          .from('loyalty_programs')
+          .select('*')
+          .eq('restaurant_id', resto.id)
+          .single()
+        if (lp) setLoyalty({ id: lp.id, enabled: lp.enabled, mechanic: lp.mechanic, goal: lp.goal, points_per_euro: lp.points_per_euro, reward_text: lp.reward_text, show_banner: lp.show_banner, email_link_enabled: lp.email_link_enabled })
       }
       const { data: factors } = await supabase.auth.mfa.listFactors()
       const totpFactor = factors?.totp?.find((f: { status: string }) => f.status === 'verified')
@@ -208,6 +227,35 @@ export default function SettingsPage() {
     setDeliveryBufferSaving(false)
   }
 
+  async function handleLoyaltySave() {
+    if (!restaurant) return
+    setLoyaltySaving(true)
+    setLoyaltySaved(false)
+    const payload = {
+      restaurant_id: restaurant.id,
+      enabled: loyalty.enabled,
+      mechanic: loyalty.mechanic,
+      goal: loyalty.goal,
+      points_per_euro: loyalty.points_per_euro,
+      reward_text: loyalty.reward_text,
+      show_banner: loyalty.show_banner,
+      email_link_enabled: loyalty.email_link_enabled,
+    }
+    const { error } = loyalty.id
+      ? await supabase.from('loyalty_programs').update(payload).eq('id', loyalty.id)
+      : await supabase.from('loyalty_programs').insert(payload).select('id').single().then(async (r) => {
+          if (r.data) setLoyalty(prev => ({ ...prev, id: r.data.id }))
+          return r
+        })
+    if (error) {
+      alert('Speichern fehlgeschlagen.')
+    } else {
+      setLoyaltySaved(true)
+      setTimeout(() => setLoyaltySaved(false), 2500)
+    }
+    setLoyaltySaving(false)
+  }
+
   async function handleDelete() {
     if (deleteInput !== 'LÖSCHEN') return
     setDeleting(true)
@@ -280,6 +328,85 @@ export default function SettingsPage() {
             }}
           >
             {googleReviewSaving ? 'Speichert…' : googleReviewSaved ? '✓ Gespeichert' : 'Speichern'}
+          </button>
+        </div>
+      )}
+
+      {/* Loyalty / Stempelkarte */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🎁 Digitale Stempelkarte</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Belohne Stammgäste mit einem Treueprogramm.</p>
+
+          {/* Master toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>Loyalty aktiv</span>
+            <button onClick={() => setLoyalty(p => ({ ...p, enabled: !p.enabled }))} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: loyalty.enabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <span style={{ position: 'absolute', top: '3px', left: loyalty.enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
+
+          {loyalty.enabled && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Mechanic */}
+              <div>
+                <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Mechanik</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['stamps', 'points'] as const).map(m => (
+                    <button key={m} onClick={() => setLoyalty(p => ({ ...p, mechanic: m }))} style={{ flex: 1, padding: '8px 12px', borderRadius: '10px', border: `1px solid ${loyalty.mechanic === m ? 'var(--accent)' : 'var(--border)'}`, background: loyalty.mechanic === m ? 'rgba(234,88,12,0.12)' : 'transparent', color: loyalty.mechanic === m ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                      {m === 'stamps' ? '🔖 Stempel' : '⭐ Punkte'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Goal */}
+              <div>
+                <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  {loyalty.mechanic === 'stamps' ? 'Stempel-Ziel (Anzahl Bestellungen)' : 'Punkte-Ziel'}
+                </label>
+                <input type="number" min={1} max={999} value={loyalty.goal} onChange={e => setLoyalty(p => ({ ...p, goal: parseInt(e.target.value) || 1 }))} style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
+              </div>
+
+              {loyalty.mechanic === 'points' && (
+                <div>
+                  <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Punkte pro Euro</label>
+                  <input type="number" min={1} max={1000} value={loyalty.points_per_euro} onChange={e => setLoyalty(p => ({ ...p, points_per_euro: parseInt(e.target.value) || 1 }))} style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
+                </div>
+              )}
+
+              {/* Reward */}
+              <div>
+                <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Belohnung</label>
+                <input type="text" value={loyalty.reward_text} onChange={e => setLoyalty(p => ({ ...p, reward_text: e.target.value }))} placeholder="z.B. Gratis-Getränk" style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
+              </div>
+
+              {/* Banner toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>Loyalty-Banner anzeigen</span>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>Schmaler Hinweis-Banner über dem Menü</p>
+                </div>
+                <button onClick={() => setLoyalty(p => ({ ...p, show_banner: !p.show_banner }))} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: loyalty.show_banner ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <span style={{ position: 'absolute', top: '3px', left: loyalty.show_banner ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                </button>
+              </div>
+
+              {/* Email link toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>Magic-Link Login (Email)</span>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '2px 0 0' }}>Gäste können sich per Email-Link anmelden (kein Passwort)</p>
+                </div>
+                <button onClick={() => setLoyalty(p => ({ ...p, email_link_enabled: !p.email_link_enabled }))} style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: loyalty.email_link_enabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <span style={{ position: 'absolute', top: '3px', left: loyalty.email_link_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button onClick={handleLoyaltySave} disabled={loyaltySaving} style={{ marginTop: '16px', background: loyaltySaved ? '#22c55e' : 'var(--accent)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: loyaltySaving ? 'wait' : 'pointer', transition: 'background 0.2s' }}>
+            {loyaltySaving ? 'Speichert…' : loyaltySaved ? '✓ Gespeichert' : 'Speichern'}
           </button>
         </div>
       )}

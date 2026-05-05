@@ -15,6 +15,7 @@ import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, Gro
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
+import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 import SmartFilter from '../_components/SmartFilter'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -135,6 +136,10 @@ export default function BestellenV1() {
     suitable: string[]
     unsuitable: { id: string; reason: string }[]
   } | null>(null)
+
+  // Loyalty — only active once restaurant is loaded (restaurantId known)
+  const loyaltyRestaurantId = restaurant?.id ?? ''
+  const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
 
   useEffect(() => {
     async function load() {
@@ -471,6 +476,11 @@ export default function BestellenV1() {
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, orderType)
+    }
+
+    // Loyalty: credit stamp/points if guest is logged in
+    if (loyaltyProgram?.enabled) {
+      creditStamp(total)
     }
 
     // Fire-and-forget order confirmation email (delivery + pickup only, requires email)
@@ -999,6 +1009,9 @@ export default function BestellenV1() {
           </div>{/* end logo+text wrapper */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginTop: '4px' }}>
             <LanguageSelector direction="down" />
+            {restaurant && (
+              <LoyaltyButton restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? '#EA580C'} />
+            )}
             <button
               onClick={toggleTheme}
               style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-text)' }}
@@ -1018,6 +1031,11 @@ export default function BestellenV1() {
           </a>
         </div>
       </div>
+
+      {/* Loyalty Banner — optional, above menu */}
+      {restaurant && (
+        <LoyaltyBanner restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? '#EA580C'} />
+      )}
 
       {/* Reservierungs-Tab */}
       {pageTab === 'reserve' && (
