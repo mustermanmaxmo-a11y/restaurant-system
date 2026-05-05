@@ -61,6 +61,13 @@ export default function MenuPage() {
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
+
+  // Recipe state
+  const [recipeIngredients, setRecipeIngredients] = useState<{ name: string; quantity: string; unit: string; uncertain: boolean }[]>([])
+  const [recipePreparation, setRecipePreparation] = useState('')
+  const [recipeExtracting, setRecipeExtracting] = useState(false)
+  const [recipeSaving, setRecipeSaving] = useState(false)
+  const [showRecipe, setShowRecipe] = useState(false)
   const [translatingId, setTranslatingId] = useState<string | null>(null)
 
   // AI Import
@@ -143,6 +150,16 @@ export default function MenuPage() {
     setItemStockCount(item.stock_count !== null && item.stock_count !== undefined ? String(item.stock_count) : '')
     setEditingItem(item)
     setModal('edit-item')
+    setRecipeIngredients([])
+    setRecipePreparation('')
+    setShowRecipe(false)
+    // Load existing recipe
+    supabase.from('menu_item_ingredients').select('*').eq('menu_item_id', item.id)
+      .then(({ data }) => {
+        if (data?.length) setRecipeIngredients(data.map(r => ({ name: r.ingredient_name, quantity: String(r.quantity ?? ''), unit: r.unit ?? '', uncertain: r.ai_uncertain ?? false })))
+      })
+    supabase.from('recipe_notes').select('preparation_text').eq('menu_item_id', item.id).single()
+      .then(({ data }) => { if (data) setRecipePreparation(data.preparation_text ?? '') })
   }
 
   function toggleTag(key: string) {
@@ -969,6 +986,84 @@ export default function MenuPage() {
                     <input type="checkbox" checked={itemAvailable} onChange={e => setItemAvailable(e.target.checked)} style={{ width: '16px', height: '16px' }} />
                     <span style={{ color: 'var(--text)', fontSize: '0.875rem' }}>{t('admin.available')} (im Menü sichtbar)</span>
                   </label>
+
+                  {/* Recipe Section (edit-item only) */}
+                  {modal === 'edit-item' && editingItem && (
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowRecipe(v => !v)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', padding: 0, marginBottom: showRecipe ? '12px' : 0 }}
+                      >
+                        🍳 Rezept {showRecipe ? '▲' : '▼'}
+                      </button>
+                      {showRecipe && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {/* Photo upload for extraction */}
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', border: '2px dashed var(--border)', borderRadius: '8px', cursor: recipeExtracting ? 'wait' : 'pointer', background: 'var(--bg)' }}>
+                            <Camera size={16} color="var(--text-muted)" />
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{recipeExtracting ? 'KI analysiert…' : 'Rezeptfoto hochladen → KI extrahiert Zutaten'}</span>
+                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={recipeExtracting} onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file || !restaurant) return
+                              setRecipeExtracting(true)
+                              const reader = new FileReader()
+                              reader.onload = async () => {
+                                const base64 = (reader.result as string).split(',')[1]
+                                const { data: { session } } = await supabase.auth.getSession()
+                                const res = await fetch('/api/ai/recipe-extract', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                                  body: JSON.stringify({ restaurantId: restaurant.id, menuItemId: editingItem.id, imageBase64: base64, mimeType: file.type }),
+                                })
+                                const json = await res.json()
+                                if (json.ingredients) setRecipeIngredients(json.ingredients.map((i: { name: string; quantity: number; unit: string; uncertain: boolean }) => ({ name: i.name, quantity: String(i.quantity ?? ''), unit: i.unit ?? '', uncertain: i.uncertain })))
+                                if (json.preparation_text) setRecipePreparation(json.preparation_text)
+                                setRecipeExtracting(false)
+                              }
+                              reader.readAsDataURL(file)
+                            }} />
+                          </label>
+
+                          {/* Ingredient list */}
+                          {recipeIngredients.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {recipeIngredients.map((ing, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center', background: ing.uncertain ? 'rgba(245,158,11,0.06)' : 'var(--bg)', padding: '6px 8px', borderRadius: '8px', border: `1px solid ${ing.uncertain ? '#f59e0b44' : 'var(--border)'}` }}>
+                                  <input value={ing.name} onChange={e => setRecipeIngredients(prev => prev.map((r, j) => j === i ? { ...r, name: e.target.value } : r))} placeholder="Zutat" style={{ flex: 2, padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }} />
+                                  <input value={ing.quantity} onChange={e => setRecipeIngredients(prev => prev.map((r, j) => j === i ? { ...r, quantity: e.target.value, uncertain: false } : r))} placeholder="Menge" style={{ width: '56px', padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }} />
+                                  <input value={ing.unit} onChange={e => setRecipeIngredients(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} placeholder="g/ml" style={{ width: '48px', padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.8rem', outline: 'none' }} />
+                                  <button type="button" onClick={() => setRecipeIngredients(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem', padding: '2px', flexShrink: 0 }}>×</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <button type="button" onClick={() => setRecipeIngredients(prev => [...prev, { name: '', quantity: '', unit: '', uncertain: false }])} style={{ background: 'none', border: '1px dashed var(--border)', borderRadius: '6px', padding: '6px 12px', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>+ Zutat manuell hinzufügen</button>
+                          <div>
+                            <label style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'block', marginBottom: '4px' }}>Zubereitung</label>
+                            <textarea value={recipePreparation} onChange={e => setRecipePreparation(e.target.value)} rows={3} placeholder="Kurze Zubereitungshinweise…" style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '0.825rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                          </div>
+                          <button
+                            type="button"
+                            disabled={recipeSaving}
+                            onClick={async () => {
+                              if (!editingItem) return
+                              setRecipeSaving(true)
+                              await supabase.from('menu_item_ingredients').delete().eq('menu_item_id', editingItem.id)
+                              if (recipeIngredients.length > 0) {
+                                await supabase.from('menu_item_ingredients').insert(recipeIngredients.filter(r => r.name.trim()).map(r => ({ menu_item_id: editingItem.id, ingredient_name: r.name.trim(), quantity: r.quantity ? parseFloat(r.quantity) : null, unit: r.unit || null, ai_uncertain: r.uncertain })))
+                              }
+                              await supabase.from('recipe_notes').upsert({ menu_item_id: editingItem.id, preparation_text: recipePreparation || null, updated_at: new Date().toISOString() }, { onConflict: 'menu_item_id' })
+                              setRecipeSaving(false)
+                            }}
+                            style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 700, fontSize: '0.825rem', cursor: recipeSaving ? 'wait' : 'pointer', alignSelf: 'flex-start' }}
+                          >
+                            {recipeSaving ? 'Speichert…' : '💾 Rezept speichern'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setModal(null)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}>{t('common.cancel')}</button>
