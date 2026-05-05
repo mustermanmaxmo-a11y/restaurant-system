@@ -128,6 +128,12 @@ export default function OrderPage() {
   const [isGroupCreator, setIsGroupCreator] = useState(false)
   const [copiedGroup, setCopiedGroup] = useState(false)
 
+  // Bill split state
+  const [showSplitSetup, setShowSplitSetup] = useState(false)
+  const [splitPersonNames, setSplitPersonNames] = useState('')
+  const [splitToken, setSplitToken] = useState<string | null>(null)
+  const [splitCreating, setSplitCreating] = useState(false)
+
   useEffect(() => {
     async function load() {
       const { data: tableData } = await supabase
@@ -635,6 +641,58 @@ export default function OrderPage() {
               </motion.button>
             ))}
           </div>
+
+          {/* Bill Split */}
+          {!splitToken ? (
+            !showSplitSetup ? (
+              <button
+                onClick={() => setShowSplitSetup(true)}
+                style={{ width: '100%', marginBottom: '12px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '14px', color: C.muted, fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                🧾 Rechnung aufteilen
+              </button>
+            ) : (
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+                <p style={{ color: C.text, fontWeight: 700, marginBottom: '8px', fontSize: '0.9rem' }}>Rechnung aufteilen</p>
+                <p style={{ color: C.muted, fontSize: '0.8rem', marginBottom: '10px' }}>Namen kommagetrennt eingeben (z.B. Anna, Ben, Clara)</p>
+                <input
+                  value={splitPersonNames}
+                  onChange={e => setSplitPersonNames(e.target.value)}
+                  placeholder="Anna, Ben, Clara"
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box', marginBottom: '10px' }}
+                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setShowSplitSetup(false)} style={{ flex: 1, padding: '9px', borderRadius: '8px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.825rem' }}>Abbrechen</button>
+                  <button
+                    disabled={splitCreating || !splitPersonNames.trim()}
+                    onClick={async () => {
+                      const names = splitPersonNames.split(',').map(n => n.trim()).filter(Boolean)
+                      if (names.length < 2) { alert('Mindestens 2 Personen eingeben.'); return }
+                      setSplitCreating(true)
+                      const persons = names.map((name, i) => ({ name, color: ['#6c63ff','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#8b5cf6','#14b8a6'][i % 8] }))
+                      const res = await fetch('/api/split', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order.id, persons }) })
+                      const json = await res.json()
+                      if (json.token) { setSplitToken(json.token); setShowSplitSetup(false) }
+                      setSplitCreating(false)
+                    }}
+                    style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: C.accent, color: '#fff', fontWeight: 700, cursor: splitCreating ? 'wait' : 'pointer', fontSize: '0.825rem' }}
+                  >
+                    {splitCreating ? 'Erstelle…' : 'Split erstellen'}
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+              <p style={{ color: C.text, fontWeight: 700, marginBottom: '8px', fontSize: '0.9rem' }}>🧾 Split-Link</p>
+              <p style={{ color: C.muted, fontSize: '0.8rem', marginBottom: '10px' }}>Teile diesen Link mit den Gästen:</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input readOnly value={`${window.location.origin}/split/${splitToken}`} style={{ flex: 1, padding: '9px 12px', borderRadius: '8px', border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontSize: '0.8rem', outline: 'none' }} />
+                <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/split/${splitToken}`)} style={{ padding: '9px 14px', borderRadius: '8px', border: `1px solid ${C.border}`, background: 'transparent', color: C.accent, fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Kopieren</button>
+              </div>
+              <button onClick={() => window.open(`/split/${splitToken}`, '_blank')} style={{ width: '100%', marginTop: '8px', padding: '9px', borderRadius: '8px', border: 'none', background: C.accent, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}>Split öffnen →</button>
+            </div>
+          )}
 
           {/* Rating — nur wenn Bestellung serviert wurde */}
           {isServed && (
