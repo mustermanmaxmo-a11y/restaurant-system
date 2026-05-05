@@ -44,6 +44,8 @@ export interface Restaurant {
   google_review_url: string | null
   weekly_report_email: boolean | null
   email_marketing_enabled: boolean | null
+  prep_show_in_kds: boolean | null
+  prep_push_enabled: boolean | null
 }
 
 export interface PlatformSettings {

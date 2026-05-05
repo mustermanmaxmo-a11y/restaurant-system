@@ -33,6 +33,9 @@ export default function StatsPage() {
   const [ratings, setRatings] = useState<{ stars: number; feedback: string | null; created_at: string }[]>([])
   const [wasteThisWeek, setWasteThisWeek] = useState<number | null>(null)
   const [wasteLastWeek, setWasteLastWeek] = useState<number | null>(null)
+  const [prepPlan, setPrepPlan] = useState<{ shifts: { name: string; time: string; items: { name: string; qty: number; confidence: string }[] }[]; insight: string } | null>(null)
+  const [prepLoading, setPrepLoading] = useState(false)
+  const [prepGenerated, setPrepGenerated] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -45,6 +48,21 @@ export default function StatsPage() {
     }
     load()
   }, [router])
+
+  useEffect(() => {
+    if (!restaurant) return
+    async function loadPrepPlan() {
+      const today = new Date().toISOString().split('T')[0]
+      const { data } = await supabase
+        .from('daily_prep_plans')
+        .select('plan_data')
+        .eq('restaurant_id', restaurant!.id)
+        .eq('plan_date', today)
+        .single()
+      if (data?.plan_data) setPrepPlan(data.plan_data as typeof prepPlan)
+    }
+    loadPrepPlan()
+  }, [restaurant])
 
   useEffect(() => {
     if (!restaurant) return
@@ -112,6 +130,27 @@ export default function StatsPage() {
     }
     loadData()
   }, [restaurant, range])
+
+  async function generatePrepPlan() {
+    if (!restaurant) return
+    setPrepLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/ai/prep-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ restaurantId: restaurant.id }),
+      })
+      const json = await res.json()
+      if (json.plan) {
+        setPrepPlan(json.plan)
+        setPrepGenerated(true)
+        setTimeout(() => setPrepGenerated(false), 3000)
+      }
+    } finally {
+      setPrepLoading(false)
+    }
+  }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -436,6 +475,53 @@ export default function StatsPage() {
             )}
           </div>
         )}
+
+        {/* Vorbereitungsplan */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              <p style={{ color: 'var(--text)', fontWeight: 700 }}>🍳 Vorbereitungsplan — Heute</p>
+              {!prepPlan && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px' }}>Noch kein Plan für heute generiert.</p>}
+            </div>
+            <button
+              onClick={generatePrepPlan}
+              disabled={prepLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: prepGenerated ? '#22c55e20' : 'var(--bg)', color: prepGenerated ? '#22c55e' : 'var(--text)', fontWeight: 600, fontSize: '0.8rem', cursor: prepLoading ? 'wait' : 'pointer' }}
+            >
+              {prepLoading ? '⏳ Generiere…' : prepGenerated ? '✓ Aktualisiert' : prepPlan ? '↻ Neu generieren' : '✨ Plan erstellen'}
+            </button>
+          </div>
+          {prepPlan && (
+            <>
+              {prepPlan.insight && (
+                <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '0.85rem', color: 'var(--text)' }}>
+                  💡 {prepPlan.insight}
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '12px' }}>
+                {prepPlan.shifts.map((shift, si) => (
+                  <div key={si} style={{ background: 'var(--bg)', borderRadius: '12px', padding: '12px 14px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.9rem' }}>{shift.name}</p>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{shift.time}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {shift.items.map((item, ii) => (
+                        <div key={ii} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <span style={{ color: 'var(--text)', fontSize: '0.85rem', flex: 1 }}>{item.name}</span>
+                          <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{item.qty}×</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, background: item.confidence === 'Sicher' ? '#14532d' : '#78350f', color: item.confidence === 'Sicher' ? '#4ade80' : '#fcd34d', whiteSpace: 'nowrap' }}>
+                            {item.confidence}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* KI-Wochenbericht — Pro/Enterprise only, always visible */}
         {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise') && (

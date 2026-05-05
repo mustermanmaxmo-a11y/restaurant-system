@@ -35,7 +35,8 @@ export default function DashboardPage() {
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
   const [claimingOrder, setClaimingOrder] = useState<string | null>(null)
   const [staffMap, setStaffMap] = useState<Record<string, string>>({})
-  const [view, setView] = useState<'board' | 'calls' | 'tables' | 'reservations'>('board')
+  const [view, setView] = useState<'board' | 'calls' | 'tables' | 'reservations' | 'prep'>('board')
+  const [prepPlan, setPrepPlan] = useState<{ shifts: { name: string; time: string; items: { name: string; qty: number; confidence: string }[] }[]; insight: string } | null>(null)
   const [mobileCol, setMobileCol] = useState<Column>('new')
   const [reservations, setReservations] = useState<Reservation[]>([])
 
@@ -134,6 +135,12 @@ export default function DashboardPage() {
     loadTables(rId)
     loadCalls(rId)
     loadReservations(rId)
+
+    if (session.restaurant.prep_show_in_kds) {
+      const today = new Date().toISOString().split('T')[0]
+      supabase.from('daily_prep_plans').select('plan_data').eq('restaurant_id', rId).eq('plan_date', today).single()
+        .then(({ data }) => { if (data?.plan_data) setPrepPlan(data.plan_data as typeof prepPlan) })
+    }
 
     supabase.from('staff').select('id, name').eq('restaurant_id', rId).eq('active', true)
       .then(({ data }) => {
@@ -571,6 +578,7 @@ export default function DashboardPage() {
             { key: 'calls', label: 'Service', badge: unresolvedCalls.length },
             { key: 'tables', label: 'Tische', badge: 0 },
             { key: 'reservations', label: 'Reservierungen', badge: reservations.filter(r => r.status === 'pending').length },
+            ...(session.restaurant.prep_show_in_kds ? [{ key: 'prep', label: '🍳 Prep', badge: 0 }] : []),
           ].map(tab => (
             <button
               key={tab.key}
@@ -1003,6 +1011,48 @@ export default function DashboardPage() {
           </div>
         )
       })()}
+
+      {/* Prep Plan View */}
+      {view === 'prep' && (
+        <div style={{ flex: 1, padding: '20px', overflowY: 'auto', maxWidth: '700px', width: '100%', margin: '0 auto' }}>
+          {!prepPlan ? (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <p style={{ fontSize: '2rem', marginBottom: '12px' }}>🍳</p>
+              <p style={{ color: '#555' }}>Noch kein Vorbereitungsplan für heute.</p>
+              <p style={{ color: '#444', fontSize: '0.8rem', marginTop: '6px' }}>Der Plan wird täglich um 08:00 generiert oder kann im Admin-Dashboard erstellt werden.</p>
+            </div>
+          ) : (
+            <>
+              {prepPlan.insight && (
+                <div style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '0.875rem', color: '#aaa' }}>
+                  💡 {prepPlan.insight}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {prepPlan.shifts.map((shift, si) => (
+                  <div key={si} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '16px', border: '1px solid #2a2a2a' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <p style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{shift.name}</p>
+                      <span style={{ color: '#666', fontSize: '0.8rem' }}>{shift.time}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {shift.items.map((item, ii) => (
+                        <div key={ii} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: ii < shift.items.length - 1 ? '1px solid #2a2a2a' : 'none' }}>
+                          <span style={{ color: '#ccc', fontSize: '0.9rem', flex: 1 }}>{item.name}</span>
+                          <span style={{ color: '#ff6b35', fontWeight: 700, fontSize: '1rem' }}>{item.qty}×</span>
+                          <span style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 600, background: item.confidence === 'Sicher' ? '#14532d' : '#78350f', color: item.confidence === 'Sicher' ? '#4ade80' : '#fcd34d' }}>
+                            {item.confidence}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Shift Handover Modal */}
       {showHandoverModal && session && (

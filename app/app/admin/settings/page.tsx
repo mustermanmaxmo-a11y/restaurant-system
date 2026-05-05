@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -508,6 +508,50 @@ export default function SettingsPage() {
             >
               <span style={{ position: 'absolute', top: '3px', left: restaurant.email_marketing_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* KI-Vorbereitungsplan */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🍳 KI-Vorbereitungsplan</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Täglich generierter Prep-Plan basierend auf Reservierungen und Bestellhistorie.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>Im KDS anzeigen</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Prep-Plan im Küchen-Display sichtbar</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const newVal = !restaurant.prep_show_in_kds
+                  const { error } = await supabase.from('restaurants').update({ prep_show_in_kds: newVal }).eq('id', restaurant.id)
+                  if (!error) setRestaurant(prev => prev ? { ...prev, prep_show_in_kds: newVal } : prev)
+                }}
+                style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: restaurant.prep_show_in_kds ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <span style={{ position: 'absolute', top: '3px', left: restaurant.prep_show_in_kds ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <p style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>Push um 08:00</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>Tägliche Push-Benachrichtigung mit neuem Plan</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const newVal = !restaurant.prep_push_enabled
+                  const { error } = await supabase.from('restaurants').update({ prep_push_enabled: newVal }).eq('id', restaurant.id)
+                  if (!error) setRestaurant(prev => prev ? { ...prev, prep_push_enabled: newVal } : prev)
+                }}
+                style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: restaurant.prep_push_enabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <span style={{ position: 'absolute', top: '3px', left: restaurant.prep_push_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </button>
+            </div>
           </div>
         </div>
       )}
