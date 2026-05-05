@@ -20,6 +20,8 @@ interface LoyaltyMember {
   id: string
   stamp_count: number
   points: number
+  dietary_preferences: string[]
+  favorite_item_ids: string[]
 }
 
 interface Props {
@@ -58,11 +60,11 @@ export function useLoyalty(restaurantId: string) {
     if (!user || !program) { setMember(null); return }
     supabase
       .from('loyalty_members')
-      .select('id, stamp_count, points')
+      .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
       .eq('user_id', user.id)
       .eq('restaurant_id', restaurantId)
       .maybeSingle()
-      .then(({ data }) => setMember(data))
+      .then(({ data }) => setMember(data ? { ...data, dietary_preferences: data.dietary_preferences ?? [], favorite_item_ids: data.favorite_item_ids ?? [] } : null))
   }, [user, program, restaurantId])
 
   const creditStamp = useCallback(async (orderTotal: number) => {
@@ -72,9 +74,9 @@ export function useLoyalty(restaurantId: string) {
       const { data } = await supabase
         .from('loyalty_members')
         .upsert({ user_id: user.id, restaurant_id: restaurantId }, { onConflict: 'user_id,restaurant_id' })
-        .select('id, stamp_count, points')
+        .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
         .single()
-      mem = data
+      mem = data ? { ...data, dietary_preferences: data.dietary_preferences ?? [], favorite_item_ids: data.favorite_item_ids ?? [] } : null
     }
     if (!mem) return
 
@@ -146,6 +148,7 @@ export function LoyaltyButton({ restaurantId, accentColor = '#EA580C' }: Props) 
           <LoyaltyCardDropdown
             program={program}
             member={member}
+            memberId={member?.id}
             accentColor={accentColor}
             onClose={() => setShowCard(false)}
             onSignOut={async () => {
@@ -246,8 +249,8 @@ function LoyaltyModal({
         const { data: mem } = await supabase
           .from('loyalty_members')
           .upsert({ user_id: data.user.id, restaurant_id: restaurantId }, { onConflict: 'user_id,restaurant_id' })
-          .select('id, stamp_count, points').single()
-        onSuccess(data.user, mem)
+          .select('id, stamp_count, points, dietary_preferences, favorite_item_ids').single()
+        onSuccess(data.user, mem ? { ...mem, dietary_preferences: mem.dietary_preferences ?? [], favorite_item_ids: mem.favorite_item_ids ?? [] } : null)
       }
     } else {
       const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
@@ -255,11 +258,11 @@ function LoyaltyModal({
       if (data.user) {
         const { data: mem } = await supabase
           .from('loyalty_members')
-          .select('id, stamp_count, points')
+          .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
           .eq('user_id', data.user.id)
           .eq('restaurant_id', restaurantId)
           .maybeSingle()
-        onSuccess(data.user, mem)
+        onSuccess(data.user, mem ? { ...mem, dietary_preferences: mem.dietary_preferences ?? [], favorite_item_ids: mem.favorite_item_ids ?? [] } : null)
       }
     }
     setLoading(false)
@@ -364,22 +367,65 @@ function LoyaltyModal({
   )
 }
 
+const DIETARY_OPTIONS = [
+  { key: 'vegetarisch', label: '🥗 Vegetarisch' },
+  { key: 'vegan', label: '🌱 Vegan' },
+  { key: 'glutenfrei', label: '🌾 Glutenfrei' },
+  { key: 'laktosefrei', label: '🥛 Laktosefrei' },
+  { key: 'no_nuts', label: '🥜 Keine Nüsse' },
+  { key: 'no_fish', label: '🐟 Kein Fisch' },
+]
+
 // ─── Card Dropdown ─────────────────────────────────────────────────────────────
 function LoyaltyCardDropdown({
   program,
   member,
+  memberId,
   accentColor,
   onClose,
   onSignOut,
 }: {
   program: LoyaltyProgram
   member: LoyaltyMember | null
+  memberId?: string
   accentColor: string
   onClose: () => void
   onSignOut: () => void
 }) {
+  const [tab, setTab] = useState<'card' | 'profile'>('card')
+  const [dietary, setDietary] = useState<string[]>(member?.dietary_preferences ?? [])
+  const [savingPref, setSavingPref] = useState(false)
   const current = program.mechanic === 'stamps' ? (member?.stamp_count ?? 0) : (member?.points ?? 0)
   const pct = Math.min(current / program.goal, 1)
+  const mId = member?.id ?? memberId
+
+  async function toggleDietary(key: string) {
+    const newVal = dietary.includes(key) ? dietary.filter(d => d !== key) : [...dietary, key]
+    setDietary(newVal)
+    if (!mId) return
+    setSavingPref(true)
+    await supabase.from('loyalty_members').update({ dietary_preferences: newVal }).eq('id', mId)
+    setSavingPref(false)
+  }
+
+  async function downloadData() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch('/api/profile/export', { headers: { Authorization: `Bearer ${session.access_token}` } })
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'meine-daten.json'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function deleteAccount() {
+    if (!confirm('Konto und alle Daten unwiderruflich löschen?')) return
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    await fetch('/api/profile/delete', { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } })
+    onSignOut()
+  }
 
   return (
     <>
@@ -393,42 +439,75 @@ function LoyaltyCardDropdown({
           position: 'absolute', top: '70px', right: '16px',
           background: '#0f0f13', borderRadius: '16px',
           border: '1px solid rgba(255,255,255,0.1)',
-          padding: '18px', width: '240px',
+          padding: '18px', width: '260px',
           zIndex: 8999, boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
         }}
       >
-        <p style={{ color: '#8B8B93', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
-          Deine {program.mechanic === 'stamps' ? 'Stempelkarte' : 'Punkte'}
-        </p>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', padding: '3px' }}>
+          {(['card', 'profile'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '5px 0', borderRadius: '8px', border: 'none', background: tab === t ? accentColor : 'transparent', color: tab === t ? '#fff' : '#8B8B93', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+              {t === 'card' ? '⭐ Karte' : '👤 Profil'}
+            </button>
+          ))}
+        </div>
 
-        {program.mechanic === 'stamps' ? (
+        {tab === 'card' && (
           <>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
-              {Array.from({ length: program.goal }).map((_, i) => (
-                <span key={i} style={{ fontSize: '1.3rem', filter: i < current ? 'none' : 'grayscale(1) opacity(0.25)' }}>⭐</span>
-              ))}
-            </div>
-            <p style={{ color: '#F5F5F7', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>
-              {current} / {program.goal} Stempel
+            <p style={{ color: '#8B8B93', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+              Deine {program.mechanic === 'stamps' ? 'Stempelkarte' : 'Punkte'}
             </p>
-          </>
-        ) : (
-          <>
-            <p style={{ color: accentColor, fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px' }}>{current} Punkte</p>
-            <div style={{ background: '#2a2a3a', borderRadius: '4px', height: '6px', marginBottom: '8px' }}>
-              <div style={{ background: accentColor, width: `${pct * 100}%`, height: '100%', borderRadius: '4px', transition: 'width 0.4s' }} />
-            </div>
+
+            {program.mechanic === 'stamps' ? (
+              <>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+                  {Array.from({ length: Math.min(program.goal, 20) }).map((_, i) => (
+                    <span key={i} style={{ fontSize: '1.1rem', filter: i < current ? 'none' : 'grayscale(1) opacity(0.25)' }}>⭐</span>
+                  ))}
+                </div>
+                <p style={{ color: '#F5F5F7', fontSize: '0.85rem', fontWeight: 700, marginBottom: '4px' }}>
+                  {current} / {program.goal} Stempel
+                </p>
+              </>
+            ) : (
+              <>
+                <p style={{ color: accentColor, fontSize: '1.4rem', fontWeight: 800, marginBottom: '6px' }}>{current} Punkte</p>
+                <div style={{ background: '#2a2a3a', borderRadius: '4px', height: '6px', marginBottom: '8px' }}>
+                  <div style={{ background: accentColor, width: `${pct * 100}%`, height: '100%', borderRadius: '4px', transition: 'width 0.4s' }} />
+                </div>
+              </>
+            )}
+
+            {current >= program.goal ? (
+              <div style={{ background: accentColor + '20', borderRadius: '8px', padding: '8px 10px', fontSize: '0.8rem', color: accentColor, fontWeight: 700 }}>
+                🎉 Belohnung verfügbar: {program.reward_text}
+              </div>
+            ) : (
+              <p style={{ color: '#8B8B93', fontSize: '0.78rem' }}>
+                Noch {program.goal - current} {program.mechanic === 'stamps' ? 'Stempel' : 'Punkte'} bis: <span style={{ color: '#F5F5F7' }}>{program.reward_text}</span>
+              </p>
+            )}
           </>
         )}
 
-        {current >= program.goal ? (
-          <div style={{ background: accentColor + '20', borderRadius: '8px', padding: '8px 10px', fontSize: '0.8rem', color: accentColor, fontWeight: 700 }}>
-            🎉 Belohnung verfügbar: {program.reward_text}
-          </div>
-        ) : (
-          <p style={{ color: '#8B8B93', fontSize: '0.78rem' }}>
-            Noch {program.goal - current} {program.mechanic === 'stamps' ? 'Stempel' : 'Punkte'} bis: <span style={{ color: '#F5F5F7' }}>{program.reward_text}</span>
-          </p>
+        {tab === 'profile' && (
+          <>
+            <p style={{ color: '#8B8B93', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              Ernährung {savingPref ? '(speichert…)' : ''}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+              {DIETARY_OPTIONS.map(opt => (
+                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={dietary.includes(opt.key)} onChange={() => toggleDietary(opt.key)} />
+                  <span style={{ color: '#F5F5F7', fontSize: '0.82rem' }}>{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <button onClick={downloadData} style={{ ...linkBtnStyle, textAlign: 'left', fontSize: '0.75rem' }}>⬇ Meine Daten herunterladen</button>
+              <button onClick={deleteAccount} style={{ ...linkBtnStyle, color: '#ef4444', textAlign: 'left', fontSize: '0.75rem' }}>🗑 Konto löschen</button>
+            </div>
+          </>
         )}
 
         <button onClick={onSignOut} style={{ ...linkBtnStyle, marginTop: '14px', display: 'block' }}>

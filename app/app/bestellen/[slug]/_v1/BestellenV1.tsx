@@ -143,7 +143,7 @@ export default function BestellenV1() {
 
   // Loyalty — only active once restaurant is loaded (restaurantId known)
   const loyaltyRestaurantId = restaurant?.id ?? ''
-  const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
+  const { program: loyaltyProgram, creditStamp, member: loyaltyMember } = useLoyalty(loyaltyRestaurantId)
 
   useEffect(() => {
     async function load() {
@@ -1482,6 +1482,9 @@ export default function BestellenV1() {
                   const qty = getQty(item.id)
                   const displayName = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.name ?? item.name
                   const displayDesc = (item.translations as Record<string, {name: string; description: string}> | null | undefined)?.[lang]?.description ?? item.description
+                  const isFavorite = loyaltyMember?.favorite_item_ids?.includes(item.id)
+                  const dietaryPrefs = loyaltyMember?.dietary_preferences ?? []
+                  const allergenConflict = dietaryPrefs.length > 0 && item.allergens?.some(a => dietaryPrefs.includes(a))
                   return (
                     <div
                       key={item.id}
@@ -1499,6 +1502,19 @@ export default function BestellenV1() {
                           pointerEvents: 'none',
                         }}>
                           Ausverkauft
+                        </div>
+                      )}
+                      {isFavorite && (
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, fontSize: '0.85rem', pointerEvents: 'none' }}>⭐</div>
+                      )}
+                      {allergenConflict && (
+                        <div style={{
+                          position: 'absolute', bottom: '8px', left: '8px', zIndex: 10,
+                          background: '#f59e0b', color: '#fff', fontSize: '0.65rem',
+                          padding: '2px 7px', borderRadius: '20px', fontWeight: 700,
+                          pointerEvents: 'none',
+                        }}>
+                          ⚠ Allergen
                         </div>
                       )}
                       {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (
