@@ -5,12 +5,13 @@ CREATE TABLE IF NOT EXISTS public.reengagement_log (
   restaurant_id uuid REFERENCES public.restaurants(id) ON DELETE CASCADE,
   member_id uuid REFERENCES public.loyalty_members(id) ON DELETE CASCADE,
   rule text NOT NULL,
+  sent_date date NOT NULL DEFAULT CURRENT_DATE,
   sent_at timestamptz DEFAULT now()
 );
 
--- Unique: max 1x per day per member per rule
+-- Unique: max 1x per day per member per rule (uses plain date column, no expression)
 CREATE UNIQUE INDEX IF NOT EXISTS reengagement_log_daily
-  ON public.reengagement_log (member_id, rule, (sent_at::date));
+  ON public.reengagement_log (member_id, rule, sent_date);
 
 ALTER TABLE public.restaurants
   ADD COLUMN IF NOT EXISTS crm_rule_inactive boolean DEFAULT false,

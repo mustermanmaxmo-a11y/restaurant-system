@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
       const memberCreatedAt = new Date(member.created_at)
       const daysSinceJoin = Math.floor((today.getTime() - memberCreatedAt.getTime()) / 86400000)
 
-      // Check already sent today
+      // Check already sent today (uses sent_date column for reliable dedup)
       const { data: alreadySent } = await adminClient
         .from('reengagement_log')
         .select('id')
         .eq('member_id', member.id)
-        .gte('sent_at', todayStr + 'T00:00:00')
+        .eq('sent_date', todayStr)
         .limit(1)
 
       if (alreadySent && alreadySent.length > 0) continue
@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
           restaurant_id: resto.id,
           member_id: member.id,
           rule: ruleFired,
+          sent_date: todayStr,
           sent_at: new Date().toISOString(),
         })
         totalSent++
