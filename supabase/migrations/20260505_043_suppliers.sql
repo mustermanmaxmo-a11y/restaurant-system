@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS public.supplier_products (
   created_at timestamptz DEFAULT now()
 );
 
--- Bevorzugter Lieferant pro Inventory-Item
-ALTER TABLE public.inventory_items
+-- Bevorzugter Lieferant pro Zutat (ingredients = Lagerbestand-Tabelle)
+ALTER TABLE public.ingredients
   ADD COLUMN IF NOT EXISTS preferred_supplier_id uuid REFERENCES public.suppliers(id);
 
 -- RLS für supplier_products (suppliers-Tabelle hat bereits RLS via migration 009)
