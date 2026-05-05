@@ -7,7 +7,7 @@ import { Restaurant } from '@/types/database'
 import type { RestaurantPlan } from '@/types/database'
 import { TrialBanner } from '@/components/TrialBanner'
 import type { LucideIcon } from 'lucide-react'
-import { ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays, Clock, BarChart2, Package, Plug, CreditCard, PartyPopper, AlertTriangle, Mail } from 'lucide-react'
+import { ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays, Clock, BarChart2, Package, Plug, CreditCard, PartyPopper, AlertTriangle, Mail, Building2 } from 'lucide-react'
 
 function AdminContent() {
   const router = useRouter()
@@ -15,24 +15,26 @@ function AdminContent() {
   const welcome = searchParams.get('welcome') === 'true'
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
+  const [restaurantCount, setRestaurantCount] = useState(1)
 
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/owner-login'); return }
 
-      const { data } = await supabase
+      const { data: allRestos } = await supabase
         .from('restaurants')
         .select('*')
         .eq('owner_id', session.user.id)
-        .limit(1)
-        .single()
+        .order('created_at', { ascending: true })
 
-      if (!data) {
+      if (!allRestos || allRestos.length === 0) {
         router.push('/admin/setup')
         return
       }
 
+      const data = allRestos[0]
+      setRestaurantCount(allRestos.length)
       setRestaurant(data)
       setLoading(false)
     }
@@ -144,6 +146,7 @@ function AdminContent() {
             { icon: BarChart2, label: 'Statistik', href: '/admin/stats', available: true },
             { icon: Package, label: 'Lagerbestand', href: '/admin/inventory', available: true },
             { icon: Mail, label: 'Marketing', href: '/admin/marketing', available: true },
+            ...(restaurantCount > 1 ? [{ icon: Building2, label: 'Alle Standorte', href: '/admin/overview', available: true }] : []),
             { icon: Plug, label: 'Integrationen', href: '/admin/integrations', available: true },
             { icon: CreditCard, label: 'Billing', href: '/admin/billing', available: true },
           ] as { icon: LucideIcon; label: string; href: string; available: boolean }[]).map(card => (
