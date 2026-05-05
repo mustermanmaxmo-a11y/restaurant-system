@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -486,6 +486,29 @@ export default function SettingsPage() {
           <button onClick={handleAlertsSave} disabled={alertsSaving} style={{ marginTop: '16px', background: alertsSaved ? '#22c55e' : 'var(--accent)', border: 'none', borderRadius: '10px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: alertsSaving ? 'wait' : 'pointer', transition: 'background 0.2s' }}>
             {alertsSaving ? 'Speichert…' : alertsSaved ? '✓ Gespeichert' : 'Speichern'}
           </button>
+        </div>
+      )}
+
+      {/* Email Marketing */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>📧 Email Marketing</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Wenn aktiv erscheint beim Checkout eine Opt-in-Checkbox. Kampagnen verwalten unter <a href="/admin/marketing" style={{ color: 'var(--accent)' }}>Marketing</a>.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ color: 'var(--text)', fontSize: '0.9rem' }}>Email Marketing aktiv</span>
+            <button
+              onClick={async () => {
+                const newVal = !restaurant.email_marketing_enabled
+                const { error } = await supabase.from('restaurants').update({ email_marketing_enabled: newVal }).eq('id', restaurant.id)
+                if (!error) setRestaurant(prev => prev ? { ...prev, email_marketing_enabled: newVal } : prev)
+              }}
+              style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: restaurant.email_marketing_enabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
+            >
+              <span style={{ position: 'absolute', top: '3px', left: restaurant.email_marketing_enabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
         </div>
       )}
 

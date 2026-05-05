@@ -43,6 +43,7 @@ export interface Restaurant {
   delivery_buffer_minutes: number
   google_review_url: string | null
   weekly_report_email: boolean | null
+  email_marketing_enabled: boolean | null
 }
 
 export interface PlatformSettings {

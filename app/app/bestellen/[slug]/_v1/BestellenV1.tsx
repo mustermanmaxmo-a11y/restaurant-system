@@ -114,6 +114,7 @@ export default function BestellenV1() {
   const [city, setCity] = useState('')
   const [zip, setZip] = useState('')
   const [note, setNote] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
 
   // Group ordering
   const [orderMode, setOrderMode] = useState<OrderMode>('confirmed-solo')
@@ -489,8 +490,19 @@ export default function BestellenV1() {
       creditStamp(total)
     }
 
-    // Fire-and-forget order confirmation email (delivery + pickup only, requires email)
-    // Orders currently don't collect email — skipping for now
+    // Email marketing opt-in
+    if (marketingOptIn && restaurant.email_marketing_enabled) {
+      // We don't collect email in this form, but save name if available via loyalty auth
+      const { data: { user: guestUser } } = await supabase.auth.getUser()
+      if (guestUser?.email) {
+        await supabase.from('marketing_subscribers').upsert({
+          restaurant_id: restaurant.id,
+          email: guestUser.email,
+          name: customerName || null,
+          source: 'order',
+        }, { onConflict: 'restaurant_id,email', ignoreDuplicates: true })
+      }
+    }
   }
 
   async function submitReservation() {
@@ -923,6 +935,16 @@ export default function BestellenV1() {
               <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{total.toFixed(2)} €</span>
             </div>
           </div>
+
+          {/* Email Marketing Opt-in */}
+          {restaurant?.email_marketing_enabled && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px', cursor: 'pointer' }}>
+              <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                Ich möchte Angebote & News von {restaurant.name} per Email erhalten (jederzeit abbestellbar).
+              </span>
+            </label>
+          )}
 
           {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
 
