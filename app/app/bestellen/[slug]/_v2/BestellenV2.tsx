@@ -13,7 +13,9 @@ import BestellenV1 from '../_v1/BestellenV1'
 import SmartFilter from '../_components/SmartFilter'
 import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 import { OrderRating } from '@/components/order/OrderRating'
+import { useLanguage } from '@/components/providers/language-provider'
 
+type Translations = Record<string, { name: string; description: string }>
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'pickup' | 'delivery'
 type View = 'menu' | 'checkout' | 'status'
@@ -55,6 +57,14 @@ async function calculateAndStoreEta(
 export default function BestellenV2() {
   const params = useParams()
   const slug = params.slug as string
+  const { lang } = useLanguage()
+
+  function itemName(item: MenuItem) {
+    return (item.translations as Translations | null)?.[lang]?.name ?? item.name
+  }
+  function itemDesc(item: MenuItem) {
+    return (item.translations as Translations | null)?.[lang]?.description ?? item.description
+  }
 
   const [showV1, setShowV1] = useState(false)
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
@@ -433,10 +443,10 @@ export default function BestellenV2() {
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{item.name}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{itemName(item)}</div>
                             {item.description && (
                               <div style={{ color: V2.textDim, fontSize: '12px', lineHeight: 1.4, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                {item.description}
+                                {itemDesc(item)}
                               </div>
                             )}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>

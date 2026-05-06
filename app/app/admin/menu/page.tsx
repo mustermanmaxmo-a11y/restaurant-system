@@ -69,6 +69,8 @@ export default function MenuPage() {
   const [recipeSaving, setRecipeSaving] = useState(false)
   const [showRecipe, setShowRecipe] = useState(false)
   const [translatingId, setTranslatingId] = useState<string | null>(null)
+  const [retranslating, setRetranslating] = useState(false)
+  const [retranslateProgress, setRetranslateProgress] = useState<{ done: number; total: number } | null>(null)
 
   // AI Import
   const [aiFile, setAiFile] = useState<File | null>(null)
@@ -89,6 +91,27 @@ export default function MenuPage() {
     } finally {
       setTranslatingId(null)
     }
+  }
+
+  async function retranslateAll() {
+    if (!restaurant || retranslating) return
+    setRetranslating(true)
+    setRetranslateProgress({ done: 0, total: items.length })
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      setTranslatingId(item.id)
+      try {
+        await supabase.functions.invoke('translate-menu-item', {
+          body: { item_id: item.id, name: item.name, description: item.description || '' },
+        })
+      } catch (e) {
+        console.error(`Translation failed for ${item.name}:`, e)
+      }
+      setTranslatingId(null)
+      setRetranslateProgress({ done: i + 1, total: items.length })
+    }
+    setRetranslating(false)
+    setRetranslateProgress(null)
   }
 
   useEffect(() => {
@@ -441,6 +464,29 @@ export default function MenuPage() {
             </button>
           )}
           <button
+            onClick={retranslateAll}
+            disabled={retranslating || items.length === 0}
+            title="Alle Gerichte neu übersetzen (8 Sprachen)"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: '8px', padding: '7px 10px',
+              color: retranslating ? 'var(--text-muted)' : 'var(--accent)',
+              fontWeight: 600, fontSize: '0.78rem',
+              cursor: retranslating ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              whiteSpace: 'nowrap',
+              opacity: retranslating ? 0.7 : 1,
+            }}
+          >
+            <Globe size={13} className={retranslating ? 'spin-slow' : ''} />
+            <span className="btn-label-hide">
+              {retranslateProgress
+                ? `${retranslateProgress.done}/${retranslateProgress.total}`
+                : 'Übersetzen'}
+            </span>
+          </button>
+          <button
             onClick={() => setShowSocialPost(true)}
             title="Social-Media-Post per KI generieren"
             style={{
@@ -596,6 +642,8 @@ export default function MenuPage() {
       </div>
 
       <style>{`
+        @keyframes spin-slow { to { transform: rotate(360deg) } }
+        .spin-slow { animation: spin-slow 1.5s linear infinite; }
         @media (max-width: 768px) {
           .menu-layout { flex-direction: column; height: auto; }
           .menu-sidebar {

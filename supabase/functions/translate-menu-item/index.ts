@@ -7,7 +7,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
-const LANGS = ['en', 'es', 'it', 'tr', 'fr', 'pl', 'ru']
+const LANGS = ['de', 'en', 'es', 'it', 'tr', 'fr', 'pl', 'ru']
 
 function sanitize(str: string, maxLen: number): string {
   return str.replace(/[\r\n"\\]/g, ' ').slice(0, maxLen)
@@ -58,13 +58,14 @@ Deno.serve(async (req) => {
     const safeName = sanitize(name, 200)
     const safeDesc = sanitize(description || '', 500)
 
-    const prompt = `Translate this restaurant menu item into the following languages: ${LANGS.join(', ')}.
+    const prompt = `You are translating a restaurant menu item. First detect the input language automatically, then translate into all of these languages: ${LANGS.join(', ')}.
 
-Name (German): "${safeName}"
-Description (German): "${safeDesc}"
+Input name: "${safeName}"
+Input description: "${safeDesc}"
 
 Return ONLY a valid JSON object with this exact structure, no markdown, no explanation:
 {
+  "de": { "name": "...", "description": "..." },
   "en": { "name": "...", "description": "..." },
   "es": { "name": "...", "description": "..." },
   "it": { "name": "...", "description": "..." },
