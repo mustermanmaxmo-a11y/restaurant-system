@@ -25,17 +25,21 @@ ALTER TABLE public.restaurants
 ALTER TABLE public.agencies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_branding ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "agency_owner" ON public.agencies;
 CREATE POLICY "agency_owner" ON public.agencies
   FOR ALL USING (owner_id = auth.uid());
 
+DROP POLICY IF EXISTS "agency_owner_branding" ON public.agency_branding;
 CREATE POLICY "agency_owner_branding" ON public.agency_branding
   FOR ALL USING (
     agency_id IN (SELECT id FROM public.agencies WHERE owner_id = auth.uid())
   );
 
 -- Public read for branding (guests need to fetch it)
+DROP POLICY IF EXISTS "public_branding_read" ON public.agency_branding;
 CREATE POLICY "public_branding_read" ON public.agency_branding
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "public_agencies_read" ON public.agencies;
 CREATE POLICY "public_agencies_read" ON public.agencies
   FOR SELECT USING (true);

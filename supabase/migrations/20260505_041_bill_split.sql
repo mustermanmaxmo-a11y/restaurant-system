@@ -12,11 +12,14 @@ CREATE TABLE IF NOT EXISTS public.bill_splits (
 -- Public: anyone with the token can read/update the split
 ALTER TABLE public.bill_splits ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "public_read" ON public.bill_splits;
 CREATE POLICY "public_read" ON public.bill_splits
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "public_update" ON public.bill_splits;
 CREATE POLICY "public_update" ON public.bill_splits
   FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "public_insert" ON public.bill_splits;
 CREATE POLICY "public_insert" ON public.bill_splits
   FOR INSERT WITH CHECK (true);

@@ -29,11 +29,13 @@ CREATE TABLE IF NOT EXISTS public.marketing_campaigns (
 ALTER TABLE public.marketing_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.marketing_campaigns ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_all" ON public.marketing_subscribers;
 CREATE POLICY "owner_all" ON public.marketing_subscribers
   FOR ALL USING (
     restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "owner_all" ON public.marketing_campaigns;
 CREATE POLICY "owner_all" ON public.marketing_campaigns
   FOR ALL USING (
     restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid())

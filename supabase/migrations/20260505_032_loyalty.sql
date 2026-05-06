@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS public.loyalty_members (
 -- RLS: loyalty_programs
 ALTER TABLE public.loyalty_programs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_manage" ON public.loyalty_programs;
 CREATE POLICY "owner_manage" ON public.loyalty_programs
   FOR ALL USING (
     restaurant_id IN (
@@ -36,6 +37,7 @@ CREATE POLICY "owner_manage" ON public.loyalty_programs
     )
   );
 
+DROP POLICY IF EXISTS "public_read_enabled" ON public.loyalty_programs;
 CREATE POLICY "public_read_enabled" ON public.loyalty_programs
   FOR SELECT USING (enabled = true);
 
@@ -43,10 +45,12 @@ CREATE POLICY "public_read_enabled" ON public.loyalty_programs
 ALTER TABLE public.loyalty_members ENABLE ROW LEVEL SECURITY;
 
 -- Gast kann eigene Daten lesen und schreiben
+DROP POLICY IF EXISTS "member_own" ON public.loyalty_members;
 CREATE POLICY "member_own" ON public.loyalty_members
   FOR ALL USING (user_id = auth.uid());
 
 -- Owner kann alle Mitglieder seines Restaurants lesen
+DROP POLICY IF EXISTS "owner_read" ON public.loyalty_members;
 CREATE POLICY "owner_read" ON public.loyalty_members
   FOR SELECT USING (
     restaurant_id IN (

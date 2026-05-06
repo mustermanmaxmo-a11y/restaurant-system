@@ -20,6 +20,7 @@ ALTER TABLE public.ingredients
 -- RLS für supplier_products (suppliers-Tabelle hat bereits RLS via migration 009)
 ALTER TABLE public.supplier_products ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_all" ON public.supplier_products;
 CREATE POLICY "owner_all" ON public.supplier_products
   FOR ALL USING (
     supplier_id IN (

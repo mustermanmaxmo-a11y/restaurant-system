@@ -16,6 +16,7 @@ ALTER TABLE public.restaurants
 -- RLS: nur Owner
 ALTER TABLE public.daily_prep_plans ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_manage" ON public.daily_prep_plans;
 CREATE POLICY "owner_manage" ON public.daily_prep_plans
   FOR ALL USING (
     restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid())

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.benchmark_snapshots (
 -- RLS: owner reads own snapshots, system writes all (via service role)
 ALTER TABLE public.benchmark_snapshots ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_read" ON public.benchmark_snapshots;
 CREATE POLICY "owner_read" ON public.benchmark_snapshots
   FOR SELECT USING (
     restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid())

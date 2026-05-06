@@ -23,6 +23,7 @@ ALTER TABLE public.menu_items ADD COLUMN IF NOT EXISTS stock_count int;
 -- RLS: nur Owner
 ALTER TABLE public.alert_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_manage" ON public.alert_settings;
 CREATE POLICY "owner_manage" ON public.alert_settings
   FOR ALL USING (
     restaurant_id IN (
@@ -31,5 +32,6 @@ CREATE POLICY "owner_manage" ON public.alert_settings
   );
 
 -- Guests need to read alert settings to apply sold-out logic on ordering page
+DROP POLICY IF EXISTS "public_read" ON public.alert_settings;
 CREATE POLICY "public_read" ON public.alert_settings
   FOR SELECT USING (alerts_enabled = true);

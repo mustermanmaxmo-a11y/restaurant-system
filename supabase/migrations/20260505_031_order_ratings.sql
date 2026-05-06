@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.order_ratings (
 ALTER TABLE public.order_ratings ENABLE ROW LEVEL SECURITY;
 
 -- Owner kann Ratings seines Restaurants lesen
+DROP POLICY IF EXISTS "owner_read" ON public.order_ratings;
 CREATE POLICY "owner_read" ON public.order_ratings
   FOR SELECT USING (
     restaurant_id IN (
@@ -26,5 +27,6 @@ CREATE POLICY "owner_read" ON public.order_ratings
   );
 
 -- Gast kann Rating ohne Login einreichen
+DROP POLICY IF EXISTS "public_insert" ON public.order_ratings;
 CREATE POLICY "public_insert" ON public.order_ratings
   FOR INSERT WITH CHECK (true);

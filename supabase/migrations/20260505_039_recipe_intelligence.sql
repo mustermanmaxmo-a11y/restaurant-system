@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.recipe_notes (
 -- RLS: nur Staff + Owner können Rezepte lesen (nie Gäste)
 ALTER TABLE public.recipe_notes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_manage" ON public.recipe_notes;
 CREATE POLICY "owner_manage" ON public.recipe_notes
   FOR ALL USING (
     menu_item_id IN (
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.recipe_ingredients (
 
 ALTER TABLE public.recipe_ingredients ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_manage" ON public.recipe_ingredients;
 CREATE POLICY "owner_manage" ON public.recipe_ingredients
   FOR ALL USING (
     menu_item_id IN (
