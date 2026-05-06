@@ -16,15 +16,19 @@ CREATE TABLE IF NOT EXISTS public.design_templates (
   created_at   timestamptz DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS public.design_requests (
+-- Redesign design_requests table (replacing old schema from migration 020)
+-- Old table had user_id/message/admin_note; new schema uses restaurant_id/description/screenshot_url/result_template_id
+DROP TABLE IF EXISTS public.design_requests CASCADE;
+CREATE TABLE public.design_requests (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id      uuid REFERENCES public.restaurants(id) ON DELETE CASCADE,
   description        text,
   screenshot_url     text,
-  status             text NOT NULL DEFAULT 'pending', -- 'pending'|'building'|'done'|'rejected'
+  status             text NOT NULL DEFAULT 'pending',
   result_template_id uuid REFERENCES public.design_templates(id),
   admin_notes        text,
-  created_at         timestamptz DEFAULT now()
+  created_at         timestamptz DEFAULT now(),
+  CONSTRAINT design_requests_status_check CHECK (status IN ('pending', 'building', 'done', 'rejected'))
 );
 
 CREATE TABLE IF NOT EXISTS public.template_access (
@@ -70,7 +74,9 @@ SET design_config = jsonb_strip_nulls(jsonb_build_object(
   'animation_style','fade',
   'card_style',     'elevated'
 ))
-WHERE design_config = '{}';
+WHERE design_config = '{}' AND (
+  primary_color IS NOT NULL OR font_pair IS NOT NULL OR design_package IS NOT NULL
+);
 
 -- 4. Enable RLS on all new tables
 
@@ -90,10 +96,25 @@ DROP POLICY IF EXISTS "design_templates_service_all" ON public.design_templates;
 CREATE POLICY "design_templates_service_all" ON public.design_templates
   FOR ALL USING (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "design_templates_granted_read" ON public.design_templates;
+CREATE POLICY "design_templates_granted_read" ON public.design_templates
+  FOR SELECT USING (
+    id IN (
+      SELECT ta.template_id FROM public.template_access ta
+      JOIN public.restaurants r ON r.id = ta.restaurant_id
+      WHERE r.owner_id = auth.uid()
+    )
+  );
+
 -- design_requests: owners manage their own, service role full access
 DROP POLICY IF EXISTS "design_requests_owner_all" ON public.design_requests;
 CREATE POLICY "design_requests_owner_all" ON public.design_requests
   FOR ALL USING (
+    restaurant_id IN (
+      SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
+    )
+  )
+  WITH CHECK (
     restaurant_id IN (
       SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
     )
