@@ -37,6 +37,8 @@ export interface Restaurant {
   card_color:      string | null
   text_color:      string | null
   bg_color:        string | null
+  // New unified design config (JSONB) — replaces individual columns over time
+  design_config: Record<string, unknown> | null
   // Versioned design system
   admin_design_version: 'v1' | 'v2' | null
   guest_design_version: 'v1' | 'v2' | null
