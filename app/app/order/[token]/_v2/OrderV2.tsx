@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { buildColorsFromRestaurant } from '@/lib/color-utils'
+import { buildColorsFromRestaurant, readCfgString } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { MenuItem, MenuCategory, Order, Restaurant } from '@/types/database'
@@ -61,7 +61,14 @@ export default function OrderV2() {
     async function load() {
       const { data: tableData } = await supabase
         .from('tables')
-        .select('*, restaurants(*)')
+        .select(`*, restaurants(
+          id, name, slug, logo_url, description,
+          contact_email, contact_phone, contact_address,
+          primary_color, surface_color, bg_color, header_color, button_color, card_color, text_color,
+          font_pair, design_package, layout_variant, design_config,
+          guest_design_version, online_payments_enabled,
+          opening_hours, google_review_url, brand_preset
+        )`)
         .eq('qr_token', token)
         .eq('active', true)
         .single()
@@ -92,30 +99,30 @@ export default function OrderV2() {
   }, [token])
 
   // Live menu updates
+  const restaurantId = restaurant?.id ?? null
   useEffect(() => {
-    if (!restaurant) return
-    const rId = restaurant.id
+    if (!restaurantId) return
     async function reloadMenu() {
       const [{ data: cats }, { data: menuItems }] = await Promise.all([
-        supabase.from('menu_categories').select('*').eq('restaurant_id', rId).eq('active', true).order('sort_order'),
-        supabase.from('menu_items').select('*').eq('restaurant_id', rId).eq('available', true).order('sort_order'),
+        supabase.from('menu_categories').select('*').eq('restaurant_id', restaurantId).eq('active', true).order('sort_order'),
+        supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId).eq('available', true).order('sort_order'),
       ])
       if (cats) setCategories(cats)
       if (menuItems) setItems(menuItems)
     }
-    const ch = supabase.channel(`menu-v2-order-${rId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items', filter: `restaurant_id=eq.${rId}` }, reloadMenu)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_categories', filter: `restaurant_id=eq.${rId}` }, reloadMenu)
+    const ch = supabase.channel(`menu-v2-order-${restaurantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_items', filter: `restaurant_id=eq.${restaurantId}` }, reloadMenu)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menu_categories', filter: `restaurant_id=eq.${restaurantId}` }, reloadMenu)
       .subscribe()
 
     // Live branding updates
-    const brandCh = supabase.channel(`brand-v2-order-${rId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurants', filter: `id=eq.${rId}` },
+    const brandCh = supabase.channel(`brand-v2-order-${restaurantId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurants', filter: `id=eq.${restaurantId}` },
         (payload) => { setRestaurant(prev => prev ? { ...prev, ...(payload.new as Partial<Restaurant>) } : null) })
       .subscribe()
 
     return () => { supabase.removeChannel(ch); supabase.removeChannel(brandCh) }
-  }, [restaurant])
+  }, [restaurantId])
 
   // Live order status
   useEffect(() => {
@@ -198,8 +205,8 @@ export default function OrderV2() {
   const accentGradient = `linear-gradient(135deg, ${C.accent} 0%, ${C.buttonBg !== C.accent ? C.buttonBg : C.accent}ee 100%)`
 
   // Font pair
-  const cfg = (restaurant?.design_config ?? {}) as Record<string, string | null | undefined>
-  const fontPairKey = cfg.font_pair ?? restaurant?.font_pair ?? getDesignPackage(restaurant?.design_package).fontPair
+  const cfg = restaurant?.design_config ?? {}
+  const fontPairKey = readCfgString(cfg, 'font_pair') ?? restaurant?.font_pair ?? getDesignPackage(restaurant?.design_package).fontPair
   const fontPair = (FONT_PAIRS[fontPairKey ?? ''] ?? FONT_PAIRS['syne-dmsans'])
 
   const iconBtnStyle: React.CSSProperties = {
@@ -361,8 +368,8 @@ export default function OrderV2() {
             <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
               Bestellte Artikel
             </div>
-            {order.items.map((it, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px' }}>
+            {order.items.map((it) => (
+              <div key={it.item_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px' }}>
                 <span>{it.qty}× {it.name}</span>
                 <span style={{ color: C.muted }}>{(it.price * it.qty).toFixed(2)} €</span>
               </div>
