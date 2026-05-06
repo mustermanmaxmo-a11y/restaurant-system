@@ -21,6 +21,7 @@ ALTER TABLE public.restaurants
 -- RLS: nur Owner
 ALTER TABLE public.reengagement_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "owner_read" ON public.reengagement_log;
 CREATE POLICY "owner_read" ON public.reengagement_log
   FOR SELECT USING (
     restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid())
