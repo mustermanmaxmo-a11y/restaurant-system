@@ -161,6 +161,28 @@ export default function BrandingPage() {
   const [designReqError, setDesignReqError] = useState<string | null>(null)
   const [existingDesignReq, setExistingDesignReq] = useState<{ status: string; created_at: string } | null>(null)
 
+  // Template browser state
+  type TemplateRow = {
+    id: string
+    name: string
+    slug: string
+    category: string
+    style_tags: string[]
+    plan_tier: 'basic' | 'pro' | 'premium'
+    preview_url: string | null
+    config: Record<string, string>
+    sort_order: number
+    accessible: boolean
+    granted: boolean
+  }
+  const [templates, setTemplates] = useState<TemplateRow[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [templateCategory, setTemplateCategory] = useState<string>('all')
+  const [templateSearch, setTemplateSearch] = useState('')
+  const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null)
+  const [templateApplied, setTemplateApplied] = useState<string | null>(null)
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null)
+
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -194,10 +216,78 @@ export default function BrandingPage() {
         .maybeSingle()
       if (openReq) setExistingDesignReq(openReq)
 
+      // Aktives Template aus design_config lesen
+      const dc = (resto as { design_config?: Record<string, unknown> }).design_config
+      if (dc && typeof dc.template_id === 'string') {
+        setActiveTemplateId(dc.template_id)
+      }
+
       setLoading(false)
     }
     load()
   }, [router])
+
+  // Templates laden (abhängig von Restaurant + Filter)
+  useEffect(() => {
+    if (!restaurant) return
+    const ctrl = new AbortController()
+    async function loadTemplates() {
+      setTemplatesLoading(true)
+      try {
+        const params = new URLSearchParams({ restaurant_id: restaurant!.id })
+        if (templateCategory !== 'all') params.set('category', templateCategory)
+        if (templateSearch.trim()) params.set('search', templateSearch.trim())
+        const res = await fetch(`/api/design-templates?${params.toString()}`, { signal: ctrl.signal })
+        if (!res.ok) { setTemplates([]); return }
+        const json = await res.json()
+        setTemplates(json.templates ?? [])
+      } catch {
+        // aborted or network
+      } finally {
+        setTemplatesLoading(false)
+      }
+    }
+    loadTemplates()
+    return () => ctrl.abort()
+  }, [restaurant, templateCategory, templateSearch])
+
+  async function applyTemplate(tpl: TemplateRow) {
+    if (!restaurant || !tpl.accessible) return
+    setApplyingTemplateId(tpl.id)
+    try {
+      const res = await fetch(`/api/design-templates/${tpl.id}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: restaurant.id }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        alert(j.error ?? 'Template konnte nicht angewendet werden.')
+        return
+      }
+      // Reload restaurant
+      const { data: resto } = await supabase
+        .from('restaurants').select('*').eq('id', restaurant.id).single()
+      if (resto) {
+        setRestaurant(resto)
+        if (resto.design_package) setDesignPackage(resto.design_package)
+        if (resto.layout_variant) setLayoutVariant(resto.layout_variant as LayoutVariant)
+        if (resto.font_pair) setFontPair(resto.font_pair)
+        setPrimaryColor(resto.primary_color)
+        setBgColor(resto.bg_color)
+        setHeaderColor(resto.header_color)
+        setCardColor(resto.card_color)
+        setButtonColor(resto.button_color)
+        setTextColor(resto.text_color)
+        const dc = (resto as { design_config?: Record<string, unknown> }).design_config
+        if (dc && typeof dc.template_id === 'string') setActiveTemplateId(dc.template_id)
+      }
+      setTemplateApplied(tpl.id)
+      setTimeout(() => setTemplateApplied(null), 2500)
+    } finally {
+      setApplyingTemplateId(null)
+    }
+  }
 
   function applyPackage(pkg: DesignPackage) {
     setDesignPackage(pkg.id)
@@ -317,6 +407,138 @@ export default function BrandingPage() {
       <div className="branding-layout" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
       {/* ── LEFT COLUMN: alle Einstellungen ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
+
+      {/* ── Section 0: Template Browser ── */}
+      <section style={{ marginBottom: '36px' }}>
+        <label style={sectionLabel}>Template-Bibliothek</label>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '-6px', marginBottom: '14px' }}>
+          50+ kuratierte Designs — wähle eines, das zu deinem Restaurant passt. Du kannst danach jederzeit Farben & Layout anpassen.
+        </p>
+
+        {/* Category tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+          {[
+            { id: 'all', label: 'Alle' },
+            { id: 'fast-food', label: 'Fast Food' },
+            { id: 'fine-dining', label: 'Fine Dining' },
+            { id: 'casual', label: 'Casual' },
+            { id: 'bar', label: 'Bar' },
+            { id: 'cafe', label: 'Café' },
+            { id: 'asian', label: 'Asian' },
+            { id: 'italian', label: 'Italian' },
+            { id: 'bavarian', label: 'Bayerisch' },
+            { id: 'street-food', label: 'Street Food' },
+            { id: 'scandinavian', label: 'Skandinavisch' },
+          ].map(cat => {
+            const isActive = cat.id === templateCategory
+            return (
+              <button key={cat.id} onClick={() => setTemplateCategory(cat.id)} style={{
+                padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: isActive ? 'var(--text)' : 'var(--surface)',
+                color: isActive ? 'var(--bg)' : 'var(--text-muted)',
+                border: '1.5px solid var(--border)',
+                transition: 'all 0.15s',
+              }}>{cat.label}</button>
+            )
+          })}
+        </div>
+
+        {/* Search */}
+        <input
+          type="text"
+          value={templateSearch}
+          onChange={e => setTemplateSearch(e.target.value)}
+          placeholder="Templates durchsuchen…"
+          style={{ ...inputStyle, marginBottom: '14px' }}
+        />
+
+        {/* Grid */}
+        {templatesLoading && (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Lade Templates…</div>
+        )}
+        {!templatesLoading && templates.length === 0 && (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Keine Templates gefunden.</div>
+        )}
+        {!templatesLoading && templates.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {templates.map(tpl => {
+              const isActive = activeTemplateId === tpl.id
+              const isApplying = applyingTemplateId === tpl.id
+              const justApplied = templateApplied === tpl.id
+              const cfg = tpl.config
+              const swatches = [cfg.bg_color, cfg.surface_color, cfg.primary_color, cfg.button_color, cfg.text_color].filter(Boolean)
+              const tierColor = tpl.plan_tier === 'premium' ? '#8B5CF6' : tpl.plan_tier === 'pro' ? '#F59E0B' : '#4B5563'
+              return (
+                <div key={tpl.id} style={{
+                  background: 'var(--surface)',
+                  border: isActive ? `2px solid ${cfg.primary_color}` : '2px solid var(--border)',
+                  borderRadius: '12px', padding: '12px', position: 'relative',
+                  opacity: tpl.accessible ? 1 : 0.55,
+                  transition: 'border-color 0.15s',
+                }}>
+                  {isActive && (
+                    <div style={{ position: 'absolute', top: '8px', right: '8px', padding: '3px 8px', borderRadius: '12px', background: cfg.primary_color, color: '#fff', fontSize: '0.62rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Check size={10} /> Aktiv
+                    </div>
+                  )}
+                  {/* Mini preview */}
+                  <div style={{
+                    height: '70px', borderRadius: '8px', background: cfg.bg_color, marginBottom: '10px',
+                    border: '1px solid var(--border)', position: 'relative', overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      width: '70%', height: '40px', borderRadius: '6px', background: cfg.surface_color || cfg.card_color,
+                      display: 'flex', alignItems: 'center', padding: '0 8px', gap: '6px',
+                    }}>
+                      <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.primary_color }} />
+                      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: cfg.text_color, opacity: 0.4 }} />
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: cfg.button_color || cfg.primary_color }} />
+                    </div>
+                  </div>
+
+                  {/* Color swatches */}
+                  <div style={{ display: 'flex', gap: '3px', marginBottom: '8px' }}>
+                    {swatches.map((c, i) => (
+                      <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />
+                    ))}
+                  </div>
+
+                  {/* Name + badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                    <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.82rem' }}>{tpl.name}</div>
+                    <span style={{
+                      padding: '2px 6px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 800,
+                      background: `${tierColor}22`, color: tierColor, letterSpacing: '0.04em',
+                    }}>
+                      {tpl.plan_tier === 'premium' ? 'PREMIUM' : tpl.plan_tier === 'pro' ? 'PRO' : 'BASIC'}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.66rem', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {tpl.category}
+                  </div>
+
+                  {/* Apply button */}
+                  <button
+                    onClick={() => applyTemplate(tpl)}
+                    disabled={!tpl.accessible || isApplying || isActive}
+                    style={{
+                      width: '100%', padding: '8px', borderRadius: '7px', fontSize: '0.78rem', fontWeight: 700,
+                      background: justApplied ? '#10b981' : isActive ? 'var(--surface-2)' : tpl.accessible ? cfg.primary_color : 'var(--surface-2)',
+                      color: isActive ? 'var(--text-muted)' : '#fff',
+                      border: 'none',
+                      cursor: !tpl.accessible || isApplying || isActive ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {isApplying ? 'Wird angewendet…' : justApplied ? '✓ Angewendet' : isActive ? 'Aktuell aktiv' : !tpl.accessible ? `Upgrade auf ${tpl.plan_tier}` : 'Anwenden'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       {/* ── Section 1: Design-Pakete ── */}
       <section style={{ marginBottom: '36px' }}>
