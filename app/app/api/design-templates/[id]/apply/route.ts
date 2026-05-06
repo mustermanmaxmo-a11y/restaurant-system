@@ -34,6 +34,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'restaurant_id required' }, { status: 400 })
   }
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!UUID_RE.test(restaurantId) || !UUID_RE.test(templateId)) {
+    return NextResponse.json({ error: 'invalid id' }, { status: 400 })
+  }
+
   const admin = createSupabaseAdmin()
 
   // Restaurant ownership
@@ -100,7 +105,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .update(updatePayload)
     .eq('id', restaurantId)
 
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
+  if (updErr) return NextResponse.json({ error: 'access denied' }, { status: 500 })
 
   return NextResponse.json({ success: true, template_id: template.id, template_slug: template.slug })
 }

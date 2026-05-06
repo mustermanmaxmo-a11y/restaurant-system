@@ -185,10 +185,10 @@ export default function BrandingPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/owner-login'); return }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/owner-login'); return }
       const { data: resto } = await supabase
-        .from('restaurants').select('*').eq('owner_id', session.user.id).limit(1).single()
+        .from('restaurants').select('*').eq('owner_id', user.id).limit(1).single()
       if (!resto) { router.push('/admin/setup'); return }
       setRestaurant(resto)
       // Load existing values
@@ -227,28 +227,45 @@ export default function BrandingPage() {
     load()
   }, [router])
 
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Templates laden (abhängig von Restaurant + Filter)
+  // Category changes fire immediately; search changes are debounced 350ms
   useEffect(() => {
     if (!restaurant) return
-    const ctrl = new AbortController()
-    async function loadTemplates() {
-      setTemplatesLoading(true)
-      try {
-        const params = new URLSearchParams({ restaurant_id: restaurant!.id })
-        if (templateCategory !== 'all') params.set('category', templateCategory)
-        if (templateSearch.trim()) params.set('search', templateSearch.trim())
-        const res = await fetch(`/api/design-templates?${params.toString()}`, { signal: ctrl.signal })
-        if (!res.ok) { setTemplates([]); return }
-        const json = await res.json()
-        setTemplates(json.templates ?? [])
-      } catch {
-        // aborted or network
-      } finally {
-        setTemplatesLoading(false)
+
+    function doFetch() {
+      const ctrl = new AbortController()
+      async function loadTemplates() {
+        setTemplatesLoading(true)
+        try {
+          const params = new URLSearchParams({ restaurant_id: restaurant!.id })
+          if (templateCategory !== 'all') params.set('category', templateCategory)
+          if (templateSearch.trim()) params.set('search', templateSearch.trim())
+          const res = await fetch(`/api/design-templates?${params.toString()}`, { signal: ctrl.signal })
+          if (!res.ok) { setTemplates([]); return }
+          const json = await res.json()
+          setTemplates(json.templates ?? [])
+        } catch {
+          // aborted or network
+        } finally {
+          setTemplatesLoading(false)
+        }
       }
+      loadTemplates()
+      return ctrl
     }
-    loadTemplates()
-    return () => ctrl.abort()
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    let ctrl: AbortController | undefined
+    searchTimeoutRef.current = setTimeout(() => {
+      ctrl = doFetch()
+    }, 350)
+
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+      ctrl?.abort()
+    }
   }, [restaurant, templateCategory, templateSearch])
 
   async function applyTemplate(tpl: TemplateRow) {
@@ -313,8 +330,12 @@ export default function BrandingPage() {
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('restaurant-logos').getPublicUrl(path)
       setLogoUrl(publicUrl)
-      await supabase.from('restaurants').update({ logo_url: publicUrl }).eq('id', restaurant.id)
-      setSaved(true); setTimeout(() => setSaved(false), 2500)
+      const { error: logoUpdateErr } = await supabase.from('restaurants').update({ logo_url: publicUrl }).eq('id', restaurant.id)
+      if (logoUpdateErr) {
+        setDesignReqError('Logo-URL konnte nicht gespeichert werden. Bitte erneut versuchen.')
+      } else {
+        setSaved(true); setTimeout(() => setSaved(false), 2500)
+      }
     }
     setLogoUploading(false)
     if (fileRef.current) fileRef.current.value = ''
@@ -324,7 +345,7 @@ export default function BrandingPage() {
     if (!restaurant) return
     setSaving(true)
     const pkg = getDesignPackage(designPackage)
-    await supabase.from('restaurants').update({
+    const { error: saveErr } = await supabase.from('restaurants').update({
       design_package: designPackage,
       layout_variant: layoutVariant,
       font_pair: fontPair,
@@ -342,6 +363,11 @@ export default function BrandingPage() {
       contact_address: contactAddress || null,
       description: description || null,
     }).eq('id', restaurant.id)
+    if (saveErr) {
+      setSaving(false)
+      setDesignReqError('Speichern fehlgeschlagen. Bitte erneut versuchen.')
+      return
+    }
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)

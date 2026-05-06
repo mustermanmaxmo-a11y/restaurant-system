@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       const allowedByPlan = t.is_public && allowedTiers.includes(t.plan_tier)
       const allowedByGrant = grantedIds.includes(t.id)
       const accessible = allowedByPlan || allowedByGrant
-      return { ...t, accessible, granted: allowedByGrant }
+      return { ...t, config: accessible ? t.config : null, accessible, granted: allowedByGrant }
     })
     // Hide non-public templates that aren't granted
     .filter(t => t.is_public || grantedIds.includes(t.id))
