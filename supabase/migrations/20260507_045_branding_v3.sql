@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.design_templates (
 DROP TABLE IF EXISTS public.design_requests CASCADE;
 CREATE TABLE public.design_requests (
   id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  restaurant_id      uuid REFERENCES public.restaurants(id) ON DELETE CASCADE,
+  restaurant_id      uuid NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
   description        text,
   screenshot_url     text,
   status             text NOT NULL DEFAULT 'pending',
@@ -92,10 +92,6 @@ DROP POLICY IF EXISTS "design_templates_public_read" ON public.design_templates;
 CREATE POLICY "design_templates_public_read" ON public.design_templates
   FOR SELECT USING (is_public = true);
 
-DROP POLICY IF EXISTS "design_templates_service_all" ON public.design_templates;
-CREATE POLICY "design_templates_service_all" ON public.design_templates
-  FOR ALL USING (auth.role() = 'service_role');
-
 DROP POLICY IF EXISTS "design_templates_granted_read" ON public.design_templates;
 CREATE POLICY "design_templates_granted_read" ON public.design_templates
   FOR SELECT USING (
@@ -120,19 +116,24 @@ CREATE POLICY "design_requests_owner_all" ON public.design_requests
     )
   );
 
-DROP POLICY IF EXISTS "design_requests_service_all" ON public.design_requests;
-CREATE POLICY "design_requests_service_all" ON public.design_requests
-  FOR ALL USING (auth.role() = 'service_role');
+-- template_access: owner read
+DROP POLICY IF EXISTS "template_access_owner_read" ON public.template_access;
+CREATE POLICY "template_access_owner_read" ON public.template_access
+  FOR SELECT USING (
+    restaurant_id IN (
+      SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
+    )
+  );
 
--- template_access: service role only
-DROP POLICY IF EXISTS "template_access_service_all" ON public.template_access;
-CREATE POLICY "template_access_service_all" ON public.template_access
-  FOR ALL USING (auth.role() = 'service_role');
-
--- landing_pages: owners manage their own, public read published, service role full access
+-- landing_pages: owners manage their own, public read published
 DROP POLICY IF EXISTS "landing_pages_owner_all" ON public.landing_pages;
 CREATE POLICY "landing_pages_owner_all" ON public.landing_pages
   FOR ALL USING (
+    restaurant_id IN (
+      SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
+    )
+  )
+  WITH CHECK (
     restaurant_id IN (
       SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
     )
@@ -142,15 +143,10 @@ DROP POLICY IF EXISTS "landing_pages_public_read" ON public.landing_pages;
 CREATE POLICY "landing_pages_public_read" ON public.landing_pages
   FOR SELECT USING (is_published = true);
 
-DROP POLICY IF EXISTS "landing_pages_service_all" ON public.landing_pages;
-CREATE POLICY "landing_pages_service_all" ON public.landing_pages
-  FOR ALL USING (auth.role() = 'service_role');
-
 -- 6. Indexes for performance
 
 CREATE INDEX IF NOT EXISTS idx_design_templates_category ON public.design_templates(category);
 CREATE INDEX IF NOT EXISTS idx_design_templates_plan_tier ON public.design_templates(plan_tier);
-CREATE INDEX IF NOT EXISTS idx_design_templates_slug ON public.design_templates(slug);
 CREATE INDEX IF NOT EXISTS idx_design_requests_restaurant ON public.design_requests(restaurant_id);
 CREATE INDEX IF NOT EXISTS idx_design_requests_status ON public.design_requests(status);
 CREATE INDEX IF NOT EXISTS idx_template_access_restaurant ON public.template_access(restaurant_id);
