@@ -9,7 +9,7 @@ interface OrderRatingProps {
   orderId: string
   restaurantId: string
   googleReviewUrl: string | null
-  C: ColorSet
+  C: ColorSet | null
 }
 
 const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
@@ -17,7 +17,15 @@ const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
 
 type Step = 'stars' | 'feedback' | 'done'
 
-export function OrderRating({ orderId, restaurantId, googleReviewUrl, C }: OrderRatingProps) {
+export function OrderRating({ orderId, restaurantId, googleReviewUrl, C: CProp }: OrderRatingProps) {
+  const C = CProp ?? {
+    surface: 'var(--surface, #1a1a1a)',
+    surface2: 'var(--surface2, #222)',
+    border: 'var(--border, #333)',
+    text: 'var(--text, #fff)',
+    muted: 'var(--text-muted, #888)',
+    accent: 'var(--accent, #ea580c)',
+  } as ColorSet
   const [step, setStep] = useState<Step>('stars')
   const [hovered, setHovered] = useState(0)
   const [selected, setSelected] = useState(0)

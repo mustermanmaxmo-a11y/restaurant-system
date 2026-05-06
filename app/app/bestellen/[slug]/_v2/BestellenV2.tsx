@@ -12,6 +12,7 @@ import {
 import BestellenV1 from '../_v1/BestellenV1'
 import SmartFilter from '../_components/SmartFilter'
 import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
+import { OrderRating } from '@/components/order/OrderRating'
 
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'pickup' | 'delivery'
@@ -258,7 +259,7 @@ export default function BestellenV2() {
     <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, fontFamily: 'var(--font-geist), system-ui, sans-serif', paddingBottom: cartCount > 0 && view === 'menu' ? '100px' : '0' }}>
       {/* STATUS VIEW */}
       {view === 'status' && order && (
-        <StatusView order={order} onReset={() => { setView('menu'); setOrder(null) }} />
+        <StatusView order={order} googleReviewUrl={restaurant?.google_review_url ?? null} onReset={() => { setView('menu'); setOrder(null) }} />
       )}
 
       {/* CHECKOUT VIEW */}
@@ -736,7 +737,8 @@ function Input({ placeholder, value, onChange, type = 'text' }: { placeholder: s
   )
 }
 
-function StatusView({ order, onReset }: { order: Order; onReset: () => void }) {
+function StatusView({ order, googleReviewUrl, onReset }: { order: Order; googleReviewUrl: string | null; onReset: () => void }) {
+  const isServed = order.status === 'served'
   const steps: { key: Order['status']; label: string; icon: typeof ChefHat }[] = [
     { key: 'new', label: 'Empfangen', icon: Clock },
     { key: 'cooking', label: 'In Zubereitung', icon: ChefHat },
@@ -826,6 +828,15 @@ function StatusView({ order, onReset }: { order: Order; onReset: () => void }) {
           </div>
         )}
       </div>
+
+      {isServed && (
+        <OrderRating
+          orderId={order.id}
+          restaurantId={order.restaurant_id}
+          googleReviewUrl={googleReviewUrl}
+          C={null}
+        />
+      )}
 
       <button
         onClick={onReset}

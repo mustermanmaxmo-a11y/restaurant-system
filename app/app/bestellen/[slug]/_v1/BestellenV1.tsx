@@ -13,6 +13,7 @@ import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
+import { OrderRating } from '@/components/order/OrderRating'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
@@ -843,6 +844,15 @@ export default function BestellenV1() {
                 {order.delivery_address.street}, {order.delivery_address.zip} {order.delivery_address.city}
               </p>
             </div>
+          )}
+
+          {isServed && (
+            <OrderRating
+              orderId={order.id}
+              restaurantId={order.restaurant_id}
+              googleReviewUrl={restaurant?.google_review_url ?? null}
+              C={C}
+            />
           )}
 
           <motion.button
