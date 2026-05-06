@@ -480,6 +480,23 @@ export default function BestellenV1() {
     setView('status')
     setSubmitting(false)
 
+    // Online payment via Stripe — redirect to Checkout Session
+    if (restaurant.online_payments_enabled && restaurant.stripe_connect_account_id) {
+      try {
+        const payRes = await fetch('/api/stripe/guest-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.id }),
+        })
+        if (payRes.ok) {
+          const { url } = await payRes.json()
+          if (url) { window.location.href = url; return }
+        }
+      } catch {
+        // Payment redirect failed — order still submitted, guest pays at counter
+      }
+    }
+
     // After successful insert, calculate ETA (non-blocking)
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))

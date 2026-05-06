@@ -32,6 +32,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
   const [payments, setPayments] = useState<GroupPayment[]>([])
   const [loading, setLoading] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [splitToken, setSplitToken] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from('group_payments').select('*').eq('group_id', groupId).then(({ data }) => {
@@ -70,6 +71,16 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
   const alreadyCommitted = myPayment !== undefined && myPayment.status !== 'pending'
   const allMembers = [...new Set(groupItems.map(i => i.added_by))]
   const allCommitted = payments.length > 0 && payments.every(p => p.status !== 'pending')
+
+  useEffect(() => {
+    if (!allCommitted || splitToken) return
+    supabase
+      .from('bill_splits')
+      .select('share_token')
+      .eq('group_id', groupId)
+      .single()
+      .then(({ data }) => { if (data?.share_token) setSplitToken(data.share_token) })
+  }, [allCommitted, groupId, splitToken])
 
   async function payOnline() {
     setShowModal(false)
@@ -310,9 +321,23 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
         })}
 
         {allCommitted && (
-          <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem', marginTop: '14px', textAlign: 'center' }}>
-            Alle haben gewählt — Bestellung wird vorbereitet!
-          </p>
+          <div style={{ marginTop: '14px', textAlign: 'center' }}>
+            <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem', marginBottom: splitToken ? '10px' : '0' }}>
+              Alle haben gewählt — Bestellung wird vorbereitet!
+            </p>
+            {splitToken && (
+              <a
+                href={`/split/${splitToken}`}
+                style={{
+                  display: 'inline-block', padding: '10px 18px', borderRadius: '10px',
+                  background: accent, color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                  textDecoration: 'none',
+                }}
+              >
+                🧾 Rechnung ansehen
+              </a>
+            )}
+          </div>
         )}
       </div>
     </div>

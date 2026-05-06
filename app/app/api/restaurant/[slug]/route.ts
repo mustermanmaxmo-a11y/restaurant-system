@@ -15,7 +15,7 @@ export async function GET(
 
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('id, name, slug, plan, trial_ends_at, active, logo_url, floor_plan_url, primary_color, header_color, button_color, font_pair, design_package, description, opening_hours')
+    .select('id, name, slug, plan, trial_ends_at, active, logo_url, floor_plan_url, primary_color, header_color, button_color, font_pair, design_package, description, opening_hours, online_payments_enabled, stripe_connect_account_id, google_review_url, email_marketing_enabled')
     .eq('slug', slug)
     .limit(1)
     .single()

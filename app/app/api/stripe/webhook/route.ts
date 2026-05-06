@@ -26,6 +26,35 @@ export async function POST(request: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
 
+    // Guest order payment via Stripe Checkout redirect
+    if (session.mode === 'payment' && session.metadata?.order_id && !session.metadata?.split_token) {
+      await supabaseAdmin
+        .from('orders')
+        .update({ payment_status: 'paid' })
+        .eq('id', session.metadata.order_id)
+    }
+
+    // Split payment via Stripe Checkout redirect
+    if (session.mode === 'payment' && session.metadata?.split_token) {
+      const personNames: string[] = JSON.parse(session.metadata.person_names ?? '[]')
+      if (personNames.length > 0) {
+        const { data: split } = await supabaseAdmin
+          .from('bill_splits')
+          .select('id, payment_statuses')
+          .eq('share_token', session.metadata.split_token)
+          .single()
+
+        if (split) {
+          const updated: Record<string, string> = { ...(split.payment_statuses ?? {}) }
+          for (const name of personNames) updated[name] = 'paid'
+          await supabaseAdmin
+            .from('bill_splits')
+            .update({ payment_statuses: updated })
+            .eq('id', split.id)
+        }
+      }
+    }
+
     if (session.mode === 'subscription') {
       // Subscription checkout — update restaurant plan
       const userId = session.metadata?.user_id
@@ -61,11 +90,10 @@ export async function POST(request: NextRequest) {
 
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object as Stripe.PaymentIntent
-    // Nur Terminal-Zahlungen (card_present = physisches Kartenlesegerät)
     const isTerminal = pi.payment_method_types?.includes('card_present')
     const restaurantId = pi.metadata?.restaurant_id
+
     if (isTerminal && restaurantId) {
-      // ignoreDuplicates: duplicate webhooks (same external_id) are silently skipped
       await supabaseAdmin.from('external_transactions').upsert({
         restaurant_id: restaurantId,
         source: 'stripe_terminal',
@@ -74,6 +102,33 @@ export async function POST(request: NextRequest) {
         currency: pi.currency.toUpperCase(),
         paid_at: new Date(pi.created * 1000).toISOString(),
       }, { onConflict: 'external_id', ignoreDuplicates: true })
+    }
+
+    // Guest checkout — mark whole order as paid
+    if (pi.metadata?.order_id) {
+      await supabaseAdmin
+        .from('orders')
+        .update({ payment_status: 'paid' })
+        .eq('id', pi.metadata.order_id)
+    }
+
+    // Split checkout — mark each person as paid
+    if (pi.metadata?.split_token && pi.metadata?.person_names) {
+      const personNames: string[] = JSON.parse(pi.metadata.person_names)
+      const { data: split } = await supabaseAdmin
+        .from('bill_splits')
+        .select('id, payment_statuses')
+        .eq('share_token', pi.metadata.split_token)
+        .single()
+
+      if (split) {
+        const updated: Record<string, string> = { ...(split.payment_statuses ?? {}) }
+        for (const name of personNames) updated[name] = 'paid'
+        await supabaseAdmin
+          .from('bill_splits')
+          .update({ payment_statuses: updated })
+          .eq('id', split.id)
+      }
     }
   }
 

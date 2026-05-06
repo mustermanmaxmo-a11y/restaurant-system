@@ -3,8 +3,6 @@
 import { useState, useEffect, use } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const PERSON_COLORS = ['#6c63ff', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#8b5cf6', '#14b8a6']
-
 interface Person { name: string; color: string }
 interface OrderItem { name: string; price: number; qty: number }
 interface Split {
@@ -13,16 +11,28 @@ interface Split {
   order_id: string
   persons: Person[]
   item_assignments: Record<string, string[]>
+  payment_statuses: Record<string, string>
+}
+interface RestaurantInfo {
+  online_payments_enabled: boolean
+  stripe_connect_account_id: string | null
 }
 
 export default function SplitPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
   const [split, setSplit] = useState<Split | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [resto, setResto] = useState<RestaurantInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [view, setView] = useState<'assign' | 'result'>('assign')
   const [assignments, setAssignments] = useState<Record<string, string[]>>({})
+  const [payStatuses, setPayStatuses] = useState<Record<string, string>>({})
+  const [selectedPersons, setSelectedPersons] = useState<string[]>([])
+  const [paying, setPaying] = useState(false)
+
+  // Check if just returned from successful payment
+  const justPaid = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('paid') === '1'
 
   useEffect(() => {
     async function load() {
@@ -33,18 +43,24 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
         .single()
 
       if (!splitData) { setLoading(false); return }
-      setSplit(splitData as Split)
-      setAssignments(splitData.item_assignments ?? {})
+      const s = splitData as Split
+      setSplit(s)
+      setAssignments(s.item_assignments ?? {})
+      setPayStatuses(s.payment_statuses ?? {})
+
+      // Auto-result if assignments already filled (from group order)
+      if (Object.keys(s.item_assignments ?? {}).length > 0) {
+        setView('result')
+      }
 
       const { data: order } = await supabase
         .from('orders')
-        .select('items')
-        .eq('id', splitData.order_id)
+        .select('items, restaurant_id')
+        .eq('id', s.order_id)
         .single()
 
       if (order) {
         const items = order.items as OrderItem[]
-        // Expand qty into individual item entries
         const expanded: OrderItem[] = []
         items.forEach(item => {
           for (let i = 0; i < item.qty; i++) {
@@ -52,11 +68,37 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
           }
         })
         setOrderItems(expanded)
+
+        const { data: restoData } = await supabase
+          .from('restaurants')
+          .select('online_payments_enabled, stripe_connect_account_id')
+          .eq('id', order.restaurant_id)
+          .single()
+
+        if (restoData) setResto(restoData as RestaurantInfo)
       }
+
       setLoading(false)
     }
     load()
   }, [token])
+
+  // Realtime: update payment_statuses as others pay
+  useEffect(() => {
+    if (!split?.id) return
+    const channel = supabase
+      .channel(`bill-split-${split.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'bill_splits',
+        filter: `id=eq.${split.id}`,
+      }, payload => {
+        const updated = payload.new as Split
+        setPayStatuses(updated.payment_statuses ?? {})
+        setAssignments(updated.item_assignments ?? {})
+      })
+      .subscribe()
+    return () => { channel.unsubscribe() }
+  }, [split?.id])
 
   async function saveAssignments(newAssignments: Record<string, string[]>) {
     setSaving(true)
@@ -81,6 +123,56 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
     })
   }
 
+  function togglePersonSelection(name: string) {
+    if (payStatuses[name] === 'paid') return
+    setSelectedPersons(prev =>
+      prev.includes(name) ? prev.filter(p => p !== name) : [...prev, name]
+    )
+  }
+
+  function calcPersonTotal(name: string): number {
+    let total = 0
+    orderItems.forEach((item, idx) => {
+      const assigned = assignments[String(idx)] ?? []
+      if (assigned.includes(name) && assigned.length > 0) {
+        total += item.price / assigned.length
+      }
+    })
+    return total
+  }
+
+  function calcSelectedTotal(): number {
+    return selectedPersons.reduce((s, n) => s + calcPersonTotal(n), 0)
+  }
+
+  function calcAllUnpaidTotal(): number {
+    if (!split) return 0
+    return split.persons
+      .filter(p => payStatuses[p.name] !== 'paid')
+      .reduce((s, p) => s + calcPersonTotal(p.name), 0)
+  }
+
+  async function payForPersons(names: string[]) {
+    if (paying || !names.length) return
+    setPaying(true)
+    try {
+      const res = await fetch('/api/stripe/split-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ splitToken: token, personNames: names }),
+      })
+      const json = await res.json()
+      if (json.url) {
+        window.location.href = json.url
+      } else {
+        alert(json.error ?? 'Fehler beim Bezahlen')
+        setPaying(false)
+      }
+    } catch {
+      setPaying(false)
+    }
+  }
+
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#666' }}>Lädt…</p>
@@ -98,30 +190,25 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
   )
 
   const persons = split.persons as Person[]
-
-  // Calculate each person's total
-  const personTotals: Record<string, number> = {}
-  persons.forEach(p => { personTotals[p.name] = 0 })
-  orderItems.forEach((item, idx) => {
-    const assigned = assignments[String(idx)] ?? []
-    if (assigned.length > 0) {
-      const share = item.price / assigned.length
-      assigned.forEach(name => {
-        personTotals[name] = (personTotals[name] ?? 0) + share
-      })
-    }
-  })
-
+  const onlinePaymentsEnabled = !!(resto?.online_payments_enabled && resto?.stripe_connect_account_id)
   const unassignedCount = orderItems.filter((_, idx) => (assignments[String(idx)] ?? []).length === 0).length
+  const unpaidPersons = persons.filter(p => payStatuses[p.name] !== 'paid')
+  const allPaid = unpaidPersons.length === 0
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#fff' }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#fff', paddingBottom: selectedPersons.length > 0 ? '100px' : '0' }}>
       <div style={{ padding: '20px 16px', maxWidth: '560px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <p style={{ fontSize: '2rem', marginBottom: '8px' }}>🧾</p>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '4px' }}>Rechnung aufteilen</h1>
           <p style={{ color: '#666', fontSize: '0.875rem' }}>{persons.length} Personen · {orderItems.length} Positionen</p>
         </div>
+
+        {justPaid && (
+          <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', textAlign: 'center', color: '#10b981', fontWeight: 700 }}>
+            Zahlung erfolgreich! ✓
+          </div>
+        )}
 
         {/* Tab switcher */}
         <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#1a1a1a', borderRadius: '10px', padding: '4px' }}>
@@ -183,38 +270,142 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
 
         {view === 'result' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {persons.map(person => (
-              <div key={person.name} style={{ background: '#1a1a1a', borderRadius: '14px', padding: '16px 18px', borderLeft: `4px solid ${person.color}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <p style={{ color: person.color, fontWeight: 700, fontSize: '1rem' }}>{person.name}</p>
-                  <p style={{ color: '#fff', fontWeight: 800, fontSize: '1.3rem' }}>{(personTotals[person.name] ?? 0).toFixed(2)} €</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  {orderItems.map((item, idx) => {
-                    const assigned = assignments[String(idx)] ?? []
-                    if (!assigned.includes(person.name)) return null
-                    return (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#666', fontSize: '0.8rem' }}>{item.name}{assigned.length > 1 ? ` (÷${assigned.length})` : ''}</span>
-                        <span style={{ color: '#888', fontSize: '0.8rem' }}>{(item.price / assigned.length).toFixed(2)} €</span>
-                      </div>
-                    )
-                  })}
-                </div>
+            {allPaid && (
+              <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '12px 16px', textAlign: 'center', color: '#10b981', fontWeight: 700, marginBottom: '4px' }}>
+                Alle haben bezahlt ✓
               </div>
-            ))}
+            )}
+
+            {persons.map(person => {
+              const isPaid = payStatuses[person.name] === 'paid'
+              const amount = calcPersonTotal(person.name)
+              const isChecked = selectedPersons.includes(person.name)
+
+              return (
+                <div
+                  key={person.name}
+                  onClick={() => !isPaid && onlinePaymentsEnabled && togglePersonSelection(person.name)}
+                  style={{
+                    background: '#1a1a1a', borderRadius: '14px', padding: '16px 18px',
+                    borderLeft: `4px solid ${isPaid ? '#10b981' : person.color}`,
+                    opacity: isPaid ? 0.7 : 1,
+                    cursor: !isPaid && onlinePaymentsEnabled ? 'pointer' : 'default',
+                    outline: isChecked ? `2px solid ${person.color}` : 'none',
+                    transition: 'outline 0.1s',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {onlinePaymentsEnabled && !isPaid && (
+                        <div style={{
+                          width: '18px', height: '18px', borderRadius: '4px', flexShrink: 0,
+                          border: `2px solid ${isChecked ? person.color : '#444'}`,
+                          background: isChecked ? person.color : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          {isChecked && <span style={{ color: '#fff', fontSize: '11px', fontWeight: 700 }}>✓</span>}
+                        </div>
+                      )}
+                      <p style={{ color: isPaid ? '#10b981' : person.color, fontWeight: 700, fontSize: '1rem' }}>
+                        {person.name}
+                        {isPaid && <span style={{ fontSize: '0.75rem', marginLeft: '6px' }}>✓ bezahlt</span>}
+                      </p>
+                    </div>
+                    <p style={{ color: '#fff', fontWeight: 800, fontSize: '1.3rem' }}>{amount.toFixed(2)} €</p>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {orderItems.map((item, idx) => {
+                      const assigned = assignments[String(idx)] ?? []
+                      if (!assigned.includes(person.name)) return null
+                      return (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#666', fontSize: '0.8rem' }}>{item.name}{assigned.length > 1 ? ` (÷${assigned.length})` : ''}</span>
+                          <span style={{ color: '#888', fontSize: '0.8rem' }}>{(item.price / assigned.length).toFixed(2)} €</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+
             <div style={{ background: '#1a1a1a', borderRadius: '12px', padding: '14px 18px', marginTop: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#888', fontSize: '0.9rem' }}>Gesamt</span>
-                <span style={{ color: '#fff', fontWeight: 700 }}>{Object.values(personTotals).reduce((s, v) => s + v, 0).toFixed(2)} €</span>
+                <span style={{ color: '#fff', fontWeight: 700 }}>
+                  {persons.reduce((s, p) => s + calcPersonTotal(p.name), 0).toFixed(2)} €
+                </span>
               </div>
             </div>
-            <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '12px', padding: '14px 18px', textAlign: 'center' }}>
-              <p style={{ color: '#aaa', fontSize: '0.85rem' }}>Bitte beim Personal bezahlen 🙏</p>
-            </div>
+
+            {/* Pay all unpaid button */}
+            {onlinePaymentsEnabled && unpaidPersons.length > 1 && !allPaid && (
+              <button
+                onClick={() => payForPersons(unpaidPersons.map(p => p.name))}
+                disabled={paying}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
+                  background: '#6c63ff', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+                  cursor: paying ? 'wait' : 'pointer', opacity: paying ? 0.6 : 1,
+                }}
+              >
+                {paying ? 'Weiterleitung…' : `Gesamtrechnung übernehmen — ${calcAllUnpaidTotal().toFixed(2)} €`}
+              </button>
+            )}
+
+            {!onlinePaymentsEnabled && !allPaid && (
+              <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '12px', padding: '14px 18px', textAlign: 'center' }}>
+                <p style={{ color: '#aaa', fontSize: '0.85rem' }}>Bitte beim Personal bezahlen 🙏</p>
+              </div>
+            )}
+
+            {onlinePaymentsEnabled && !allPaid && (
+              <p style={{ color: '#555', fontSize: '0.78rem', textAlign: 'center' }}>
+                Person antippen zum Auswählen — jeder kann für jeden zahlen
+              </p>
+            )}
           </div>
         )}
       </div>
+
+      {/* Floating action bar for selected persons */}
+      {selectedPersons.length > 0 && view === 'result' && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#18181b', borderTop: '1px solid #2a2a3e',
+          padding: '16px', display: 'flex', gap: '10px', alignItems: 'center',
+          maxWidth: '560px', margin: '0 auto',
+        }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>
+              {selectedPersons.length} Person{selectedPersons.length !== 1 ? 'en' : ''} ausgewählt
+            </p>
+            <p style={{ color: '#888', fontSize: '0.8rem' }}>
+              {selectedPersons.join(', ')}
+            </p>
+          </div>
+          <button
+            onClick={() => payForPersons(selectedPersons)}
+            disabled={paying}
+            style={{
+              padding: '12px 20px', borderRadius: '10px', border: 'none',
+              background: '#ff6b35', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+              cursor: paying ? 'wait' : 'pointer', opacity: paying ? 0.6 : 1, whiteSpace: 'nowrap',
+            }}
+          >
+            {paying ? '…' : `${calcSelectedTotal().toFixed(2)} € zahlen`}
+          </button>
+          <button
+            onClick={() => setSelectedPersons([])}
+            style={{
+              padding: '12px', borderRadius: '10px', border: '1px solid #333',
+              background: 'transparent', color: '#888', fontSize: '0.85rem', cursor: 'pointer',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }

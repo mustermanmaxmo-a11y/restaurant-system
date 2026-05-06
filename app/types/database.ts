@@ -52,6 +52,9 @@ export interface Restaurant {
   crm_rule_inactive: boolean | null
   crm_rule_almost_goal: boolean | null
   crm_rule_welcome: boolean | null
+  // Online payments (Stripe Connect)
+  online_payments_enabled: boolean
+  stripe_connect_account_id: string | null
 }
 
 export interface PlatformSettings {
@@ -157,6 +160,8 @@ export interface Order {
   claimed_by: string | null
   claimed_at: string | null
   created_at: string
+  payment_status: 'unpaid' | 'paid' | 'partial'
+  group_id: string | null
 }
 
 export interface ServiceCall {
@@ -230,6 +235,17 @@ export interface Reservation {
   note: string | null
   status: ReservationStatus
   table_id: string | null
+  created_at: string
+}
+
+export interface BillSplit {
+  id: string
+  order_id: string
+  group_id: string | null
+  share_token: string
+  persons: Array<{ name: string; color: string }>
+  item_assignments: Record<string, string[]>
+  payment_statuses: Record<string, string>
   created_at: string
 }
 

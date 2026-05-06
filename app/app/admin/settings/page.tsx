@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null; crm_rule_inactive: boolean; crm_rule_almost_goal: boolean; crm_rule_welcome: boolean } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null; crm_rule_inactive: boolean; crm_rule_almost_goal: boolean; crm_rule_welcome: boolean; online_payments_enabled: boolean; stripe_connect_account_id: string | null } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome, online_payments_enabled, stripe_connect_account_id')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -686,6 +686,56 @@ export default function SettingsPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '8px' }}>
             {restaurant.weekly_report_email ? 'E-Mail aktiviert' : 'E-Mail deaktiviert'}
           </p>
+        </div>
+      )}
+
+      {/* Online-Zahlung / Stripe Connect */}
+      {restaurant && (
+        <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>💳 Online-Zahlung (Stripe)</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Verbinde dein Stripe-Konto damit Gäste direkt online bezahlen können. Die Online-Zahlung wird vom Platform-Admin aktiviert.
+          </p>
+          {restaurant.stripe_connect_account_id ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#10b981', fontSize: '1rem' }}>✓</span>
+                <div>
+                  <p style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>Stripe verbunden</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+                    Konto: {restaurant.stripe_connect_account_id}
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {restaurant.online_payments_enabled
+                  ? <span style={{ background: '#10b98120', color: '#10b981', borderRadius: '8px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Online-Zahlung aktiv</span>
+                  : <span style={{ background: 'var(--border)', color: 'var(--text-muted)', borderRadius: '8px', padding: '4px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Warte auf Aktivierung</span>
+                }
+                <button
+                  onClick={async () => {
+                    const { error } = await supabase.from('restaurants').update({ stripe_connect_account_id: null, online_payments_enabled: false }).eq('id', restaurant.id)
+                    if (!error) setRestaurant(prev => prev ? { ...prev, stripe_connect_account_id: null, online_payments_enabled: false } : prev)
+                  }}
+                  style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', padding: '6px 14px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}
+                >
+                  Trennen
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={async () => {
+                const { data: { session } } = await supabase.auth.getSession()
+                if (session) {
+                  window.location.href = `/api/stripe/connect?token=${session.access_token}`
+                }
+              }}
+              style={{ background: 'var(--accent)', color: 'var(--accent-text)', border: 'none', borderRadius: '10px', padding: '10px 20px', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+            >
+              Stripe-Konto verbinden →
+            </button>
+          )}
         </div>
       )}
 

@@ -2,6 +2,7 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
 import CreateRestaurantModal from '@/components/platform/CreateRestaurantModal'
+import { PaymentToggle } from '@/components/platform/PaymentToggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ const PLAN_COLORS: Record<string, { bg: string; fg: string }> = {
 
 type Row = Pick<Restaurant,
   'id' | 'name' | 'slug' | 'plan' | 'active' | 'trial_ends_at' | 'created_at' | 'owner_id' | 'stripe_customer_id' | 'stripe_subscription_id'
-> & { owner_email: string }
+> & { owner_email: string; online_payments_enabled: boolean; stripe_connect_account_id: string | null }
 
 export default async function PlatformRestaurants() {
   const { user, role } = await requirePlatformAccess()
@@ -43,7 +44,7 @@ export default async function PlatformRestaurants() {
 
   let query = admin
     .from('restaurants')
-    .select('id, name, slug, plan, active, trial_ends_at, created_at, owner_id, stripe_customer_id, stripe_subscription_id')
+    .select('id, name, slug, plan, active, trial_ends_at, created_at, owner_id, stripe_customer_id, stripe_subscription_id, online_payments_enabled, stripe_connect_account_id')
     .order('created_at', { ascending: false })
 
   if (allowedRestaurantIds !== null) {
@@ -87,6 +88,7 @@ export default async function PlatformRestaurants() {
                 <Th>Trial-Ende</Th>
                 <Th>Angelegt</Th>
                 <Th>Stripe</Th>
+                <Th>Online-Zahlung</Th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +126,13 @@ export default async function PlatformRestaurants() {
                     <Td>{formatDate(r.created_at)}</Td>
                     <Td mono>
                       {r.stripe_subscription_id ? r.stripe_subscription_id.slice(0, 14) + '…' : <span style={{ color: '#555' }}>—</span>}
+                    </Td>
+                    <Td>
+                      <PaymentToggle
+                        restaurantId={r.id}
+                        initialEnabled={r.online_payments_enabled ?? false}
+                        hasStripe={!!r.stripe_connect_account_id}
+                      />
                     </Td>
                   </tr>
                 )
