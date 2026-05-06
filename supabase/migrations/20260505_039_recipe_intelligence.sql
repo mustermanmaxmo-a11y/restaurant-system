@@ -20,8 +20,8 @@ CREATE POLICY "owner_manage" ON public.recipe_notes
     )
   );
 
--- menu_item_ingredients existiert bereits, nur Falls noch nicht vorhanden:
-CREATE TABLE IF NOT EXISTS public.menu_item_ingredients (
+-- KI-extrahierte Rezept-Zutaten (freier Text, getrennt von menu_item_ingredients die FK auf ingredients haben)
+CREATE TABLE IF NOT EXISTS public.recipe_ingredients (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   menu_item_id uuid REFERENCES public.menu_items(id) ON DELETE CASCADE,
   ingredient_name text NOT NULL,
@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS public.menu_item_ingredients (
   created_at timestamptz DEFAULT now()
 );
 
-ALTER TABLE public.menu_item_ingredients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recipe_ingredients ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "owner_manage" ON public.menu_item_ingredients
+CREATE POLICY "owner_manage" ON public.recipe_ingredients
   FOR ALL USING (
     menu_item_id IN (
       SELECT id FROM public.menu_items WHERE restaurant_id IN (

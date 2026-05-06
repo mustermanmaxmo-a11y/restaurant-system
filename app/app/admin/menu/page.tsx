@@ -154,7 +154,7 @@ export default function MenuPage() {
     setRecipePreparation('')
     setShowRecipe(false)
     // Load existing recipe
-    supabase.from('menu_item_ingredients').select('*').eq('menu_item_id', item.id)
+    supabase.from('recipe_ingredients').select('*').eq('menu_item_id', item.id)
       .then(({ data }) => {
         if (data?.length) setRecipeIngredients(data.map(r => ({ name: r.ingredient_name, quantity: String(r.quantity ?? ''), unit: r.unit ?? '', uncertain: r.ai_uncertain ?? false })))
       })
@@ -1049,9 +1049,9 @@ export default function MenuPage() {
                             onClick={async () => {
                               if (!editingItem) return
                               setRecipeSaving(true)
-                              await supabase.from('menu_item_ingredients').delete().eq('menu_item_id', editingItem.id)
+                              await supabase.from('recipe_ingredients').delete().eq('menu_item_id', editingItem.id)
                               if (recipeIngredients.length > 0) {
-                                await supabase.from('menu_item_ingredients').insert(recipeIngredients.filter(r => r.name.trim()).map(r => ({ menu_item_id: editingItem.id, ingredient_name: r.name.trim(), quantity: r.quantity ? parseFloat(r.quantity) : null, unit: r.unit || null, ai_uncertain: r.uncertain })))
+                                await supabase.from('recipe_ingredients').insert(recipeIngredients.filter(r => r.name.trim()).map(r => ({ menu_item_id: editingItem.id, ingredient_name: r.name.trim(), quantity: r.quantity ? parseFloat(r.quantity) : null, unit: r.unit || null, ai_uncertain: r.uncertain })))
                               }
                               await supabase.from('recipe_notes').upsert({ menu_item_id: editingItem.id, preparation_text: recipePreparation || null, updated_at: new Date().toISOString() }, { onConflict: 'menu_item_id' })
                               setRecipeSaving(false)
