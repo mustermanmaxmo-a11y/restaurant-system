@@ -7,19 +7,15 @@ export const dynamic = 'force-dynamic'
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
 
-function makeUserClient(token: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  )
-}
-
 async function getUser(req: NextRequest) {
   const auth = req.headers.get('authorization')
   const token = auth?.replace('Bearer ', '').trim()
   if (!token) return { user: null, token: null }
-  const client = makeUserClient(token)
+  const client = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
   const { data: { user } } = await client.auth.getUser(token)
   return { user, token }
 }
