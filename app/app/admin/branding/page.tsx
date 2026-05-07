@@ -155,11 +155,13 @@ export default function BrandingPage() {
   const [showColorSection, setShowColorSection] = useState(false)
 
   // Design-Request State
-  const [designReqMessage, setDesignReqMessage] = useState('')
+  const [designReqDescription, setDesignReqDescription] = useState('')
+  const [designReqScreenshot, setDesignReqScreenshot] = useState<File | null>(null)
   const [designReqSubmitting, setDesignReqSubmitting] = useState(false)
   const [designReqSent, setDesignReqSent] = useState(false)
   const [designReqError, setDesignReqError] = useState<string | null>(null)
-  const [existingDesignReq, setExistingDesignReq] = useState<{ status: string; created_at: string } | null>(null)
+  const [existingDesignReqs, setExistingDesignReqs] = useState<{ id: string; status: string; created_at: string; result_template_id: string | null }[]>([])
+  const [designReqOpen, setDesignReqOpen] = useState(false)
 
   // AI Design-Erkennung state
   const [aiOpen, setAiOpen] = useState(false)
@@ -225,14 +227,13 @@ export default function BrandingPage() {
       if (resto.contact_address) setContactAddress(resto.contact_address)
       if (resto.description) setDescription(resto.description)
 
-      // Offene Design-Anfrage laden
-      const { data: openReq } = await supabase
+      // Alle Design-Anfragen laden
+      const { data: allReqs } = await supabase
         .from('design_requests')
-        .select('status, created_at')
+        .select('id, status, created_at, result_template_id')
         .eq('restaurant_id', resto.id)
-        .in('status', ['pending', 'in_progress'])
-        .maybeSingle()
-      if (openReq) setExistingDesignReq(openReq)
+        .order('created_at', { ascending: false })
+      if (allReqs && allReqs.length > 0) setExistingDesignReqs(allReqs)
 
       // Aktives Template aus design_config lesen
       const dc = (resto as { design_config?: Record<string, unknown> }).design_config
@@ -392,13 +393,23 @@ export default function BrandingPage() {
   }
 
   async function submitDesignRequest() {
-    if (!restaurant || designReqMessage.trim().length < 10) return
+    if (!restaurant) return
     setDesignReqSubmitting(true)
     setDesignReqError(null)
-    const res = await fetch('/api/platform/design-requests', {
+
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = authUser ? session?.access_token : undefined
+
+    const form = new FormData()
+    form.append('restaurant_id', restaurant.id)
+    if (designReqDescription.trim()) form.append('description', designReqDescription.trim())
+    if (designReqScreenshot) form.append('screenshot', designReqScreenshot)
+
+    const res = await fetch('/api/admin/design-requests', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: designReqMessage, restaurant_id: restaurant.id }),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
     })
     const json = await res.json()
     setDesignReqSubmitting(false)
@@ -406,8 +417,10 @@ export default function BrandingPage() {
       setDesignReqError(json.error ?? 'Fehler beim Senden.')
     } else {
       setDesignReqSent(true)
-      setExistingDesignReq({ status: 'pending', created_at: new Date().toISOString() })
-      setDesignReqMessage('')
+      const newReq = json.data as { id: string; status: string; created_at: string; result_template_id: string | null }
+      setExistingDesignReqs(prev => [newReq, ...prev])
+      setDesignReqDescription('')
+      setDesignReqScreenshot(null)
     }
   }
 
@@ -934,86 +947,198 @@ export default function BrandingPage() {
         </div>
       </section>
 
-      {/* ── Section 8: Custom Design anfragen ── */}
+      {/* ── Section 8: Design-Anfragen ── */}
       <section style={{ marginBottom: '36px' }}>
-        <label style={sectionLabel}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Palette size={16} />
-            Custom Design anfragen
-          </span>
-        </label>
-        <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
-          {existingDesignReq ? (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-                background: existingDesignReq.status === 'in_progress' ? '#f59e0b22' : existingDesignReq.status === 'done' ? '#10b98122' : `${pAccent}22`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {existingDesignReq.status === 'done'
-                  ? <Check size={16} color="#10b981" />
-                  : <Clock size={16} color={existingDesignReq.status === 'in_progress' ? '#f59e0b' : pAccent} />
-                }
-              </div>
-              <div>
-                <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 4px' }}>
-                  {existingDesignReq.status === 'pending' && 'Anfrage eingegangen — wir melden uns bald.'}
-                  {existingDesignReq.status === 'in_progress' && 'Dein Design wird gerade umgesetzt!'}
-                  {existingDesignReq.status === 'done' && 'Design-Anfrage abgeschlossen.'}
-                </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
-                  Gesendet am {new Date(existingDesignReq.created_at).toLocaleDateString('de-DE')}
-                </p>
-              </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+          {/* Collapsible Header */}
+          <button
+            onClick={() => setDesignReqOpen(!designReqOpen)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Palette size={18} color={pAccent} />
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Design nicht dabei? Anfrage stellen</span>
+              {existingDesignReqs.length > 0 && (
+                <span style={{
+                  background: pAccent, color: '#fff', fontSize: '0.65rem',
+                  fontWeight: 800, padding: '2px 7px', borderRadius: '8px',
+                }}>
+                  {existingDesignReqs.length}
+                </span>
+              )}
             </div>
-          ) : (
-            <>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '14px', lineHeight: 1.5 }}>
-                Du möchtest ein individuelles Design, das perfekt zu deinem Restaurant passt?
-                Beschreibe deinen Stil, deine Farben oder Wünsche — wir setzen es für dich um.
-              </p>
-              <textarea
-                value={designReqMessage}
-                onChange={e => {
-                  setDesignReqMessage(e.target.value.slice(0, 1000))
-                  setDesignReqError(null)
-                }}
-                placeholder="z.B. Wir möchten ein warmes, mediterranes Design mit Olivgrün und Terrakotta. Am liebsten große Produktbilder…"
-                rows={4}
-                style={{ ...inputStyle, resize: 'vertical', marginBottom: '8px' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0 }}>
-                  {designReqMessage.length}/1000
-                  {designReqMessage.trim().length > 0 && designReqMessage.trim().length < 10 && (
-                    <span style={{ color: '#ef4444', marginLeft: '8px' }}>Min. 10 Zeichen</span>
+            <ChevronDown size={16} style={{ transform: designReqOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+
+          {designReqOpen && (
+            <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
+
+              {/* Existing requests */}
+              {existingDesignReqs.length > 0 && (
+                <div style={{ marginTop: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {existingDesignReqs.map(req => {
+                    const statusMap: Record<string, { label: string; color: string; bg: string }> = {
+                      pending:  { label: 'In Bearbeitung', color: '#93c5fd', bg: 'rgba(147,197,253,0.1)' },
+                      building: { label: 'Wird gebaut',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+                      done:     { label: 'Fertig — Template zugewiesen', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+                      rejected: { label: 'Abgelehnt',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+                    }
+                    const s = statusMap[req.status] ?? statusMap['pending']
+                    return (
+                      <div key={req.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        background: 'var(--surface-2)', borderRadius: '8px', padding: '10px 14px',
+                        gap: '12px',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
+                            padding: '2px 7px', borderRadius: '5px',
+                            background: s.bg, color: s.color, flexShrink: 0,
+                          }}>
+                            {s.label}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', flexShrink: 0 }}>
+                            {new Date(req.created_at).toLocaleDateString('de-DE')}
+                          </span>
+                        </div>
+                        {req.status === 'done' && req.result_template_id && (
+                          <button
+                            onClick={async () => {
+                              if (!restaurant) return
+                              const res = await fetch(`/api/design-templates/${req.result_template_id}/apply`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ restaurant_id: restaurant.id }),
+                              })
+                              if (res.ok) {
+                                const { data: resto } = await supabase.from('restaurants').select('*').eq('id', restaurant.id).single()
+                                if (resto) {
+                                  setRestaurant(resto)
+                                  if (resto.design_package) setDesignPackage(resto.design_package)
+                                  if (resto.layout_variant) setLayoutVariant(resto.layout_variant as LayoutVariant)
+                                  if (resto.font_pair) setFontPair(resto.font_pair)
+                                  setPrimaryColor(resto.primary_color)
+                                  setBgColor(resto.bg_color)
+                                  setHeaderColor(resto.header_color)
+                                  setCardColor(resto.card_color)
+                                  setButtonColor(resto.button_color)
+                                  setTextColor(resto.text_color)
+                                }
+                                setSaved(true)
+                                setTimeout(() => setSaved(false), 2500)
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px', borderRadius: '7px', border: 'none',
+                              background: '#10b981', color: '#fff', fontSize: '0.75rem',
+                              fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >
+                            Template anwenden
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* New request form */}
+              {!designReqSent ? (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '16px', marginBottom: '14px', lineHeight: 1.5 }}>
+                    Kein passendes Design gefunden? Beschreib uns deinen Stil — wir erstellen ein individuelles Template für dich.
+                  </p>
+
+                  {/* Description */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={fieldLabel}>Beschreibung (Optional)</label>
+                    <textarea
+                      value={designReqDescription}
+                      onChange={e => { setDesignReqDescription(e.target.value.slice(0, 1000)); setDesignReqError(null) }}
+                      placeholder="z.B. Warmes mediterranes Design mit Olivgrün und Terrakotta, große Produktbilder…"
+                      rows={3}
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: '3px 0 0', textAlign: 'right' }}>
+                      {designReqDescription.length}/1000
+                    </p>
+                  </div>
+
+                  {/* Screenshot upload */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={fieldLabel}>Screenshot (Optional)</label>
+                    <label style={{
+                      display: 'block', border: '2px dashed var(--border)', borderRadius: '8px',
+                      padding: '16px', textAlign: 'center', cursor: 'pointer',
+                    }}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        style={{ display: 'none' }}
+                        onChange={e => { setDesignReqScreenshot(e.target.files?.[0] ?? null); setDesignReqError(null) }}
+                      />
+                      {designReqScreenshot ? (
+                        <div style={{ color: 'var(--text)', fontSize: '0.8rem' }}>
+                          <Check size={14} color="#10b981" style={{ verticalAlign: 'middle', marginRight: '5px' }} />
+                          {designReqScreenshot.name}
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                            ({(designReqScreenshot.size / 1024 / 1024).toFixed(1)} MB)
+                          </span>
+                        </div>
+                      ) : (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          Bild hochladen (PNG, JPG, WebP — max. 8 MB)
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  {designReqError && (
+                    <p style={{ color: '#ef4444', fontSize: '0.78rem', marginBottom: '10px' }}>{designReqError}</p>
                   )}
-                </p>
-                {designReqError && (
-                  <p style={{ color: '#ef4444', fontSize: '0.75rem', margin: 0 }}>{designReqError}</p>
-                )}
-                <button
-                  onClick={submitDesignRequest}
-                  disabled={designReqSubmitting || designReqMessage.trim().length < 10}
-                  style={{
-                    padding: '10px 20px', borderRadius: '8px',
-                    background: designReqSent ? '#10b981' : pAccent, color: '#fff',
-                    fontWeight: 700, fontSize: '0.82rem', border: 'none',
-                    cursor: (designReqSubmitting || designReqMessage.trim().length < 10) ? 'not-allowed' : 'pointer',
-                    opacity: (designReqSubmitting || designReqMessage.trim().length < 10) ? 0.6 : 1,
-                    display: 'flex', alignItems: 'center', gap: '7px', transition: 'background 0.3s',
-                  }}
-                >
-                  {designReqSubmitting
-                    ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Senden…</>
-                    : designReqSent
-                    ? <><Check size={13} /> Gesendet</>
-                    : <><Palette size={13} /> Design anfragen</>
-                  }
-                </button>
-              </div>
-              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-            </>
+
+                  <button
+                    onClick={submitDesignRequest}
+                    disabled={designReqSubmitting}
+                    style={{
+                      padding: '10px 20px', borderRadius: '8px',
+                      background: pAccent, color: '#fff',
+                      fontWeight: 700, fontSize: '0.82rem', border: 'none',
+                      cursor: designReqSubmitting ? 'wait' : 'pointer',
+                      opacity: designReqSubmitting ? 0.7 : 1,
+                      display: 'flex', alignItems: 'center', gap: '7px',
+                    }}
+                  >
+                    {designReqSubmitting
+                      ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Senden…</>
+                      : <><Palette size={13} /> Anfrage senden</>
+                    }
+                  </button>
+                  <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                </>
+              ) : (
+                <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(16,185,129,0.08)', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 4px' }}>
+                    <Check size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />
+                    Anfrage erfolgreich gesendet!
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+                    Wir melden uns, sobald dein individuelles Template fertig ist.
+                  </p>
+                  <button
+                    onClick={() => setDesignReqSent(false)}
+                    style={{ marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    Weitere Anfrage stellen
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </section>
