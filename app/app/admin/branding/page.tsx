@@ -285,6 +285,7 @@ export default function BrandingPage() {
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [liveDesign, setLiveDesign] = useState<Record<string, string> | null>(null)
+  const [livePreviewFullscreen, setLivePreviewFullscreen] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -1442,130 +1443,190 @@ export default function BrandingPage() {
         </div>
       )}
 
-      {/* ── Design Chat Widget ── */}
+      {/* ── Design Chat Widget (floating card — does not block preview) ── */}
       {restaurant && (
         <>
-          {!chatOpen && (
-            <button
-              onClick={() => setChatOpen(true)}
-              title="Design-Assistent"
-              style={{
-                position: 'fixed', bottom: '84px', right: '24px', zIndex: 85,
-                width: '52px', height: '52px', borderRadius: '50%',
-                background: '#8B5CF6', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 20px rgba(139,92,246,0.45)',
-              }}
-            >
-              <Palette size={22} color="#fff" />
-            </button>
-          )}
+          {/* Toggle button — always visible */}
+          <button
+            onClick={() => setChatOpen(o => !o)}
+            title="Design-Assistent"
+            style={{
+              position: 'fixed', bottom: '84px', right: '24px', zIndex: 90,
+              width: '52px', height: '52px', borderRadius: '50%',
+              background: chatOpen ? 'var(--surface-2)' : '#8B5CF6',
+              border: chatOpen ? '2px solid #8B5CF6' : 'none',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: chatOpen ? 'none' : '0 4px 20px rgba(139,92,246,0.45)',
+              transition: 'background 0.2s',
+            }}
+          >
+            {chatOpen
+              ? <X size={20} color="#8B5CF6" />
+              : <Palette size={22} color="#fff" />
+            }
+          </button>
 
+          {/* Floating chat card — no backdrop, preview stays visible */}
           {chatOpen && (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} onClick={() => setChatOpen(false)} />
-              <div style={{
-                position: 'absolute', right: 0, top: 0, bottom: 0, width: '380px', maxWidth: '100vw',
-                background: 'var(--surface)', borderLeft: '1px solid var(--border)',
-                display: 'flex', flexDirection: 'column',
-              }}>
-                {/* Header */}
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Palette size={16} color="#fff" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>Design-Assistent</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Beschreib dein Wunsch-Design</div>
-                  </div>
-                  <button onClick={() => setChatOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
-                    <X size={18} />
-                  </button>
+            <div style={{
+              position: 'fixed', bottom: '148px', right: '24px', zIndex: 89,
+              width: '360px', height: '520px',
+              background: 'var(--surface)', borderRadius: '16px',
+              border: '1px solid var(--border)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+            }}>
+              {/* Header */}
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Palette size={14} color="#fff" />
                 </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text)' }}>Design-Assistent</div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Beschreib dein Wunsch-Design</div>
+                </div>
+                <button
+                  onClick={() => setLivePreviewFullscreen(true)}
+                  title="Vorschau vergrößern"
+                  style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '7px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 600, flexShrink: 0 }}
+                >
+                  <Maximize2 size={12} /> Vorschau
+                </button>
+              </div>
 
-                {/* Messages */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {chatMessages.length === 0 && (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', marginTop: '24px', lineHeight: 1.7 }}>
-                      Beschreib wie dein Design aussehen soll.<br />
-                      <span style={{ fontSize: '0.72rem', opacity: 0.65 }}>&ldquo;Mach es dunkler&rdquo; · &ldquo;Blaue Akzentfarbe&rdquo; · &ldquo;Runde Ecken&rdquo;</span>
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {chatMessages.length === 0 && (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginTop: '20px', lineHeight: 1.7 }}>
+                    Beschreib wie dein Design aussehen soll.<br />
+                    <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>&ldquo;Mach es dunkler&rdquo; · &ldquo;Blaue Akzentfarbe&rdquo; · &ldquo;Runde Ecken&rdquo;</span>
+                  </div>
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      maxWidth: '88%', padding: '9px 13px', borderRadius: '12px',
+                      background: msg.role === 'user' ? '#8B5CF6' : 'var(--surface-2)',
+                      color: msg.role === 'user' ? '#fff' : 'var(--text)',
+                      fontSize: '0.82rem', lineHeight: 1.5,
+                    }}>
+                      {msg.content}
                     </div>
-                  )}
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                      <div style={{
-                        maxWidth: '85%', padding: '10px 14px', borderRadius: '12px',
-                        background: msg.role === 'user' ? '#8B5CF6' : 'var(--surface-2)',
-                        color: msg.role === 'user' ? '#fff' : 'var(--text)',
-                        fontSize: '0.85rem', lineHeight: 1.5,
-                      }}>
-                        {msg.content}
-                      </div>
-                      {msg.delta && Object.keys(msg.delta).length > 0 && (
-                        <div style={{ marginTop: '5px', display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', gap: '3px' }}>
-                            {Object.values(msg.delta)
-                              .filter((v): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v))
-                              .slice(0, 6)
-                              .map((c, ci) => (
-                                <div key={ci} style={{ width: '10px', height: '10px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />
-                              ))}
-                          </div>
-                          <button
-                            onClick={async () => {
-                              if (!restaurant || !msg.delta) return
-                              const { data: { user: authUser } } = await supabase.auth.getUser()
-                              const { data: { session } } = await supabase.auth.getSession()
-                              const token = authUser ? session?.access_token : undefined
-                              const merged = { ...(liveDesign ?? {}), ...msg.delta }
-                              await fetch('/api/admin/design-config', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                                body: JSON.stringify({ restaurant_id: restaurant.id, design_config: merged }),
-                              })
-                              setLiveDesign(merged)
-                              setSaved(true)
-                              setTimeout(() => setSaved(false), 2500)
-                            }}
-                            style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px', background: 'rgba(139,92,246,0.12)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.25)', cursor: 'pointer' }}
-                          >
-                            Übernehmen
-                          </button>
+                    {msg.delta && Object.keys(msg.delta).length > 0 && (
+                      <div style={{ marginTop: '4px', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '3px' }}>
+                          {Object.values(msg.delta)
+                            .filter((v): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v))
+                            .slice(0, 6)
+                            .map((c, ci) => (
+                              <div key={ci} style={{ width: '9px', height: '9px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />
+                            ))}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                  {chatLoading && (
-                    <div style={{ alignSelf: 'flex-start' }}>
-                      <div style={{ padding: '10px 16px', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-muted)', fontSize: '1rem', letterSpacing: '0.15em' }}>
-                        ···
+                        <button
+                          onClick={async () => {
+                            if (!restaurant || !msg.delta) return
+                            const { data: { user: authUser } } = await supabase.auth.getUser()
+                            const { data: { session } } = await supabase.auth.getSession()
+                            const token = authUser ? session?.access_token : undefined
+                            const merged = { ...(liveDesign ?? {}), ...msg.delta }
+                            await fetch('/api/admin/design-config', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                              body: JSON.stringify({ restaurant_id: restaurant.id, design_config: merged }),
+                            })
+                            setLiveDesign(merged)
+                            setSaved(true)
+                            setTimeout(() => setSaved(false), 2500)
+                          }}
+                          style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: 'rgba(139,92,246,0.12)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.25)', cursor: 'pointer' }}
+                        >
+                          Übernehmen
+                        </button>
                       </div>
+                    )}
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div style={{ alignSelf: 'flex-start' }}>
+                    <div style={{ padding: '9px 14px', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-muted)', fontSize: '1rem', letterSpacing: '0.18em' }}>
+                      ···
                     </div>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
 
-                {/* Input */}
-                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
-                  <input
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage() } }}
-                    placeholder="Design beschreiben…"
-                    style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none' }}
-                  />
-                  <button
-                    onClick={sendChatMessage}
-                    disabled={!chatInput.trim() || chatLoading}
-                    style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#8B5CF6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !chatInput.trim() || chatLoading ? 0.45 : 1, flexShrink: 0 }}
-                  >
-                    <Send size={16} color="#fff" />
-                  </button>
-                </div>
+              {/* Input */}
+              <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '7px' }}>
+                <input
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage() } }}
+                  placeholder="Design beschreiben…"
+                  style={{ flex: 1, padding: '9px 11px', borderRadius: '8px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.85rem', outline: 'none' }}
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={!chatInput.trim() || chatLoading}
+                  style={{ width: '38px', height: '38px', borderRadius: '8px', background: '#8B5CF6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !chatInput.trim() || chatLoading ? 0.45 : 1, flexShrink: 0 }}
+                >
+                  <Send size={15} color="#fff" />
+                </button>
               </div>
             </div>
           )}
         </>
+      )}
+
+      {/* ── Live Design Fullscreen Preview Modal ── */}
+      {livePreviewFullscreen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={() => setLivePreviewFullscreen(false)}
+        >
+          <div
+            style={{ background: 'var(--surface)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.95rem' }}>Live-Vorschau</div>
+                {liveDesign && <div style={{ fontSize: '0.7rem', color: '#8B5CF6', marginTop: '2px' }}>Chat-Änderungen aktiv</div>}
+              </div>
+              <button onClick={() => setLivePreviewFullscreen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <DesignMockup
+              cfg={{ primary_color: pAccent, bg_color: pBg, surface_color: pCard, header_color: pHeader, button_color: pButton, text_color: pText }}
+              size="full"
+            />
+            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' }}>
+              {([['Akzent', pAccent], ['Hintergrund', pBg], ['Karten', pCard], ['Header', pHeader], ['Buttons', pButton], ['Text', pText]] as [string, string][]).map(([label, color]) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: color, border: '1px solid var(--border)', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text)', fontFamily: 'monospace' }}>{color}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <span>Schrift: {liveDesign?.font_pair ?? fontPair}</span>
+              <span>Layout: {liveDesign?.layout_variant ?? layoutVariant}</span>
+              {(liveDesign?.border_radius) && <span>Ecken: {liveDesign.border_radius}</span>}
+            </div>
+            <button
+              onClick={() => setLivePreviewFullscreen(false)}
+              style={{ marginTop: '16px', width: '100%', padding: '10px', borderRadius: '8px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
       )}
 
     </div>
