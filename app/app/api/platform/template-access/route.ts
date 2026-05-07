@@ -50,16 +50,19 @@ export async function GET(req: Request) {
       slug: string
       category: string
       plan_tier: string
-    } | null
-  }) => ({
-    id: row.design_templates?.id,
-    name: row.design_templates?.name,
-    slug: row.design_templates?.slug,
-    category: row.design_templates?.category,
-    plan_tier: row.design_templates?.plan_tier,
-    granted_by: row.granted_by,
-    created_at: row.created_at,
-  }))
+    }[] | null
+  }) => {
+    const t = Array.isArray(row.design_templates) ? row.design_templates[0] : row.design_templates
+    return {
+      id: t?.id,
+      name: t?.name,
+      slug: t?.slug,
+      category: t?.category,
+      plan_tier: t?.plan_tier,
+      granted_by: row.granted_by,
+      created_at: row.created_at,
+    }
+  })
 
   return NextResponse.json({ templates })
 }
