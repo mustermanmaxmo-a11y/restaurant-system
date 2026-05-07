@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check, Palette, Clock, Loader2, Sparkles, ChevronDown } from 'lucide-react'
+import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -123,6 +123,81 @@ function LayoutIcon({ variant, active, accent }: { variant: LayoutVariant; activ
   )
 }
 
+// ─── Design Mockup ───────────────────────────────────────────────────────────
+function DesignMockup({ cfg, size, onFullscreen }: {
+  cfg: Record<string, string>; size: 'mini' | 'full'; onFullscreen?: () => void
+}) {
+  const bg = cfg.bg_color || '#111111'
+  const surface = cfg.surface_color || cfg.card_color || '#1a1a1a'
+  const primary = cfg.primary_color || '#e85d26'
+  const text = cfg.text_color || '#ffffff'
+  const header = cfg.header_color || surface
+  const btn = cfg.button_color || primary
+  const br = cfg.border_radius === 'sharp' ? '2px' : cfg.border_radius === 'pill' ? '20px' : '8px'
+
+  if (size === 'mini') {
+    return (
+      <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '10px' }}>
+        <div style={{ background: header, padding: '7px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '18px', height: '18px', borderRadius: '4px', background: primary, flexShrink: 0 }} />
+          <div style={{ flex: 1, height: '3px', borderRadius: '2px', background: `${text}25` }} />
+          <div style={{ width: '36px', height: '14px', borderRadius: br, background: btn }} />
+        </div>
+        <div style={{ background: bg, padding: '7px', display: 'flex', gap: '5px' }}>
+          {[1, 2].map(i => (
+            <div key={i} style={{ flex: 1, background: surface, borderRadius: br, padding: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '22px', height: '22px', borderRadius: '4px', background: `${text}10`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ height: '3px', width: `${40 + i * 8}px`, borderRadius: '2px', background: `${text}35`, marginBottom: '4px' }} />
+                <div style={{ height: '3px', width: '28px', borderRadius: '2px', background: primary, opacity: 0.7 }} />
+              </div>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: btn, flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+        {onFullscreen && (
+          <button onClick={onFullscreen} style={{ position: 'absolute', top: '6px', right: '6px', width: '22px', height: '22px', borderRadius: '5px', background: 'rgba(0,0,0,0.5)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <Maximize2 size={10} />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+      <div style={{ background: header, padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: primary, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: '4px', width: '80px', borderRadius: '2px', background: `${text}45`, marginBottom: '4px' }} />
+            <div style={{ height: '3px', width: '50px', borderRadius: '2px', background: `${text}20` }} />
+          </div>
+          <div style={{ width: '60px', height: '24px', borderRadius: br, background: btn }} />
+        </div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ padding: '4px 12px', borderRadius: '20px', background: primary, height: '20px', width: '60px' }} />
+          <div style={{ padding: '4px 12px', borderRadius: '20px', background: `${text}12`, height: '20px', width: '70px' }} />
+          <div style={{ padding: '4px 12px', borderRadius: '20px', background: `${text}12`, height: '20px', width: '55px' }} />
+        </div>
+      </div>
+      <div style={{ background: bg, padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {[60, 75, 50].map((w, i) => (
+          <div key={i} style={{ background: surface, borderRadius: br, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '6px', background: `${text}08`, flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: '4px', width: `${w}px`, borderRadius: '2px', background: `${text}40`, marginBottom: '6px' }} />
+              <div style={{ height: '3px', width: '80px', borderRadius: '2px', background: `${text}20`, marginBottom: '6px' }} />
+              <div style={{ height: '4px', width: '40px', borderRadius: '2px', background: primary, opacity: 0.8 }} />
+            </div>
+            <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: btn, flexShrink: 0 }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function BrandingPage() {
   const router = useRouter()
@@ -202,6 +277,15 @@ export default function BrandingPage() {
   const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null)
   const [templateApplied, setTemplateApplied] = useState<string | null>(null)
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null)
+
+  // AI preview fullscreen + design chat state
+  const [aiPreviewFullscreen, setAiPreviewFullscreen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string; delta?: Record<string, string> }[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [liveDesign, setLiveDesign] = useState<Record<string, string> | null>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function load() {
@@ -494,6 +578,61 @@ export default function BrandingPage() {
     }
   }
 
+  async function sendChatMessage() {
+    if (!restaurant || !chatInput.trim() || chatLoading) return
+    const userMsg = { role: 'user' as const, content: chatInput.trim() }
+    const newMessages = [...chatMessages, userMsg]
+    setChatMessages(newMessages)
+    setChatInput('')
+    setChatLoading(true)
+
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = authUser ? session?.access_token : undefined
+
+      const currentPkg = getDesignPackage(designPackage)
+      const currentConfig = liveDesign ?? {
+        primary_color: primaryColor ?? currentPkg.preview.primaryColor,
+        bg_color: bgColor ?? currentPkg.preview.bgColor,
+        header_color: headerColor ?? currentPkg.preview.headerColor,
+        card_color: cardColor ?? currentPkg.preview.cardColor,
+        button_color: buttonColor ?? currentPkg.preview.buttonColor,
+        text_color: textColor ?? currentPkg.preview.textColor,
+        font_pair: fontPair,
+        layout_variant: layoutVariant,
+      }
+
+      const res = await fetch('/api/ai/design-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          restaurant_id: restaurant.id,
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          current_design_config: currentConfig,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: data.error ?? 'Fehler aufgetreten' }])
+        return
+      }
+      const { message, delta } = data as { message: string; delta?: Record<string, string> }
+      setChatMessages(prev => [...prev, { role: 'assistant', content: message, delta }])
+      if (delta && Object.keys(delta).length > 0) {
+        setLiveDesign(prev => ({ ...(prev ?? {}), ...delta }))
+      }
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    } catch {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Verbindungsfehler' }])
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
   if (loading) return (
     <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('common.loading')}</div>
   )
@@ -511,12 +650,12 @@ export default function BrandingPage() {
   }
 
   const pkg = getDesignPackage(designPackage)
-  const pAccent = primaryColor ?? pkg.preview.primaryColor
-  const pBg = bgColor ?? pkg.preview.bgColor
-  const pHeader = headerColor ?? pkg.preview.headerColor
-  const pCard = cardColor ?? pkg.preview.cardColor
-  const pButton = buttonColor ?? pkg.preview.buttonColor
-  const pText = textColor ?? pkg.preview.textColor
+  const pAccent = liveDesign?.primary_color ?? primaryColor ?? pkg.preview.primaryColor
+  const pBg = liveDesign?.bg_color ?? bgColor ?? pkg.preview.bgColor
+  const pHeader = liveDesign?.header_color ?? headerColor ?? pkg.preview.headerColor
+  const pCard = liveDesign?.card_color ?? cardColor ?? pkg.preview.cardColor
+  const pButton = liveDesign?.button_color ?? buttonColor ?? pkg.preview.buttonColor
+  const pText = liveDesign?.text_color ?? textColor ?? pkg.preview.textColor
   const fp = FONT_PAIRS[fontPair] ?? FONT_PAIRS['syne-dmsans']
 
   return (
@@ -730,20 +869,19 @@ export default function BrandingPage() {
             {/* Result preview */}
             {aiResult && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                  {/* Color swatches */}
-                  {['bg_color', 'surface_color', 'primary_color', 'button_color', 'text_color'].map(key => {
-                    const color = aiResult.design_config[key] as string
-                    return color ? <div key={key} title={key} style={{ width: 32, height: 32, borderRadius: 6, background: color, border: '1px solid var(--border)' }} /> : null
-                  })}
-                  <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--muted)', alignSelf: 'center' }}>
-                    Konfidenz: {Math.round((aiResult.confidence ?? 0) * 100)}%
+                <DesignMockup
+                  cfg={aiResult.design_config as Record<string, string>}
+                  size="mini"
+                  onFullscreen={() => setAiPreviewFullscreen(true)}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flex: 1 }}>
+                    <span style={{ marginRight: 10 }}>Schrift: {aiResult.design_config.font_pair as string}</span>
+                    <span>Ecken: {aiResult.design_config.border_radius as string}</span>
                   </div>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <span>Schrift: {aiResult.design_config.font_pair as string}</span>
-                  <span>Layout: {aiResult.design_config.layout_variant as string}</span>
-                  <span>Ecken: {aiResult.design_config.border_radius as string}</span>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    {Math.round((aiResult.confidence ?? 0) * 100)}% Konfidenz
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={applyAiDesign} disabled={aiApplying}
@@ -1251,6 +1389,185 @@ export default function BrandingPage() {
       </div>{/* end right column */}
 
       </div>{/* end two-column layout */}
+
+      {/* ── Fullscreen AI Preview Modal ── */}
+      {aiPreviewFullscreen && aiResult && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={() => setAiPreviewFullscreen(false)}
+        >
+          <div
+            style={{ background: 'var(--surface)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '560px', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text)' }}>Design-Vorschau</div>
+              <button onClick={() => setAiPreviewFullscreen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <DesignMockup cfg={aiResult.design_config as Record<string, string>} size="full" />
+            <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' }}>
+              {['bg_color', 'surface_color', 'primary_color', 'button_color', 'header_color', 'text_color'].map(key => {
+                const color = aiResult.design_config[key] as string
+                if (!color) return null
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '16px', height: '16px', borderRadius: '3px', background: color, border: '1px solid var(--border)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{key.replace('_color', '')}</div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text)', fontFamily: 'monospace' }}>{color}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <span>Schrift: {aiResult.design_config.font_pair as string}</span>
+              <span>Layout: {aiResult.design_config.layout_variant as string}</span>
+              <span>Ecken: {aiResult.design_config.border_radius as string}</span>
+              <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{Math.round((aiResult.confidence ?? 0) * 100)}% Konfidenz</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+              <button onClick={() => { setAiPreviewFullscreen(false); applyAiDesign() }} disabled={aiApplying}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                {aiApplying ? 'Wird übernommen...' : '✓ Übernehmen'}
+              </button>
+              <button onClick={() => setAiPreviewFullscreen(false)}
+                style={{ padding: '10px 16px', borderRadius: '8px', border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer' }}>
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Design Chat Widget ── */}
+      {restaurant && (
+        <>
+          {!chatOpen && (
+            <button
+              onClick={() => setChatOpen(true)}
+              title="Design-Assistent"
+              style={{
+                position: 'fixed', bottom: '84px', right: '24px', zIndex: 85,
+                width: '52px', height: '52px', borderRadius: '50%',
+                background: '#8B5CF6', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(139,92,246,0.45)',
+              }}
+            >
+              <Palette size={22} color="#fff" />
+            </button>
+          )}
+
+          {chatOpen && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} onClick={() => setChatOpen(false)} />
+              <div style={{
+                position: 'absolute', right: 0, top: 0, bottom: 0, width: '380px', maxWidth: '100vw',
+                background: 'var(--surface)', borderLeft: '1px solid var(--border)',
+                display: 'flex', flexDirection: 'column',
+              }}>
+                {/* Header */}
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Palette size={16} color="#fff" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text)' }}>Design-Assistent</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Beschreib dein Wunsch-Design</div>
+                  </div>
+                  <button onClick={() => setChatOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {chatMessages.length === 0 && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', textAlign: 'center', marginTop: '24px', lineHeight: 1.7 }}>
+                      Beschreib wie dein Design aussehen soll.<br />
+                      <span style={{ fontSize: '0.72rem', opacity: 0.65 }}>&ldquo;Mach es dunkler&rdquo; · &ldquo;Blaue Akzentfarbe&rdquo; · &ldquo;Runde Ecken&rdquo;</span>
+                    </div>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                      <div style={{
+                        maxWidth: '85%', padding: '10px 14px', borderRadius: '12px',
+                        background: msg.role === 'user' ? '#8B5CF6' : 'var(--surface-2)',
+                        color: msg.role === 'user' ? '#fff' : 'var(--text)',
+                        fontSize: '0.85rem', lineHeight: 1.5,
+                      }}>
+                        {msg.content}
+                      </div>
+                      {msg.delta && Object.keys(msg.delta).length > 0 && (
+                        <div style={{ marginTop: '5px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {Object.values(msg.delta)
+                              .filter((v): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v))
+                              .slice(0, 6)
+                              .map((c, ci) => (
+                                <div key={ci} style={{ width: '10px', height: '10px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />
+                              ))}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (!restaurant || !msg.delta) return
+                              const { data: { user: authUser } } = await supabase.auth.getUser()
+                              const { data: { session } } = await supabase.auth.getSession()
+                              const token = authUser ? session?.access_token : undefined
+                              const merged = { ...(liveDesign ?? {}), ...msg.delta }
+                              await fetch('/api/admin/design-config', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                body: JSON.stringify({ restaurant_id: restaurant.id, design_config: merged }),
+                              })
+                              setLiveDesign(merged)
+                              setSaved(true)
+                              setTimeout(() => setSaved(false), 2500)
+                            }}
+                            style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px', background: 'rgba(139,92,246,0.12)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.25)', cursor: 'pointer' }}
+                          >
+                            Übernehmen
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div style={{ alignSelf: 'flex-start' }}>
+                      <div style={{ padding: '10px 16px', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-muted)', fontSize: '1rem', letterSpacing: '0.15em' }}>
+                        ···
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Input */}
+                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+                  <input
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage() } }}
+                    placeholder="Design beschreiben…"
+                    style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1.5px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.875rem', outline: 'none' }}
+                  />
+                  <button
+                    onClick={sendChatMessage}
+                    disabled={!chatInput.trim() || chatLoading}
+                    style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#8B5CF6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !chatInput.trim() || chatLoading ? 0.45 : 1, flexShrink: 0 }}
+                  >
+                    <Send size={16} color="#fff" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
     </div>
   )
 }
