@@ -1446,6 +1446,22 @@ export default function BrandingPage() {
       {/* ── Design Chat Widget (floating card — does not block preview) ── */}
       {restaurant && (
         <>
+          {/* Vorschau floating button — always visible */}
+          <button
+            onClick={() => setLivePreviewFullscreen(true)}
+            title="Design-Vorschau"
+            style={{
+              position: 'fixed', bottom: '148px', right: '24px', zIndex: chatOpen ? 0 : 88,
+              display: chatOpen ? 'none' : 'flex',
+              width: '52px', height: '52px', borderRadius: '50%',
+              background: 'var(--surface-2)', border: '2px solid var(--border)',
+              cursor: 'pointer', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            <Maximize2 size={18} color="var(--text-muted)" />
+          </button>
+
           {/* Toggle button — always visible */}
           <button
             onClick={() => setChatOpen(o => !o)}
@@ -1471,7 +1487,8 @@ export default function BrandingPage() {
           {chatOpen && (
             <div style={{
               position: 'fixed', bottom: '148px', right: '24px', zIndex: 89,
-              width: '360px', height: '520px',
+              width: '360px',
+              height: 'min(480px, calc(100vh - 240px))',
               background: 'var(--surface)', borderRadius: '16px',
               border: '1px solid var(--border)',
               boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
