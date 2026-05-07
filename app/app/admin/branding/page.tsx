@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check, Palette, Clock, Loader2 } from 'lucide-react'
+import { ImageIcon, Check, Palette, Clock, Loader2, Sparkles, ChevronDown } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -160,6 +160,16 @@ export default function BrandingPage() {
   const [designReqSent, setDesignReqSent] = useState(false)
   const [designReqError, setDesignReqError] = useState<string | null>(null)
   const [existingDesignReq, setExistingDesignReq] = useState<{ status: string; created_at: string } | null>(null)
+
+  // AI Design-Erkennung state
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiTab, setAiTab] = useState<'screenshot' | 'url'>('screenshot')
+  const [aiFile, setAiFile] = useState<File | null>(null)
+  const [aiUrl, setAiUrl] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState<{ design_config: Record<string, unknown>, confidence: number } | null>(null)
+  const [aiError, setAiError] = useState('')
+  const [aiApplying, setAiApplying] = useState(false)
 
   // Template browser state
   type TemplateRow = {
@@ -393,6 +403,73 @@ export default function BrandingPage() {
     }
   }
 
+  async function analyzeDesign() {
+    if (!restaurant) return
+    setAiLoading(true)
+    setAiError('')
+    setAiResult(null)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      const form = new FormData()
+      form.append('restaurant_id', restaurant.id)
+
+      if (aiTab === 'screenshot' && aiFile) {
+        form.append('image', aiFile)
+      } else if (aiTab === 'url' && aiUrl) {
+        form.append('url', aiUrl)
+      } else {
+        setAiError('Bitte Screenshot oder URL angeben')
+        return
+      }
+
+      const res = await fetch('/api/ai/design-extract', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) { setAiError(data.error ?? 'Fehler beim Analysieren'); return }
+      setAiResult(data)
+    } catch {
+      setAiError('Verbindungsfehler')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  async function applyAiDesign() {
+    if (!restaurant || !aiResult) return
+    setAiApplying(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/design-config', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ restaurant_id: restaurant.id, design_config: aiResult.design_config }),
+      })
+      if (res.ok) {
+        // Update local restaurant state with the new design_config
+        setRestaurant(prev => prev ? { ...prev, design_config: aiResult!.design_config } : null)
+        setAiResult(null)
+        setAiFile(null)
+        setAiUrl('')
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      } else {
+        const d = await res.json()
+        setAiError(d.error ?? 'Fehler beim Speichern')
+      }
+    } finally {
+      setAiApplying(false)
+    }
+  }
+
   if (loading) return (
     <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{t('common.loading')}</div>
   )
@@ -565,6 +642,100 @@ export default function BrandingPage() {
           </div>
         )}
       </section>
+
+      {/* ── AI Design-Erkennung ── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: '36px' }}>
+        {/* Header — collapsible */}
+        <button onClick={() => setAiOpen(!aiOpen)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Sparkles size={18} color="var(--accent)" />
+            <span style={{ fontWeight: 600 }}>Design automatisch erkennen</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 20 }}>KI</span>
+          </div>
+          <ChevronDown size={16} style={{ transform: aiOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        </button>
+
+        {aiOpen && (
+          <div style={{ padding: '0 20px 20px' }}>
+            {/* Tab switcher */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'var(--surface-2)', borderRadius: 8, padding: 4 }}>
+              {(['screenshot', 'url'] as const).map(tab => (
+                <button key={tab} onClick={() => { setAiTab(tab); setAiResult(null); setAiError('') }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: aiTab === tab ? 600 : 400, background: aiTab === tab ? 'var(--accent)' : 'transparent', color: aiTab === tab ? '#fff' : 'var(--muted)' }}>
+                  {tab === 'screenshot' ? '📸 Screenshot' : '🌐 Website URL'}
+                </button>
+              ))}
+            </div>
+
+            {/* Screenshot upload */}
+            {aiTab === 'screenshot' && (
+              <label style={{ display: 'block', border: '2px dashed var(--border)', borderRadius: 10, padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: 12 }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { setAiFile(e.target.files?.[0] ?? null); setAiResult(null) }} />
+                {aiFile ? (
+                  <div>
+                    <img src={URL.createObjectURL(aiFile)} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, marginBottom: 8 }} />
+                    <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{aiFile.name}</div>
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--muted)' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>🖼️</div>
+                    <div>Screenshot hier ablegen oder klicken</div>
+                    <div style={{ fontSize: '0.75rem', marginTop: 4 }}>PNG, JPG, WebP — max. 8 MB</div>
+                  </div>
+                )}
+              </label>
+            )}
+
+            {/* URL input */}
+            {aiTab === 'url' && (
+              <input type="url" placeholder="https://dein-restaurant.de" value={aiUrl} onChange={e => { setAiUrl(e.target.value); setAiResult(null) }}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem', marginBottom: 12, boxSizing: 'border-box' }} />
+            )}
+
+            {/* Analyze button */}
+            {!aiResult && (
+              <button onClick={analyzeDesign} disabled={aiLoading || (aiTab === 'screenshot' ? !aiFile : !aiUrl)}
+                style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: (aiLoading || (aiTab === 'screenshot' ? !aiFile : !aiUrl)) ? 0.5 : 1 }}>
+                {aiLoading ? '⏳ KI analysiert Design...' : '✨ Design erkennen'}
+              </button>
+            )}
+
+            {/* Error */}
+            {aiError && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 8 }}>{aiError}</div>}
+
+            {/* Result preview */}
+            {aiResult && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                  {/* Color swatches */}
+                  {['bg_color', 'surface_color', 'primary_color', 'button_color', 'text_color'].map(key => {
+                    const color = aiResult.design_config[key] as string
+                    return color ? <div key={key} title={key} style={{ width: 32, height: 32, borderRadius: 6, background: color, border: '1px solid var(--border)' }} /> : null
+                  })}
+                  <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--muted)', alignSelf: 'center' }}>
+                    Konfidenz: {Math.round((aiResult.confidence ?? 0) * 100)}%
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <span>Schrift: {aiResult.design_config.font_pair as string}</span>
+                  <span>Layout: {aiResult.design_config.layout_variant as string}</span>
+                  <span>Ecken: {aiResult.design_config.border_radius as string}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={applyAiDesign} disabled={aiApplying}
+                    style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                    {aiApplying ? 'Wird übernommen...' : '✓ Übernehmen'}
+                  </button>
+                  <button onClick={() => { setAiResult(null); setAiError('') }}
+                    style={{ padding: '10px 16px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer' }}>
+                    Nochmal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── Section 1: Design-Pakete ── */}
       <section style={{ marginBottom: '36px' }}>
