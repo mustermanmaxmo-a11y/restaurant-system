@@ -592,7 +592,7 @@ export default function BrandingPage() {
               const isActive = activeTemplateId === tpl.id
               const isApplying = applyingTemplateId === tpl.id
               const justApplied = templateApplied === tpl.id
-              const cfg = tpl.config
+              const cfg = tpl.config ?? {}
               const swatches = [cfg.bg_color, cfg.surface_color, cfg.primary_color, cfg.button_color, cfg.text_color].filter(Boolean)
               const tierColor = tpl.plan_tier === 'premium' ? '#8B5CF6' : tpl.plan_tier === 'pro' ? '#F59E0B' : '#4B5563'
               return (
