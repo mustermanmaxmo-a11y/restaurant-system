@@ -1,6 +1,24 @@
 import { getDesignPackage } from './design-packages'
 import type { Restaurant } from '@/types/database'
 
+export interface DesignConfig {
+  primary_color?: string
+  surface_color?: string
+  bg_color?: string
+  header_color?: string
+  button_color?: string
+  card_color?: string
+  text_color?: string
+  font_pair?: string
+  layout_variant?: string
+  design_package?: string
+  border_radius?: 'sharp' | 'rounded' | 'pill'
+  hover_effect?: 'scale' | 'glow' | 'underline' | 'color-shift' | 'none'
+  animation_style?: 'fade' | 'slide' | 'none'
+  card_style?: 'elevated' | 'flat' | 'outlined' | 'ghost'
+  template_id?: string
+}
+
 export function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.replace('#', ''), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
@@ -44,17 +62,24 @@ export interface ColorSet {
   cardBg: string
 }
 
-// New signature: accepts restaurant object, resolves package defaults + individual overrides
-export function buildColorsFromRestaurant(restaurant: Partial<Restaurant>): ColorSet {
-  const pkg = getDesignPackage(restaurant.design_package)
+export function readCfgString(cfg: Record<string, unknown>, key: string): string | undefined {
+  const v = cfg[key]
+  return typeof v === 'string' ? v : undefined
+}
 
-  const accent = restaurant.primary_color ?? pkg.preview.primaryColor
-  const bg = restaurant.bg_color ?? pkg.preview.bgColor
-  const surface = restaurant.surface_color ?? pkg.preview.surfaceColor
-  const cardBg = restaurant.card_color ?? pkg.preview.cardColor
-  const headerBg = restaurant.header_color ?? pkg.preview.headerColor
-  const buttonBg = restaurant.button_color ?? pkg.preview.buttonColor
-  const text = restaurant.text_color ?? pkg.preview.textColor
+// New signature: accepts restaurant object, resolves package defaults + individual overrides
+// Reads from design_config first, then falls back to individual columns
+export function buildColorsFromRestaurant(restaurant: Partial<Restaurant>): ColorSet {
+  const cfg = restaurant.design_config ?? {}
+  const pkg = getDesignPackage(readCfgString(cfg, 'design_package') ?? restaurant.design_package ?? undefined)
+
+  const accent = readCfgString(cfg, 'primary_color') ?? restaurant.primary_color ?? pkg.preview.primaryColor
+  const bg = readCfgString(cfg, 'bg_color') ?? restaurant.bg_color ?? pkg.preview.bgColor
+  const surface = readCfgString(cfg, 'surface_color') ?? restaurant.surface_color ?? pkg.preview.surfaceColor
+  const cardBg = readCfgString(cfg, 'card_color') ?? restaurant.card_color ?? pkg.preview.cardColor
+  const headerBg = readCfgString(cfg, 'header_color') ?? restaurant.header_color ?? pkg.preview.headerColor
+  const buttonBg = readCfgString(cfg, 'button_color') ?? restaurant.button_color ?? pkg.preview.buttonColor
+  const text = readCfgString(cfg, 'text_color') ?? restaurant.text_color ?? pkg.preview.textColor
 
   const bgIsLight = isLightColor(bg)
   const surface2 = bgIsLight ? darken(surface, 8) : lighten(surface, 10)

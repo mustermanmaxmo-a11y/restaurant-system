@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Paintbrush, Settings } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Paintbrush, Settings, Layers } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -25,44 +25,31 @@ function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCoun
     { icon: Users,           label: 'Team',            href: '/platform/team',                roles: ['owner'], badge: teamPendingCount },
     { icon: Palette,         label: 'Design-Anfragen', href: '/platform/design-requests',     roles: ['owner', 'co_founder'], badge: designRequestCount },
     { icon: Paintbrush,      label: 'Design',          href: '/platform/design',              roles: ['owner', 'co_founder'] },
+    { icon: Layers,          label: 'Templates',       href: '/platform/templates',            roles: ['owner', 'co_founder'] },
     { icon: Settings,        label: 'Einstellungen',   href: '/platform/settings',            roles: ['owner', 'co_founder', 'developer', 'billing', 'support'] },
   ]
   return all.filter(item => item.roles.includes(role))
 }
 
-export function PlatformSidebar({
-  userEmail,
-  role,
-  legalPendingCount = 0,
-  teamPendingCount = 0,
-  designRequestCount = 0,
-}: {
-  userEmail: string
+const roleLabel: Record<PlatformRole, string> = {
+  owner: 'Owner',
+  co_founder: 'Co-Founder',
+  developer: 'Developer',
+  billing: 'Billing',
+  support: 'Support',
+}
+
+type SidebarPanelProps = {
+  nav: NavItem[]
+  pathname: string
   role: PlatformRole
-  legalPendingCount?: number
-  teamPendingCount?: number
-  designRequestCount?: number
-}) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  userEmail: string
+  onNavigate: (href: string) => void
+  onLogout: () => void
+}
 
-  const nav = buildNav(role, legalPendingCount, teamPendingCount, designRequestCount)
-
-  const roleLabel: Record<PlatformRole, string> = {
-    owner: 'Owner',
-    co_founder: 'Co-Founder',
-    developer: 'Developer',
-    billing: 'Billing',
-    support: 'Support',
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push(role === 'owner' ? '/platform-login' : '/team-login')
-  }
-
-  const Sidebar = () => (
+function SidebarPanel({ nav, pathname, role, userEmail, onNavigate, onLogout }: SidebarPanelProps) {
+  return (
     <aside style={{
       width: '220px', height: '100%', background: '#0f0f1a',
       display: 'flex', flexDirection: 'column', position: 'fixed',
@@ -103,7 +90,7 @@ export function PlatformSidebar({
           return (
             <button
               key={item.href}
-              onClick={() => { router.push(item.href); setMobileOpen(false) }}
+              onClick={() => onNavigate(item.href)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '9px 12px', borderRadius: '8px', border: 'none',
@@ -137,7 +124,7 @@ export function PlatformSidebar({
         <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '0 8px 10px' }} />
         {role === 'owner' && (
           <button
-            onClick={() => router.push('/admin')}
+            onClick={() => onNavigate('/admin')}
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '9px 12px', borderRadius: '8px', border: 'none',
@@ -150,7 +137,7 @@ export function PlatformSidebar({
           </button>
         )}
         <button
-          onClick={handleLogout}
+          onClick={onLogout}
           style={{
             display: 'flex', alignItems: 'center', gap: '10px',
             padding: '9px 12px', borderRadius: '8px', border: 'none',
@@ -164,11 +151,48 @@ export function PlatformSidebar({
       </div>
     </aside>
   )
+}
+
+export function PlatformSidebar({
+  userEmail,
+  role,
+  legalPendingCount = 0,
+  teamPendingCount = 0,
+  designRequestCount = 0,
+}: {
+  userEmail: string
+  role: PlatformRole
+  legalPendingCount?: number
+  teamPendingCount?: number
+  designRequestCount?: number
+}) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const nav = buildNav(role, legalPendingCount, teamPendingCount, designRequestCount)
+
+  function handleNavigate(href: string) {
+    router.push(href)
+    setMobileOpen(false)
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push(role === 'owner' ? '/platform-login' : '/team-login')
+  }
 
   return (
     <>
       <div className="platform-sidebar-desktop">
-        <Sidebar />
+        <SidebarPanel
+          nav={nav}
+          pathname={pathname}
+          role={role}
+          userEmail={userEmail}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+        />
       </div>
 
       <div className="platform-mobile-header" style={{
@@ -192,7 +216,14 @@ export function PlatformSidebar({
         <>
           <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 45 }} />
           <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, width: '240px' }}>
-            <Sidebar />
+            <SidebarPanel
+              nav={nav}
+              pathname={pathname}
+              role={role}
+              userEmail={userEmail}
+              onNavigate={handleNavigate}
+              onLogout={handleLogout}
+            />
           </div>
         </>
       )}

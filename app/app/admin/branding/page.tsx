@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check, Palette, Clock, Loader2 } from 'lucide-react'
+import { ImageIcon, Check, Palette, Clock, Loader2, Sparkles, ChevronDown } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -155,18 +155,60 @@ export default function BrandingPage() {
   const [showColorSection, setShowColorSection] = useState(false)
 
   // Design-Request State
-  const [designReqMessage, setDesignReqMessage] = useState('')
+  const [designReqDescription, setDesignReqDescription] = useState('')
+  const [designReqScreenshot, setDesignReqScreenshot] = useState<File | null>(null)
   const [designReqSubmitting, setDesignReqSubmitting] = useState(false)
   const [designReqSent, setDesignReqSent] = useState(false)
   const [designReqError, setDesignReqError] = useState<string | null>(null)
-  const [existingDesignReq, setExistingDesignReq] = useState<{ status: string; created_at: string } | null>(null)
+  const [existingDesignReqs, setExistingDesignReqs] = useState<{ id: string; status: string; created_at: string; result_template_id: string | null }[]>([])
+  const [designReqOpen, setDesignReqOpen] = useState(false)
+
+  // AI Design-Erkennung state
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiTab, setAiTab] = useState<'screenshot' | 'url'>('screenshot')
+  const [aiFile, setAiFile] = useState<File | null>(null)
+  const [aiUrl, setAiUrl] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState<{ design_config: Record<string, unknown>, confidence: number } | null>(null)
+  const [aiError, setAiError] = useState('')
+  const [aiApplying, setAiApplying] = useState(false)
+  const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!aiFile) { setAiPreviewUrl(null); return }
+    const url = URL.createObjectURL(aiFile)
+    setAiPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [aiFile])
+
+  // Template browser state
+  type TemplateRow = {
+    id: string
+    name: string
+    slug: string
+    category: string
+    style_tags: string[]
+    plan_tier: 'basic' | 'pro' | 'premium'
+    preview_url: string | null
+    config: Record<string, string>
+    sort_order: number
+    accessible: boolean
+    granted: boolean
+  }
+  const [templates, setTemplates] = useState<TemplateRow[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [templateCategory, setTemplateCategory] = useState<string>('all')
+  const [templateSearch, setTemplateSearch] = useState('')
+  const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null)
+  const [templateApplied, setTemplateApplied] = useState<string | null>(null)
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/owner-login'); return }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/owner-login'); return }
       const { data: resto } = await supabase
-        .from('restaurants').select('*').eq('owner_id', session.user.id).limit(1).single()
+        .from('restaurants').select('*').eq('owner_id', user.id).limit(1).single()
       if (!resto) { router.push('/admin/setup'); return }
       setRestaurant(resto)
       // Load existing values
@@ -185,19 +227,103 @@ export default function BrandingPage() {
       if (resto.contact_address) setContactAddress(resto.contact_address)
       if (resto.description) setDescription(resto.description)
 
-      // Offene Design-Anfrage laden
-      const { data: openReq } = await supabase
+      // Alle Design-Anfragen laden
+      const { data: allReqs } = await supabase
         .from('design_requests')
-        .select('status, created_at')
+        .select('id, status, created_at, result_template_id')
         .eq('restaurant_id', resto.id)
-        .in('status', ['pending', 'in_progress'])
-        .maybeSingle()
-      if (openReq) setExistingDesignReq(openReq)
+        .order('created_at', { ascending: false })
+      if (allReqs && allReqs.length > 0) setExistingDesignReqs(allReqs)
+
+      // Aktives Template aus design_config lesen
+      const dc = (resto as { design_config?: Record<string, unknown> }).design_config
+      if (dc && typeof dc.template_id === 'string') {
+        setActiveTemplateId(dc.template_id)
+      }
 
       setLoading(false)
     }
     load()
   }, [router])
+
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Templates laden (abhängig von Restaurant + Filter)
+  // Category changes fire immediately; search changes are debounced 350ms
+  useEffect(() => {
+    if (!restaurant) return
+
+    function doFetch() {
+      const ctrl = new AbortController()
+      async function loadTemplates() {
+        setTemplatesLoading(true)
+        try {
+          const params = new URLSearchParams({ restaurant_id: restaurant!.id })
+          if (templateCategory !== 'all') params.set('category', templateCategory)
+          if (templateSearch.trim()) params.set('search', templateSearch.trim())
+          const res = await fetch(`/api/design-templates?${params.toString()}`, { signal: ctrl.signal })
+          if (!res.ok) { setTemplates([]); return }
+          const json = await res.json()
+          setTemplates(json.templates ?? [])
+        } catch {
+          // aborted or network
+        } finally {
+          setTemplatesLoading(false)
+        }
+      }
+      loadTemplates()
+      return ctrl
+    }
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    let ctrl: AbortController | undefined
+    searchTimeoutRef.current = setTimeout(() => {
+      ctrl = doFetch()
+    }, 350)
+
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+      ctrl?.abort()
+    }
+  }, [restaurant, templateCategory, templateSearch])
+
+  async function applyTemplate(tpl: TemplateRow) {
+    if (!restaurant || !tpl.accessible) return
+    setApplyingTemplateId(tpl.id)
+    try {
+      const res = await fetch(`/api/design-templates/${tpl.id}/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurant_id: restaurant.id }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        alert(j.error ?? 'Template konnte nicht angewendet werden.')
+        return
+      }
+      // Reload restaurant
+      const { data: resto } = await supabase
+        .from('restaurants').select('*').eq('id', restaurant.id).single()
+      if (resto) {
+        setRestaurant(resto)
+        if (resto.design_package) setDesignPackage(resto.design_package)
+        if (resto.layout_variant) setLayoutVariant(resto.layout_variant as LayoutVariant)
+        if (resto.font_pair) setFontPair(resto.font_pair)
+        setPrimaryColor(resto.primary_color)
+        setBgColor(resto.bg_color)
+        setHeaderColor(resto.header_color)
+        setCardColor(resto.card_color)
+        setButtonColor(resto.button_color)
+        setTextColor(resto.text_color)
+        const dc = (resto as { design_config?: Record<string, unknown> }).design_config
+        if (dc && typeof dc.template_id === 'string') setActiveTemplateId(dc.template_id)
+      }
+      setTemplateApplied(tpl.id)
+      setTimeout(() => setTemplateApplied(null), 2500)
+    } finally {
+      setApplyingTemplateId(null)
+    }
+  }
 
   function applyPackage(pkg: DesignPackage) {
     setDesignPackage(pkg.id)
@@ -223,8 +349,12 @@ export default function BrandingPage() {
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('restaurant-logos').getPublicUrl(path)
       setLogoUrl(publicUrl)
-      await supabase.from('restaurants').update({ logo_url: publicUrl }).eq('id', restaurant.id)
-      setSaved(true); setTimeout(() => setSaved(false), 2500)
+      const { error: logoUpdateErr } = await supabase.from('restaurants').update({ logo_url: publicUrl }).eq('id', restaurant.id)
+      if (logoUpdateErr) {
+        setDesignReqError('Logo-URL konnte nicht gespeichert werden. Bitte erneut versuchen.')
+      } else {
+        setSaved(true); setTimeout(() => setSaved(false), 2500)
+      }
     }
     setLogoUploading(false)
     if (fileRef.current) fileRef.current.value = ''
@@ -234,7 +364,7 @@ export default function BrandingPage() {
     if (!restaurant) return
     setSaving(true)
     const pkg = getDesignPackage(designPackage)
-    await supabase.from('restaurants').update({
+    const { error: saveErr } = await supabase.from('restaurants').update({
       design_package: designPackage,
       layout_variant: layoutVariant,
       font_pair: fontPair,
@@ -252,19 +382,34 @@ export default function BrandingPage() {
       contact_address: contactAddress || null,
       description: description || null,
     }).eq('id', restaurant.id)
+    if (saveErr) {
+      setSaving(false)
+      setDesignReqError('Speichern fehlgeschlagen. Bitte erneut versuchen.')
+      return
+    }
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
 
   async function submitDesignRequest() {
-    if (!restaurant || designReqMessage.trim().length < 10) return
+    if (!restaurant) return
     setDesignReqSubmitting(true)
     setDesignReqError(null)
-    const res = await fetch('/api/platform/design-requests', {
+
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = authUser ? session?.access_token : undefined
+
+    const form = new FormData()
+    form.append('restaurant_id', restaurant.id)
+    if (designReqDescription.trim()) form.append('description', designReqDescription.trim())
+    if (designReqScreenshot) form.append('screenshot', designReqScreenshot)
+
+    const res = await fetch('/api/admin/design-requests', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: designReqMessage, restaurant_id: restaurant.id }),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
     })
     const json = await res.json()
     setDesignReqSubmitting(false)
@@ -272,8 +417,80 @@ export default function BrandingPage() {
       setDesignReqError(json.error ?? 'Fehler beim Senden.')
     } else {
       setDesignReqSent(true)
-      setExistingDesignReq({ status: 'pending', created_at: new Date().toISOString() })
-      setDesignReqMessage('')
+      const newReq = json.data as { id: string; status: string; created_at: string; result_template_id: string | null }
+      setExistingDesignReqs(prev => [newReq, ...prev])
+      setDesignReqDescription('')
+      setDesignReqScreenshot(null)
+    }
+  }
+
+  async function analyzeDesign() {
+    if (!restaurant) return
+    setAiLoading(true)
+    setAiError('')
+    setAiResult(null)
+
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = authUser ? session?.access_token : undefined
+
+      const form = new FormData()
+      form.append('restaurant_id', restaurant.id)
+
+      if (aiTab === 'screenshot' && aiFile) {
+        form.append('image', aiFile)
+      } else if (aiTab === 'url' && aiUrl) {
+        form.append('url', aiUrl)
+      } else {
+        setAiError('Bitte Screenshot oder URL angeben')
+        return
+      }
+
+      const res = await fetch('/api/ai/design-extract', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) { setAiError(data.error ?? 'Fehler beim Analysieren'); return }
+      setAiResult(data)
+    } catch {
+      setAiError('Verbindungsfehler')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  async function applyAiDesign() {
+    if (!restaurant || !aiResult) return
+    setAiApplying(true)
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = authUser ? session?.access_token : undefined
+      const res = await fetch('/api/admin/design-config', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ restaurant_id: restaurant.id, design_config: aiResult.design_config }),
+      })
+      if (res.ok) {
+        // Update local restaurant state with the new design_config
+        setRestaurant(prev => prev ? { ...prev, design_config: aiResult!.design_config } : null)
+        setAiResult(null)
+        setAiFile(null)
+        setAiUrl('')
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      } else {
+        const d = await res.json()
+        setAiError(d.error ?? 'Fehler beim Speichern')
+      }
+    } finally {
+      setAiApplying(false)
     }
   }
 
@@ -317,6 +534,232 @@ export default function BrandingPage() {
       <div className="branding-layout" style={{ display: 'flex', gap: '40px', alignItems: 'flex-start' }}>
       {/* ── LEFT COLUMN: alle Einstellungen ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
+
+      {/* ── Section 0: Template Browser ── */}
+      <section style={{ marginBottom: '36px' }}>
+        <label style={sectionLabel}>Template-Bibliothek</label>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '-6px', marginBottom: '14px' }}>
+          50+ kuratierte Designs — wähle eines, das zu deinem Restaurant passt. Du kannst danach jederzeit Farben & Layout anpassen.
+        </p>
+
+        {/* Category tabs */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+          {[
+            { id: 'all', label: 'Alle' },
+            { id: 'fast-food', label: 'Fast Food' },
+            { id: 'fine-dining', label: 'Fine Dining' },
+            { id: 'casual', label: 'Casual' },
+            { id: 'bar', label: 'Bar' },
+            { id: 'cafe', label: 'Café' },
+            { id: 'asian', label: 'Asian' },
+            { id: 'italian', label: 'Italian' },
+            { id: 'bavarian', label: 'Bayerisch' },
+            { id: 'street-food', label: 'Street Food' },
+            { id: 'scandinavian', label: 'Skandinavisch' },
+          ].map(cat => {
+            const isActive = cat.id === templateCategory
+            return (
+              <button key={cat.id} onClick={() => setTemplateCategory(cat.id)} style={{
+                padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                background: isActive ? 'var(--text)' : 'var(--surface)',
+                color: isActive ? 'var(--bg)' : 'var(--text-muted)',
+                border: '1.5px solid var(--border)',
+                transition: 'all 0.15s',
+              }}>{cat.label}</button>
+            )
+          })}
+        </div>
+
+        {/* Search */}
+        <input
+          type="text"
+          value={templateSearch}
+          onChange={e => setTemplateSearch(e.target.value)}
+          placeholder="Templates durchsuchen…"
+          style={{ ...inputStyle, marginBottom: '14px' }}
+        />
+
+        {/* Grid */}
+        {templatesLoading && (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Lade Templates…</div>
+        )}
+        {!templatesLoading && templates.length === 0 && (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Keine Templates gefunden.</div>
+        )}
+        {!templatesLoading && templates.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {templates.map(tpl => {
+              const isActive = activeTemplateId === tpl.id
+              const isApplying = applyingTemplateId === tpl.id
+              const justApplied = templateApplied === tpl.id
+              const cfg = tpl.config
+              const swatches = [cfg.bg_color, cfg.surface_color, cfg.primary_color, cfg.button_color, cfg.text_color].filter(Boolean)
+              const tierColor = tpl.plan_tier === 'premium' ? '#8B5CF6' : tpl.plan_tier === 'pro' ? '#F59E0B' : '#4B5563'
+              return (
+                <div key={tpl.id} style={{
+                  background: 'var(--surface)',
+                  border: isActive ? `2px solid ${cfg.primary_color}` : '2px solid var(--border)',
+                  borderRadius: '12px', padding: '12px', position: 'relative',
+                  opacity: tpl.accessible ? 1 : 0.55,
+                  transition: 'border-color 0.15s',
+                }}>
+                  {isActive && (
+                    <div style={{ position: 'absolute', top: '8px', right: '8px', padding: '3px 8px', borderRadius: '12px', background: cfg.primary_color, color: '#fff', fontSize: '0.62rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Check size={10} /> Aktiv
+                    </div>
+                  )}
+                  {/* Mini preview */}
+                  <div style={{
+                    height: '70px', borderRadius: '8px', background: cfg.bg_color, marginBottom: '10px',
+                    border: '1px solid var(--border)', position: 'relative', overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      width: '70%', height: '40px', borderRadius: '6px', background: cfg.surface_color || cfg.card_color,
+                      display: 'flex', alignItems: 'center', padding: '0 8px', gap: '6px',
+                    }}>
+                      <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.primary_color }} />
+                      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: cfg.text_color, opacity: 0.4 }} />
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: cfg.button_color || cfg.primary_color }} />
+                    </div>
+                  </div>
+
+                  {/* Color swatches */}
+                  <div style={{ display: 'flex', gap: '3px', marginBottom: '8px' }}>
+                    {swatches.map((c, i) => (
+                      <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />
+                    ))}
+                  </div>
+
+                  {/* Name + badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                    <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.82rem' }}>{tpl.name}</div>
+                    <span style={{
+                      padding: '2px 6px', borderRadius: '4px', fontSize: '0.6rem', fontWeight: 800,
+                      background: `${tierColor}22`, color: tierColor, letterSpacing: '0.04em',
+                    }}>
+                      {tpl.plan_tier === 'premium' ? 'PREMIUM' : tpl.plan_tier === 'pro' ? 'PRO' : 'BASIC'}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.66rem', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {tpl.category}
+                  </div>
+
+                  {/* Apply button */}
+                  <button
+                    onClick={() => applyTemplate(tpl)}
+                    disabled={!tpl.accessible || isApplying || isActive}
+                    style={{
+                      width: '100%', padding: '8px', borderRadius: '7px', fontSize: '0.78rem', fontWeight: 700,
+                      background: justApplied ? '#10b981' : isActive ? 'var(--surface-2)' : tpl.accessible ? cfg.primary_color : 'var(--surface-2)',
+                      color: isActive ? 'var(--text-muted)' : '#fff',
+                      border: 'none',
+                      cursor: !tpl.accessible || isApplying || isActive ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {isApplying ? 'Wird angewendet…' : justApplied ? '✓ Angewendet' : isActive ? 'Aktuell aktiv' : !tpl.accessible ? `Upgrade auf ${tpl.plan_tier}` : 'Anwenden'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── AI Design-Erkennung ── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: '36px' }}>
+        {/* Header — collapsible */}
+        <button onClick={() => setAiOpen(!aiOpen)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Sparkles size={18} color="var(--accent)" />
+            <span style={{ fontWeight: 600 }}>Design automatisch erkennen</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--muted)', background: 'var(--surface-2)', padding: '2px 8px', borderRadius: 20 }}>KI</span>
+          </div>
+          <ChevronDown size={16} style={{ transform: aiOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        </button>
+
+        {aiOpen && (
+          <div style={{ padding: '0 20px 20px' }}>
+            {/* Tab switcher */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: 'var(--surface-2)', borderRadius: 8, padding: 4 }}>
+              {(['screenshot', 'url'] as const).map(tab => (
+                <button key={tab} onClick={() => { setAiTab(tab); setAiResult(null); setAiError('') }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: aiTab === tab ? 600 : 400, background: aiTab === tab ? 'var(--accent)' : 'transparent', color: aiTab === tab ? '#fff' : 'var(--muted)' }}>
+                  {tab === 'screenshot' ? '📸 Screenshot' : '🌐 Website URL'}
+                </button>
+              ))}
+            </div>
+
+            {/* Screenshot upload */}
+            {aiTab === 'screenshot' && (
+              <label style={{ display: 'block', border: '2px dashed var(--border)', borderRadius: 10, padding: '24px', textAlign: 'center', cursor: 'pointer', marginBottom: 12 }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { setAiFile(e.target.files?.[0] ?? null); setAiResult(null) }} />
+                {aiFile ? (
+                  <div>
+                    {aiPreviewUrl && <img src={aiPreviewUrl} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, marginBottom: 8 }} />}
+                    <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{aiFile.name}</div>
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--muted)' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>🖼️</div>
+                    <div>Screenshot hier ablegen oder klicken</div>
+                    <div style={{ fontSize: '0.75rem', marginTop: 4 }}>PNG, JPG, WebP — max. 8 MB</div>
+                  </div>
+                )}
+              </label>
+            )}
+
+            {/* URL input */}
+            {aiTab === 'url' && (
+              <input type="url" placeholder="https://dein-restaurant.de" value={aiUrl} onChange={e => { setAiUrl(e.target.value); setAiResult(null) }}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '0.9rem', marginBottom: 12, boxSizing: 'border-box' }} />
+            )}
+
+            {/* Analyze button */}
+            {!aiResult && (
+              <button onClick={analyzeDesign} disabled={aiLoading || (aiTab === 'screenshot' ? !aiFile : !aiUrl)}
+                style={{ width: '100%', padding: '11px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: (aiLoading || (aiTab === 'screenshot' ? !aiFile : !aiUrl)) ? 0.5 : 1 }}>
+                {aiLoading ? '⏳ KI analysiert Design...' : '✨ Design erkennen'}
+              </button>
+            )}
+
+            {/* Error */}
+            {aiError && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 8 }}>{aiError}</div>}
+
+            {/* Result preview */}
+            {aiResult && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                  {/* Color swatches */}
+                  {['bg_color', 'surface_color', 'primary_color', 'button_color', 'text_color'].map(key => {
+                    const color = aiResult.design_config[key] as string
+                    return color ? <div key={key} title={key} style={{ width: 32, height: 32, borderRadius: 6, background: color, border: '1px solid var(--border)' }} /> : null
+                  })}
+                  <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--muted)', alignSelf: 'center' }}>
+                    Konfidenz: {Math.round((aiResult.confidence ?? 0) * 100)}%
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <span>Schrift: {aiResult.design_config.font_pair as string}</span>
+                  <span>Layout: {aiResult.design_config.layout_variant as string}</span>
+                  <span>Ecken: {aiResult.design_config.border_radius as string}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={applyAiDesign} disabled={aiApplying}
+                    style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+                    {aiApplying ? 'Wird übernommen...' : '✓ Übernehmen'}
+                  </button>
+                  <button onClick={() => { setAiResult(null); setAiError('') }}
+                    style={{ padding: '10px 16px', borderRadius: 8, border: '1.5px solid var(--border)', background: 'transparent', color: 'var(--text)', cursor: 'pointer' }}>
+                    Nochmal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ── Section 1: Design-Pakete ── */}
       <section style={{ marginBottom: '36px' }}>
@@ -504,86 +947,198 @@ export default function BrandingPage() {
         </div>
       </section>
 
-      {/* ── Section 8: Custom Design anfragen ── */}
+      {/* ── Section 8: Design-Anfragen ── */}
       <section style={{ marginBottom: '36px' }}>
-        <label style={sectionLabel}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Palette size={16} />
-            Custom Design anfragen
-          </span>
-        </label>
-        <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
-          {existingDesignReq ? (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
-                background: existingDesignReq.status === 'in_progress' ? '#f59e0b22' : existingDesignReq.status === 'done' ? '#10b98122' : `${pAccent}22`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {existingDesignReq.status === 'done'
-                  ? <Check size={16} color="#10b981" />
-                  : <Clock size={16} color={existingDesignReq.status === 'in_progress' ? '#f59e0b' : pAccent} />
-                }
-              </div>
-              <div>
-                <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 4px' }}>
-                  {existingDesignReq.status === 'pending' && 'Anfrage eingegangen — wir melden uns bald.'}
-                  {existingDesignReq.status === 'in_progress' && 'Dein Design wird gerade umgesetzt!'}
-                  {existingDesignReq.status === 'done' && 'Design-Anfrage abgeschlossen.'}
-                </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
-                  Gesendet am {new Date(existingDesignReq.created_at).toLocaleDateString('de-DE')}
-                </p>
-              </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+          {/* Collapsible Header */}
+          <button
+            onClick={() => setDesignReqOpen(!designReqOpen)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Palette size={18} color={pAccent} />
+              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Design nicht dabei? Anfrage stellen</span>
+              {existingDesignReqs.length > 0 && (
+                <span style={{
+                  background: pAccent, color: '#fff', fontSize: '0.65rem',
+                  fontWeight: 800, padding: '2px 7px', borderRadius: '8px',
+                }}>
+                  {existingDesignReqs.length}
+                </span>
+              )}
             </div>
-          ) : (
-            <>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '14px', lineHeight: 1.5 }}>
-                Du möchtest ein individuelles Design, das perfekt zu deinem Restaurant passt?
-                Beschreibe deinen Stil, deine Farben oder Wünsche — wir setzen es für dich um.
-              </p>
-              <textarea
-                value={designReqMessage}
-                onChange={e => {
-                  setDesignReqMessage(e.target.value.slice(0, 1000))
-                  setDesignReqError(null)
-                }}
-                placeholder="z.B. Wir möchten ein warmes, mediterranes Design mit Olivgrün und Terrakotta. Am liebsten große Produktbilder…"
-                rows={4}
-                style={{ ...inputStyle, resize: 'vertical', marginBottom: '8px' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0 }}>
-                  {designReqMessage.length}/1000
-                  {designReqMessage.trim().length > 0 && designReqMessage.trim().length < 10 && (
-                    <span style={{ color: '#ef4444', marginLeft: '8px' }}>Min. 10 Zeichen</span>
+            <ChevronDown size={16} style={{ transform: designReqOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+
+          {designReqOpen && (
+            <div style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border)' }}>
+
+              {/* Existing requests */}
+              {existingDesignReqs.length > 0 && (
+                <div style={{ marginTop: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {existingDesignReqs.map(req => {
+                    const statusMap: Record<string, { label: string; color: string; bg: string }> = {
+                      pending:  { label: 'In Bearbeitung', color: '#93c5fd', bg: 'rgba(147,197,253,0.1)' },
+                      building: { label: 'Wird gebaut',    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+                      done:     { label: 'Fertig — Template zugewiesen', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+                      rejected: { label: 'Abgelehnt',      color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+                    }
+                    const s = statusMap[req.status] ?? statusMap['pending']
+                    return (
+                      <div key={req.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        background: 'var(--surface-2)', borderRadius: '8px', padding: '10px 14px',
+                        gap: '12px',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
+                            padding: '2px 7px', borderRadius: '5px',
+                            background: s.bg, color: s.color, flexShrink: 0,
+                          }}>
+                            {s.label}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', flexShrink: 0 }}>
+                            {new Date(req.created_at).toLocaleDateString('de-DE')}
+                          </span>
+                        </div>
+                        {req.status === 'done' && req.result_template_id && (
+                          <button
+                            onClick={async () => {
+                              if (!restaurant) return
+                              const res = await fetch(`/api/design-templates/${req.result_template_id}/apply`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ restaurant_id: restaurant.id }),
+                              })
+                              if (res.ok) {
+                                const { data: resto } = await supabase.from('restaurants').select('*').eq('id', restaurant.id).single()
+                                if (resto) {
+                                  setRestaurant(resto)
+                                  if (resto.design_package) setDesignPackage(resto.design_package)
+                                  if (resto.layout_variant) setLayoutVariant(resto.layout_variant as LayoutVariant)
+                                  if (resto.font_pair) setFontPair(resto.font_pair)
+                                  setPrimaryColor(resto.primary_color)
+                                  setBgColor(resto.bg_color)
+                                  setHeaderColor(resto.header_color)
+                                  setCardColor(resto.card_color)
+                                  setButtonColor(resto.button_color)
+                                  setTextColor(resto.text_color)
+                                }
+                                setSaved(true)
+                                setTimeout(() => setSaved(false), 2500)
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px', borderRadius: '7px', border: 'none',
+                              background: '#10b981', color: '#fff', fontSize: '0.75rem',
+                              fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+                            }}
+                          >
+                            Template anwenden
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* New request form */}
+              {!designReqSent ? (
+                <>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '16px', marginBottom: '14px', lineHeight: 1.5 }}>
+                    Kein passendes Design gefunden? Beschreib uns deinen Stil — wir erstellen ein individuelles Template für dich.
+                  </p>
+
+                  {/* Description */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={fieldLabel}>Beschreibung (Optional)</label>
+                    <textarea
+                      value={designReqDescription}
+                      onChange={e => { setDesignReqDescription(e.target.value.slice(0, 1000)); setDesignReqError(null) }}
+                      placeholder="z.B. Warmes mediterranes Design mit Olivgrün und Terrakotta, große Produktbilder…"
+                      rows={3}
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: '3px 0 0', textAlign: 'right' }}>
+                      {designReqDescription.length}/1000
+                    </p>
+                  </div>
+
+                  {/* Screenshot upload */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={fieldLabel}>Screenshot (Optional)</label>
+                    <label style={{
+                      display: 'block', border: '2px dashed var(--border)', borderRadius: '8px',
+                      padding: '16px', textAlign: 'center', cursor: 'pointer',
+                    }}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        style={{ display: 'none' }}
+                        onChange={e => { setDesignReqScreenshot(e.target.files?.[0] ?? null); setDesignReqError(null) }}
+                      />
+                      {designReqScreenshot ? (
+                        <div style={{ color: 'var(--text)', fontSize: '0.8rem' }}>
+                          <Check size={14} color="#10b981" style={{ verticalAlign: 'middle', marginRight: '5px' }} />
+                          {designReqScreenshot.name}
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                            ({(designReqScreenshot.size / 1024 / 1024).toFixed(1)} MB)
+                          </span>
+                        </div>
+                      ) : (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          Bild hochladen (PNG, JPG, WebP — max. 8 MB)
+                        </div>
+                      )}
+                    </label>
+                  </div>
+
+                  {designReqError && (
+                    <p style={{ color: '#ef4444', fontSize: '0.78rem', marginBottom: '10px' }}>{designReqError}</p>
                   )}
-                </p>
-                {designReqError && (
-                  <p style={{ color: '#ef4444', fontSize: '0.75rem', margin: 0 }}>{designReqError}</p>
-                )}
-                <button
-                  onClick={submitDesignRequest}
-                  disabled={designReqSubmitting || designReqMessage.trim().length < 10}
-                  style={{
-                    padding: '10px 20px', borderRadius: '8px',
-                    background: designReqSent ? '#10b981' : pAccent, color: '#fff',
-                    fontWeight: 700, fontSize: '0.82rem', border: 'none',
-                    cursor: (designReqSubmitting || designReqMessage.trim().length < 10) ? 'not-allowed' : 'pointer',
-                    opacity: (designReqSubmitting || designReqMessage.trim().length < 10) ? 0.6 : 1,
-                    display: 'flex', alignItems: 'center', gap: '7px', transition: 'background 0.3s',
-                  }}
-                >
-                  {designReqSubmitting
-                    ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Senden…</>
-                    : designReqSent
-                    ? <><Check size={13} /> Gesendet</>
-                    : <><Palette size={13} /> Design anfragen</>
-                  }
-                </button>
-              </div>
-              <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-            </>
+
+                  <button
+                    onClick={submitDesignRequest}
+                    disabled={designReqSubmitting}
+                    style={{
+                      padding: '10px 20px', borderRadius: '8px',
+                      background: pAccent, color: '#fff',
+                      fontWeight: 700, fontSize: '0.82rem', border: 'none',
+                      cursor: designReqSubmitting ? 'wait' : 'pointer',
+                      opacity: designReqSubmitting ? 0.7 : 1,
+                      display: 'flex', alignItems: 'center', gap: '7px',
+                    }}
+                  >
+                    {designReqSubmitting
+                      ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Senden…</>
+                      : <><Palette size={13} /> Anfrage senden</>
+                    }
+                  </button>
+                  <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                </>
+              ) : (
+                <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(16,185,129,0.08)', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <p style={{ color: '#10b981', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 4px' }}>
+                    <Check size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} />
+                    Anfrage erfolgreich gesendet!
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+                    Wir melden uns, sobald dein individuelles Template fertig ist.
+                  </p>
+                  <button
+                    onClick={() => setDesignReqSent(false)}
+                    style={{ marginTop: '10px', fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    Weitere Anfrage stellen
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </section>
