@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -56,6 +57,30 @@ const THEMES: Record<string, {
 
 const DEFAULT_THEME = THEMES['minimal-dark']
 
+// ─── Metadata ────────────────────────────────────────────────────────────────
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const admin = createSupabaseAdmin()
+
+  const { data: restaurant } = await admin
+    .from('restaurants')
+    .select('name, description')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (!restaurant) return {}
+
+  const r = restaurant as Pick<RestaurantRow, 'name' | 'description'>
+  return {
+    title: r.name,
+    description: r.description ?? `${r.name} — Online bestellen`,
+  }
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function PublicLandingPage({
   params,
@@ -91,21 +116,19 @@ export default async function PublicLandingPage({
   const headline = content.headline || resto.name
 
   return (
-    <html lang="de">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{resto.name}</title>
-        <meta name="description" content={content.subheadline || resto.description || `${resto.name} — Online bestellen`} />
-        <style>{`
-          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-          body { background: ${theme.bg}; color: ${theme.text}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
-          a { color: inherit; text-decoration: none; }
-          img { max-width: 100%; display: block; }
-        `}</style>
-      </head>
-      <body>
+    <div style={{
+      minHeight: '100vh',
+      background: theme.bg,
+      color: theme.text,
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+    }}>
+      <style>{`
+        #lp-root *, #lp-root *::before, #lp-root *::after { box-sizing: border-box; }
+        #lp-root a { color: inherit; text-decoration: none; }
+        #lp-root img { max-width: 100%; display: block; }
+      `}</style>
 
+      <div id="lp-root">
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <header
           style={{
@@ -123,7 +146,6 @@ export default async function PublicLandingPage({
               : `linear-gradient(135deg, ${theme.accent}22, ${theme.bg})`,
           }}
         >
-          {/* Overlay for hero images */}
           {content.hero_image_url && (
             <div style={{
               position: 'absolute', inset: 0,
@@ -181,7 +203,6 @@ export default async function PublicLandingPage({
                 fontSize: '1rem',
                 letterSpacing: '-0.01em',
                 boxShadow: `0 4px 24px ${theme.accent}66`,
-                transition: 'transform 0.15s, box-shadow 0.15s',
               }}
             >
               {content.cta_text || 'Jetzt bestellen'}
@@ -191,11 +212,7 @@ export default async function PublicLandingPage({
 
         {/* ── About section ─────────────────────────────────────────────── */}
         {content.about_text && (
-          <section style={{
-            padding: '64px 24px',
-            maxWidth: '720px',
-            margin: '0 auto',
-          }}>
+          <section style={{ padding: '64px 24px', maxWidth: '720px', margin: '0 auto' }}>
             <h2 style={{
               fontSize: 'clamp(1.4rem, 3vw, 2rem)',
               fontWeight: 800,
@@ -205,17 +222,13 @@ export default async function PublicLandingPage({
             }}>
               Über uns
             </h2>
-            <p style={{
-              fontSize: '1.05rem',
-              color: theme.muted,
-              lineHeight: 1.7,
-            }}>
+            <p style={{ fontSize: '1.05rem', color: theme.muted, lineHeight: 1.7 }}>
               {content.about_text}
             </p>
           </section>
         )}
 
-        {/* ── Menu CTA block ─────────────────────────────────────────────── */}
+        {/* ── Menu CTA block ────────────────────────────────────────────── */}
         <section style={{
           padding: '48px 24px',
           background: theme.card,
@@ -267,8 +280,7 @@ export default async function PublicLandingPage({
         }}>
           {resto.name}
         </footer>
-
-      </body>
-    </html>
+      </div>
+    </div>
   )
 }
