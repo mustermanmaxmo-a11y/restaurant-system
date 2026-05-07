@@ -4,97 +4,11 @@ import { createClient } from '@supabase/supabase-js'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveAiKey } from '@/lib/ai-key'
 import { rateLimit } from '@/lib/rate-limit'
+import { validateDesignConfigWithDefaults } from '@/lib/design-config-validate'
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8 MB
 const ALLOWED_IMAGE = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
 type AllowedImage = (typeof ALLOWED_IMAGE)[number]
-
-const VALID_FONT_PAIRS = ['syne-dmsans', 'playfair-lato', 'inter-inter', 'space-dmsans', 'merriweather-source', 'noto-noto'] as const
-const VALID_LAYOUTS = ['cards', 'list', 'grid', 'large-cards'] as const
-const VALID_BORDER_RADIUS = ['sharp', 'rounded', 'pill'] as const
-const VALID_HOVER_EFFECTS = ['scale', 'glow', 'underline', 'color-shift', 'none'] as const
-const VALID_ANIMATION_STYLES = ['fade', 'slide', 'none'] as const
-const VALID_CARD_STYLES = ['elevated', 'flat', 'outlined', 'ghost'] as const
-
-type FontPair = (typeof VALID_FONT_PAIRS)[number]
-type LayoutVariant = (typeof VALID_LAYOUTS)[number]
-type BorderRadius = (typeof VALID_BORDER_RADIUS)[number]
-type HoverEffect = (typeof VALID_HOVER_EFFECTS)[number]
-type AnimationStyle = (typeof VALID_ANIMATION_STYLES)[number]
-type CardStyle = (typeof VALID_CARD_STYLES)[number]
-
-export interface DesignConfig {
-  primary_color: string
-  bg_color: string
-  surface_color: string
-  header_color: string
-  button_color: string
-  card_color: string
-  text_color: string
-  font_pair: FontPair
-  layout_variant: LayoutVariant
-  border_radius: BorderRadius
-  hover_effect: HoverEffect
-  animation_style: AnimationStyle
-  card_style: CardStyle
-}
-
-const HEX_RE = /^#[0-9a-fA-F]{6}$/
-
-const DEFAULTS: DesignConfig = {
-  primary_color: '#e85d26',
-  bg_color: '#0a0a0a',
-  surface_color: '#1a1a1a',
-  header_color: '#111111',
-  button_color: '#e85d26',
-  card_color: '#1e1e1e',
-  text_color: '#ffffff',
-  font_pair: 'syne-dmsans',
-  layout_variant: 'cards',
-  border_radius: 'rounded',
-  hover_effect: 'scale',
-  animation_style: 'fade',
-  card_style: 'elevated',
-}
-
-function validHex(v: unknown): string | null {
-  return typeof v === 'string' && HEX_RE.test(v) ? v : null
-}
-
-function validateDesignConfig(raw: Record<string, unknown>): { config: DesignConfig; confidence: number } {
-  const config: DesignConfig = {
-    primary_color:   validHex(raw.primary_color)   ?? DEFAULTS.primary_color,
-    bg_color:        validHex(raw.bg_color)         ?? DEFAULTS.bg_color,
-    surface_color:   validHex(raw.surface_color)    ?? DEFAULTS.surface_color,
-    header_color:    validHex(raw.header_color)     ?? DEFAULTS.header_color,
-    button_color:    validHex(raw.button_color)     ?? DEFAULTS.button_color,
-    card_color:      validHex(raw.card_color)       ?? DEFAULTS.card_color,
-    text_color:      validHex(raw.text_color)       ?? DEFAULTS.text_color,
-    font_pair:       (VALID_FONT_PAIRS as readonly string[]).includes(raw.font_pair as string)
-                       ? (raw.font_pair as FontPair)
-                       : DEFAULTS.font_pair,
-    layout_variant:  (VALID_LAYOUTS as readonly string[]).includes(raw.layout_variant as string)
-                       ? (raw.layout_variant as LayoutVariant)
-                       : DEFAULTS.layout_variant,
-    border_radius:   (VALID_BORDER_RADIUS as readonly string[]).includes(raw.border_radius as string)
-                       ? (raw.border_radius as BorderRadius)
-                       : DEFAULTS.border_radius,
-    hover_effect:    (VALID_HOVER_EFFECTS as readonly string[]).includes(raw.hover_effect as string)
-                       ? (raw.hover_effect as HoverEffect)
-                       : DEFAULTS.hover_effect,
-    animation_style: (VALID_ANIMATION_STYLES as readonly string[]).includes(raw.animation_style as string)
-                       ? (raw.animation_style as AnimationStyle)
-                       : DEFAULTS.animation_style,
-    card_style:      (VALID_CARD_STYLES as readonly string[]).includes(raw.card_style as string)
-                       ? (raw.card_style as CardStyle)
-                       : DEFAULTS.card_style,
-  }
-
-  const rawConfidence = typeof raw.confidence === 'number' ? raw.confidence : parseFloat(String(raw.confidence ?? '0'))
-  const confidence = Math.min(1, Math.max(0, isNaN(rawConfidence) ? 0 : rawConfidence))
-
-  return { config, confidence }
-}
 
 const IMAGE_PROMPT = `Analyze this restaurant website screenshot and extract the design configuration.
 Return ONLY valid JSON (no markdown) with these exact fields:
@@ -248,12 +162,39 @@ export async function POST(request: NextRequest) {
       })
       responseText = message.content[0]?.type === 'text' ? message.content[0].text : ''
     } else {
+      // SSRF protection: only allow http/https and block private/loopback ranges
+      let parsedUrl: URL
+      try {
+        parsedUrl = new URL(url as string)
+      } catch {
+        return NextResponse.json({ error: 'Ungültige URL' }, { status: 400 })
+      }
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        return NextResponse.json({ error: 'Nur HTTP/HTTPS URLs erlaubt' }, { status: 400 })
+      }
+      const host = parsedUrl.hostname.toLowerCase()
+      const BLOCKED = [
+        /^localhost$/,
+        /^127\./,
+        /^10\./,
+        /^172\.(1[6-9]|2\d|3[01])\./,
+        /^192\.168\./,
+        /^::1$/,
+        /^0\.0\.0\.0$/,
+        /^169\.254\./,
+        /\.internal$/,
+        /\.local$/,
+      ]
+      if (BLOCKED.some(re => re.test(host))) {
+        return NextResponse.json({ error: 'Diese URL ist nicht erlaubt' }, { status: 400 })
+      }
+
       // URL: fetch HTML and send as text
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 8_000)
       let html: string
       try {
-        const res = await fetch(url as string, { signal: controller.signal })
+        const res = await fetch(parsedUrl.toString(), { signal: controller.signal })
         const raw = await res.text()
         html = raw.slice(0, 12_000)
       } catch {
@@ -287,7 +228,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ungültige Antwort vom KI-Modell' }, { status: 500 })
     }
 
-    const { config: design_config, confidence } = validateDesignConfig(parsed as Record<string, unknown>)
+    const { config: design_config, confidence } = validateDesignConfigWithDefaults(parsed as Record<string, unknown>)
 
     return NextResponse.json({ design_config, confidence })
   } catch (err) {

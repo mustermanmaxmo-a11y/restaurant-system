@@ -170,6 +170,14 @@ export default function BrandingPage() {
   const [aiResult, setAiResult] = useState<{ design_config: Record<string, unknown>, confidence: number } | null>(null)
   const [aiError, setAiError] = useState('')
   const [aiApplying, setAiApplying] = useState(false)
+  const [aiPreviewUrl, setAiPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!aiFile) { setAiPreviewUrl(null); return }
+    const url = URL.createObjectURL(aiFile)
+    setAiPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [aiFile])
 
   // Template browser state
   type TemplateRow = {
@@ -410,8 +418,9 @@ export default function BrandingPage() {
     setAiResult(null)
 
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
       const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
+      const token = authUser ? session?.access_token : undefined
 
       const form = new FormData()
       form.append('restaurant_id', restaurant.id)
@@ -444,12 +453,14 @@ export default function BrandingPage() {
     if (!restaurant || !aiResult) return
     setAiApplying(true)
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
       const { data: { session } } = await supabase.auth.getSession()
+      const token = authUser ? session?.access_token : undefined
       const res = await fetch('/api/admin/design-config', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ restaurant_id: restaurant.id, design_config: aiResult.design_config }),
       })
@@ -673,7 +684,7 @@ export default function BrandingPage() {
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { setAiFile(e.target.files?.[0] ?? null); setAiResult(null) }} />
                 {aiFile ? (
                   <div>
-                    <img src={URL.createObjectURL(aiFile)} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, marginBottom: 8 }} />
+                    {aiPreviewUrl && <img src={aiPreviewUrl} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 8, marginBottom: 8 }} />}
                     <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{aiFile.name}</div>
                   </div>
                 ) : (

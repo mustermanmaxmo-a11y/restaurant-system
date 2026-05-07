@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { validateDesignConfig } from '@/lib/design-config-validate'
 
 export async function PATCH(request: NextRequest) {
   // Auth via Bearer token
@@ -37,6 +38,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'design_config erforderlich' }, { status: 400 })
   }
 
+  // Validate and sanitize — drops unknown/invalid fields
+  const safeConfig = validateDesignConfig(design_config as Record<string, unknown>)
+
   // Ownership check via admin client
   const supabaseAdmin = createSupabaseAdmin()
   const { data: restaurant } = await supabaseAdmin
@@ -48,31 +52,16 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Restaurant nicht gefunden' }, { status: 404 })
   }
 
-  // Extract legacy columns from design_config for backward compat
+  // Sync legacy columns for backward compat
   const legacyColumns: Record<string, unknown> = {}
-  const legacyKeys = [
-    'primary_color',
-    'bg_color',
-    'surface_color',
-    'header_color',
-    'button_color',
-    'card_color',
-    'text_color',
-    'font_pair',
-    'layout_variant',
-  ]
+  const legacyKeys = ['primary_color', 'bg_color', 'surface_color', 'header_color', 'button_color', 'card_color', 'text_color', 'font_pair', 'layout_variant'] as const
   for (const key of legacyKeys) {
-    if (key in design_config) {
-      legacyColumns[key] = design_config[key]
-    }
+    if (key in safeConfig) legacyColumns[key] = safeConfig[key as keyof typeof safeConfig]
   }
 
   const { error } = await supabaseAdmin
     .from('restaurants')
-    .update({
-      design_config,
-      ...legacyColumns,
-    })
+    .update({ design_config: safeConfig, ...legacyColumns })
     .eq('id', restaurant_id)
 
   if (error) {
