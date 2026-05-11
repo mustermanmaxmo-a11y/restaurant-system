@@ -1374,7 +1374,7 @@ export default function BrandingPage() {
       {/* ── Fullscreen Device Preview Modal ── */}
       {previewFullscreen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden' }}
+          style={{ position: 'fixed', inset: 0, background: '#0d0d0d', zIndex: 200, display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden' }}
           onKeyDown={e => { if (e.key === 'Escape') setPreviewFullscreen(false) }}
           tabIndex={-1}
         >
@@ -1427,9 +1427,10 @@ export default function BrandingPage() {
 
           {/* Device frame — centered, scrollable if needed */}
           <div
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflow: 'auto' }}
+            style={{ overflow: 'auto', padding: '32px 24px' }}
             onClick={() => setPreviewFullscreen(false)}
           >
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div onClick={e => e.stopPropagation()}>
               {deviceMode === 'phone' && previewOrientation === 'portrait' && (
                 <div style={{ width: '320px', borderRadius: '44px', border: '9px solid #1a1a1a', background: '#000', boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px #333', position: 'relative', overflow: 'hidden' }}>
@@ -1488,11 +1489,7 @@ export default function BrandingPage() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* ESC hint */}
-          <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>
-            ESC oder außen klicken zum Schließen
+            </div>
           </div>
         </div>
       )}
