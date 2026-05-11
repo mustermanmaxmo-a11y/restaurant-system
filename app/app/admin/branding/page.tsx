@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star } from 'lucide-react'
+import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star, RotateCw } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -285,6 +285,7 @@ export default function BrandingPage() {
   const [deviceMode, setDeviceMode] = useState<'phone' | 'tablet' | 'desktop'>('phone')
   const [previewWidth, setPreviewWidth] = useState(300)
   const [previewFullscreen, setPreviewFullscreen] = useState(false)
+  const [previewOrientation, setPreviewOrientation] = useState<'portrait' | 'landscape'>('portrait')
   const isDragging = useRef(false)
   const dragStartX = useRef(0)
   const dragStartWidth = useRef(300)
@@ -1373,75 +1374,125 @@ export default function BrandingPage() {
       {/* ── Fullscreen Device Preview Modal ── */}
       {previewFullscreen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-          onClick={() => setPreviewFullscreen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 200, display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden' }}
+          onKeyDown={e => { if (e.key === 'Escape') setPreviewFullscreen(false) }}
+          tabIndex={-1}
         >
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-            {/* Controls */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '4px' }}>
-                {([
-                  { mode: 'phone', icon: <Smartphone size={14} />, label: 'Phone' },
-                  { mode: 'tablet', icon: <Tablet size={14} />, label: 'Tablet' },
-                  { mode: 'desktop', icon: <Monitor size={14} />, label: 'Desktop' },
-                ] as const).map(d => (
-                  <button key={d.mode} onClick={() => setDeviceMode(d.mode)} style={{
-                    padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
-                    background: deviceMode === d.mode ? 'rgba(255,255,255,0.15)' : 'transparent',
-                    color: deviceMode === d.mode ? '#fff' : 'rgba(255,255,255,0.45)',
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    fontSize: '0.78rem', fontWeight: deviceMode === d.mode ? 700 : 400,
-                  }}>
-                    {d.icon}{d.label}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setPreviewFullscreen(false)} style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                <X size={16} />
-              </button>
+          {/* Top bar — always clickable */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+            {/* Device switcher */}
+            <div style={{ display: 'flex', gap: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '10px', padding: '4px' }}>
+              {([
+                { mode: 'phone', icon: <Smartphone size={14} />, label: 'Phone' },
+                { mode: 'tablet', icon: <Tablet size={14} />, label: 'Tablet' },
+                { mode: 'desktop', icon: <Monitor size={14} />, label: 'Desktop' },
+              ] as const).map(d => (
+                <button key={d.mode} onClick={() => setDeviceMode(d.mode)} style={{
+                  padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                  background: deviceMode === d.mode ? 'rgba(255,255,255,0.14)' : 'transparent',
+                  color: deviceMode === d.mode ? '#fff' : 'rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '0.78rem', fontWeight: deviceMode === d.mode ? 700 : 400,
+                }}>
+                  {d.icon}{d.label}
+                </button>
+              ))}
             </div>
+            {/* Orientation toggle — only for phone + tablet */}
+            {(deviceMode === 'phone' || deviceMode === 'tablet') && (
+              <button
+                onClick={() => setPreviewOrientation(o => o === 'portrait' ? 'landscape' : 'portrait')}
+                title={previewOrientation === 'portrait' ? 'Querformat' : 'Hochformat'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)',
+                  fontSize: '0.75rem', fontWeight: 500,
+                }}
+              >
+                <RotateCw size={13} style={{ transform: previewOrientation === 'landscape' ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s' }} />
+                {previewOrientation === 'portrait' ? 'Hochformat' : 'Querformat'}
+              </button>
+            )}
+            {liveDesign && <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', marginLeft: '4px' }}>KI aktiv</div>}
+            {/* Spacer + close */}
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => setPreviewFullscreen(false)}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', gap: '4px', flexShrink: 0 }}
+            >
+              <X size={15} />
+            </button>
+          </div>
 
-            {/* Enlarged device frame */}
-            {deviceMode === 'phone' && (
-              <div style={{ width: '340px', borderRadius: '48px', border: '10px solid #222', background: '#000', boxShadow: '0 32px 80px rgba(0,0,0,0.8), inset 0 0 0 1px #3a3a3a', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '90px', height: '26px', background: '#000', borderRadius: '0 0 18px 18px', zIndex: 10 }} />
-                <div style={{ height: '680px', overflow: 'hidden', paddingTop: '26px' }}>{previewContent}</div>
-                <div style={{ height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-                  <div style={{ width: '100px', height: '4px', background: '#3a3a3a', borderRadius: '2px' }} />
-                </div>
-              </div>
-            )}
-            {deviceMode === 'tablet' && (
-              <div style={{ width: '440px', borderRadius: '24px', border: '8px solid #222', background: '#000', boxShadow: '0 32px 80px rgba(0,0,0,0.8), inset 0 0 0 1px #3a3a3a', overflow: 'hidden' }}>
-                <div style={{ height: '10px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '36px', height: '3px', background: '#2a2a2a', borderRadius: '2px' }} />
-                </div>
-                <div style={{ height: '580px', overflow: 'hidden' }}>{previewContent}</div>
-                <div style={{ height: '14px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #2a2a2a' }} />
-                </div>
-              </div>
-            )}
-            {deviceMode === 'desktop' && (
-              <div style={{ width: '780px' }}>
-                <div style={{ background: '#1e1e1e', borderRadius: '10px 10px 0 0', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f57' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' }} />
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#28ca41' }} />
-                  </div>
-                  <div style={{ flex: 1, background: '#2d2d2d', borderRadius: '5px', padding: '4px 12px', fontSize: '0.7rem', color: '#666' }}>
-                    {restaurant?.name ? restaurant.name.toLowerCase().replace(/\s+/g, '-') : 'restaurant'}.app
+          {/* Device frame — centered, scrollable if needed */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflow: 'auto' }}
+            onClick={() => setPreviewFullscreen(false)}
+          >
+            <div onClick={e => e.stopPropagation()}>
+              {deviceMode === 'phone' && previewOrientation === 'portrait' && (
+                <div style={{ width: '320px', borderRadius: '44px', border: '9px solid #1a1a1a', background: '#000', boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px #333', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '80px', height: '24px', background: '#000', borderRadius: '0 0 16px 16px', zIndex: 10 }} />
+                  <div style={{ height: '640px', overflow: 'hidden', paddingTop: '24px' }}>{previewContent}</div>
+                  <div style={{ height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                    <div style={{ width: '90px', height: '3px', background: '#333', borderRadius: '2px' }} />
                   </div>
                 </div>
-                <div style={{ border: '2px solid #1e1e1e', borderTop: 'none', borderRadius: '0 0 8px 8px', height: '480px', overflow: 'hidden' }}>{previewContent}</div>
-                <div style={{ width: '80px', height: '12px', background: '#1e1e1e', borderRadius: '0 0 4px 4px', margin: '0 auto' }} />
-              </div>
-            )}
+              )}
+              {deviceMode === 'phone' && previewOrientation === 'landscape' && (
+                <div style={{ height: '300px', borderRadius: '36px', border: '9px solid #1a1a1a', background: '#000', boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px #333', position: 'relative', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: '22px', height: '70px', background: '#000', borderRadius: '0 14px 14px 0', zIndex: 10 }} />
+                  <div style={{ width: '580px', overflow: 'hidden', paddingLeft: '22px' }}>{previewContent}</div>
+                  <div style={{ width: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                    <div style={{ width: '3px', height: '80px', background: '#333', borderRadius: '2px' }} />
+                  </div>
+                </div>
+              )}
+              {deviceMode === 'tablet' && previewOrientation === 'portrait' && (
+                <div style={{ width: '420px', borderRadius: '22px', border: '8px solid #1a1a1a', background: '#000', boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px #333', overflow: 'hidden' }}>
+                  <div style={{ height: '10px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '32px', height: '3px', background: '#2a2a2a', borderRadius: '2px' }} />
+                  </div>
+                  <div style={{ height: '560px', overflow: 'hidden' }}>{previewContent}</div>
+                  <div style={{ height: '14px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '26px', height: '26px', borderRadius: '50%', border: '2px solid #2a2a2a' }} />
+                  </div>
+                </div>
+              )}
+              {deviceMode === 'tablet' && previewOrientation === 'landscape' && (
+                <div style={{ height: '400px', borderRadius: '22px', border: '8px solid #1a1a1a', background: '#000', boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 0 0 1px #333', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: '14px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '26px', height: '26px', borderRadius: '50%', border: '2px solid #2a2a2a' }} />
+                  </div>
+                  <div style={{ width: '640px', overflow: 'hidden' }}>{previewContent}</div>
+                  <div style={{ width: '10px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '32px', height: '3px', background: '#2a2a2a', borderRadius: '2px', transform: 'rotate(90deg)' }} />
+                  </div>
+                </div>
+              )}
+              {deviceMode === 'desktop' && (
+                <div style={{ width: '860px' }}>
+                  <div style={{ background: '#1a1a1a', borderRadius: '10px 10px 0 0', padding: '9px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#ff5f57' }} />
+                      <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#ffbd2e' }} />
+                      <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#28ca41' }} />
+                    </div>
+                    <div style={{ flex: 1, background: '#2a2a2a', borderRadius: '5px', padding: '5px 14px', fontSize: '0.72rem', color: '#555' }}>
+                      {restaurant?.name ? restaurant.name.toLowerCase().replace(/\s+/g, '-') : 'restaurant'}.app
+                    </div>
+                  </div>
+                  <div style={{ border: '2px solid #1a1a1a', borderTop: 'none', borderRadius: '0 0 8px 8px', height: '520px', overflow: 'hidden' }}>{previewContent}</div>
+                  <div style={{ width: '90px', height: '12px', background: '#1a1a1a', borderRadius: '0 0 5px 5px', margin: '0 auto' }} />
+                </div>
+              )}
+            </div>
+          </div>
 
-            {liveDesign && (
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>KI-Änderungen aktiv</div>
-            )}
+          {/* ESC hint */}
+          <div style={{ position: 'absolute', bottom: '16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}>
+            ESC oder außen klicken zum Schließen
           </div>
         </div>
       )}
