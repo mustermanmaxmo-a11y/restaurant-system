@@ -1409,21 +1409,43 @@ export default function BrandingPage() {
 
       </div>{/* end 3-column */}
 
-      {/* ── Mobile FAB: Vorschau öffnen (versteckt auf KI Chat Tab) ── */}
-      {isMobile && activeTab !== 'ai-chat' && (
-        <button
-          onClick={() => setPreviewFullscreen(true)}
-          title="Vorschau öffnen"
-          style={{
-            position: 'fixed', bottom: '20px', right: '20px', zIndex: 50,
-            width: '52px', height: '52px', borderRadius: '50%',
-            background: pAccent, border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', boxShadow: `0 4px 20px ${pAccent}66`,
-          }}
-        >
-          <Eye size={20} />
-        </button>
+      {/* ── Mobile FAB Stack (bottom → top: grün AdminChat / lila KI Design / blau Vorschau) ── */}
+      {isMobile && (
+        <>
+          {/* Lila KI Design FAB — Mitte, versteckt wenn schon auf ai-chat */}
+          {activeTab !== 'ai-chat' && (
+            <button
+              onClick={() => setActiveTab('ai-chat')}
+              title="KI Design-Assistent"
+              style={{
+                position: 'fixed', bottom: '92px', right: '20px', zIndex: 75,
+                width: '48px', height: '48px', borderRadius: '50%',
+                background: '#8B5CF6', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', boxShadow: '0 4px 18px rgba(139,92,246,0.5)',
+              }}
+            >
+              <Sparkles size={18} />
+            </button>
+          )}
+          {/* Eye Vorschau FAB — oben */}
+          <button
+            onClick={() => setPreviewFullscreen(true)}
+            title="Vorschau öffnen"
+            style={{
+              position: 'fixed',
+              bottom: activeTab === 'ai-chat' ? '92px' : '152px',
+              right: '20px', zIndex: 75,
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'var(--surface-2)', border: '1px solid var(--border)',
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text)', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+            }}
+          >
+            <Eye size={18} />
+          </button>
+        </>
       )}
 
       {/* ── Fullscreen Device Preview Modal ── */}
