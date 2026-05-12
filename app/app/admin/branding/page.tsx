@@ -10,7 +10,7 @@ import { FONT_PAIRS } from '@/lib/font-pairs'
 import type { Restaurant, RestaurantPlan } from '@/types/database'
 import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
-import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star, RotateCw } from 'lucide-react'
+import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star, RotateCw, Eye } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -289,6 +289,14 @@ export default function BrandingPage() {
   const isDragging = useRef(false)
   const dragStartX = useRef(0)
   const dragStartWidth = useRef(300)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -765,6 +773,35 @@ export default function BrandingPage() {
         </button>
       </div>
 
+      {/* ── Mobile Tab Bar ── */}
+      {isMobile && (
+        <div style={{ display: 'flex', overflowX: 'auto', borderBottom: '1px solid var(--border)', padding: '0 4px', flexShrink: 0, scrollbarWidth: 'none' }}>
+          {([
+            { key: 'templates', label: 'Templates',       icon: <LayoutGrid size={13} /> },
+            { key: 'colors',    label: 'Farben',           icon: <Palette size={13} /> },
+            { key: 'layout',    label: 'Layout',           icon: <Layers size={13} /> },
+            { key: 'ai-chat',   label: 'KI Chat',          icon: <Sparkles size={13} /> },
+            { key: 'ai-scan',   label: 'Erkennen',         icon: <Scan size={13} /> },
+            { key: 'info',      label: 'Logo & Infos',     icon: <ImageIcon size={13} /> },
+            { key: 'requests',  label: 'Anfragen',         icon: <Star size={13} /> },
+          ] as const).map(tab => {
+            const active = activeTab === tab.key
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '10px 12px', whiteSpace: 'nowrap', flexShrink: 0,
+                border: 'none', borderBottom: active ? `2px solid ${pAccent}` : '2px solid transparent',
+                background: 'transparent', cursor: 'pointer',
+                color: active ? pAccent : 'var(--text-muted)',
+                fontWeight: active ? 700 : 400, fontSize: '0.78rem',
+              }}>
+                {tab.icon}{tab.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* ── 3-Column Layout ── */}
       <div
         style={{ display: 'flex', flex: 1, overflow: 'hidden' }}
@@ -779,7 +816,7 @@ export default function BrandingPage() {
       >
 
         {/* Left: Tab Navigation */}
-        <nav style={{ width: '188px', borderRight: '1px solid var(--border)', padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto', flexShrink: 0 }}>
+        <nav style={{ width: '188px', borderRight: '1px solid var(--border)', padding: '10px 8px', display: isMobile ? 'none' : 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto', flexShrink: 0 }}>
           {([
             { key: 'templates', label: 'Templates', icon: <LayoutGrid size={14} /> },
             { key: 'colors', label: 'Farben & Schrift', icon: <Palette size={14} /> },
@@ -1265,6 +1302,7 @@ export default function BrandingPage() {
             background: 'var(--border)',
             position: 'relative',
             transition: 'background 0.15s',
+            display: isMobile ? 'none' : 'block',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--accent)' }}
           onMouseLeave={e => { if (!isDragging.current) (e.currentTarget as HTMLDivElement).style.background = 'var(--border)' }}
@@ -1278,7 +1316,7 @@ export default function BrandingPage() {
         </div>
 
         {/* Right: Device Preview */}
-        <aside style={{ width: `${previewWidth}px`, borderLeft: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 12px', flexShrink: 0, overflowY: 'auto' }}>
+        <aside style={{ width: `${previewWidth}px`, borderLeft: 'none', display: isMobile ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 12px', flexShrink: 0, overflowY: 'auto' }}>
 
           {/* Device Toggle + Fullscreen */}
           <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', width: '100%', alignItems: 'center' }}>
@@ -1370,6 +1408,23 @@ export default function BrandingPage() {
         </aside>
 
       </div>{/* end 3-column */}
+
+      {/* ── Mobile FAB: Vorschau öffnen ── */}
+      {isMobile && (
+        <button
+          onClick={() => setPreviewFullscreen(true)}
+          title="Vorschau öffnen"
+          style={{
+            position: 'fixed', bottom: '20px', right: '20px', zIndex: 50,
+            width: '52px', height: '52px', borderRadius: '50%',
+            background: pAccent, border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', boxShadow: `0 4px 20px ${pAccent}66`,
+          }}
+        >
+          <Eye size={20} />
+        </button>
+      )}
 
       {/* ── Fullscreen Device Preview Modal ── */}
       {previewFullscreen && (
