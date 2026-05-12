@@ -1409,8 +1409,8 @@ export default function BrandingPage() {
 
       </div>{/* end 3-column */}
 
-      {/* ── Mobile FAB: Vorschau öffnen ── */}
-      {isMobile && (
+      {/* ── Mobile FAB: Vorschau öffnen (versteckt auf KI Chat Tab) ── */}
+      {isMobile && activeTab !== 'ai-chat' && (
         <button
           onClick={() => setPreviewFullscreen(true)}
           title="Vorschau öffnen"
@@ -1434,22 +1434,29 @@ export default function BrandingPage() {
           tabIndex={-1}
         >
           {/* Top bar — always clickable */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+            {/* Close button — FIRST so it's always reachable on mobile */}
+            <button
+              onClick={() => setPreviewFullscreen(false)}
+              style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}
+            >
+              <X size={15} />
+            </button>
             {/* Device switcher */}
-            <div style={{ display: 'flex', gap: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '10px', padding: '4px' }}>
+            <div style={{ display: 'flex', gap: '2px', background: 'rgba(255,255,255,0.07)', borderRadius: '10px', padding: '3px', flex: 1 }}>
               {([
                 { mode: 'phone', icon: <Smartphone size={14} />, label: 'Phone' },
                 { mode: 'tablet', icon: <Tablet size={14} />, label: 'Tablet' },
                 { mode: 'desktop', icon: <Monitor size={14} />, label: 'Desktop' },
               ] as const).map(d => (
                 <button key={d.mode} onClick={() => setDeviceMode(d.mode)} style={{
-                  padding: '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
+                  flex: 1, padding: isMobile ? '7px 6px' : '7px 14px', borderRadius: '7px', border: 'none', cursor: 'pointer',
                   background: deviceMode === d.mode ? 'rgba(255,255,255,0.14)' : 'transparent',
                   color: deviceMode === d.mode ? '#fff' : 'rgba(255,255,255,0.4)',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  fontSize: '0.78rem', fontWeight: deviceMode === d.mode ? 700 : 400,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                  fontSize: '0.75rem', fontWeight: deviceMode === d.mode ? 700 : 400,
                 }}>
-                  {d.icon}{d.label}
+                  {d.icon}{!isMobile && d.label}
                 </button>
               ))}
             </div>
@@ -1459,25 +1466,17 @@ export default function BrandingPage() {
                 onClick={() => setPreviewOrientation(o => o === 'portrait' ? 'landscape' : 'portrait')}
                 title={previewOrientation === 'portrait' ? 'Querformat' : 'Hochformat'}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '7px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                   background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)',
-                  fontSize: '0.75rem', fontWeight: 500,
+                  fontSize: '0.73rem', fontWeight: 500, flexShrink: 0,
                 }}
               >
                 <RotateCw size={13} style={{ transform: previewOrientation === 'landscape' ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s' }} />
-                {previewOrientation === 'portrait' ? 'Hochformat' : 'Querformat'}
+                {!isMobile && (previewOrientation === 'portrait' ? 'Hochformat' : 'Querformat')}
               </button>
             )}
-            {liveDesign && <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', marginLeft: '4px' }}>KI aktiv</div>}
-            {/* Spacer + close */}
-            <div style={{ flex: 1 }} />
-            <button
-              onClick={() => setPreviewFullscreen(false)}
-              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.75rem', gap: '4px', flexShrink: 0 }}
-            >
-              <X size={15} />
-            </button>
+            {liveDesign && !isMobile && <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>KI aktiv</div>}
           </div>
 
           {/* Device frame — centered, scrollable if needed */}
