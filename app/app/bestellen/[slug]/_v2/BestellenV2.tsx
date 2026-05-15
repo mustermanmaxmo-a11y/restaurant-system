@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
-import { supabase } from '@/lib/supabase'
+import { supabaseGuest as supabase } from '@/lib/supabase'
 import type { MenuItem, MenuCategory, Order, Restaurant } from '@/types/database'
 import {
   Sparkles, ShoppingCart, Plus, Minus, X, ArrowLeft, ArrowRight,

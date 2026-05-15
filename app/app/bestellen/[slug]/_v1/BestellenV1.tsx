@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
-import { supabase } from '@/lib/supabase'
+import { supabaseGuest as supabase } from '@/lib/supabase'
 import { darken, buildColors, buildColorsFromRestaurant } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
@@ -56,7 +56,7 @@ async function calculateAndStoreEta(
     if (!res.ok) return
     const { etaMinutes } = await res.json()
     if (typeof etaMinutes === 'number') {
-      const { supabase } = await import('@/lib/supabase')
+      const { supabaseGuest: supabase } = await import('@/lib/supabase')
       await supabase.from('orders').update({ estimated_time: etaMinutes }).eq('id', orderId)
     }
   } catch { /* non-critical */ }

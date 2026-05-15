@@ -11,4 +11,10 @@ Sentry.init({
 
   // Don't log Sentry activity in the console
   debug: false,
+
+  // Supabase Web Locks API contention on concurrent Realtime channel mounts — non-fatal, Supabase retries internally
+  ignoreErrors: [
+    /Lock broken by another request with the 'steal' option/,
+    /was released because another request stole it/,
+  ],
 })
