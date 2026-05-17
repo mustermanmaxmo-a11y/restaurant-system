@@ -45,12 +45,13 @@ function getSeasonalContext(): MarketingContext['seasonalContext'] {
 
   if (month === 12 || month === 1 || month === 2) {
     season = 'winter'
-    upcomingHolidays =
-      month === 12
-        ? ['Weihnachten', 'Silvester']
-        : month === 2
-          ? ['Valentinstag']
-          : ['Valentinstag']
+    if (month === 12) {
+      upcomingHolidays = ['Weihnachten', 'Silvester']
+    } else if (month === 1) {
+      upcomingHolidays = ['Silvester (vorbei)', 'Valentinstag']
+    } else {
+      upcomingHolidays = ['Valentinstag']
+    }
   } else if (month >= 3 && month <= 5) {
     season = 'spring'
     upcomingHolidays = ['Ostern', 'Muttertag']
@@ -182,7 +183,7 @@ export async function buildMarketingContext(
     .select('subject, sent_at, recipient_count, open_count, click_count')
     .eq('restaurant_id', restaurantId)
     .eq('status', 'sent')
-    .order('created_at', { ascending: false })
+    .order('sent_at', { ascending: false })
     .limit(5)
     .then(({ data }) =>
       (data ?? []).map((c) => ({
@@ -218,37 +219,39 @@ export async function buildMarketingContext(
 
   // ── 7. Platform knowledge (keyword search) ───────────────────
   const platformKnowledgePromise = (async () => {
+    let platformKnowledge: MarketingContext['platformKnowledge'] = []
     try {
-      const keywords = userMessage
-        .split(/\s+/)
-        .map((w) => w.replace(/[^a-zA-ZäöüÄÖÜß]/g, ''))
-        .filter((w) => w.length > 3)
-        .slice(0, 5)
+      const keywords = userMessage.split(/\s+/).filter(w => w.length > 3).slice(0, 5)
 
-      if (keywords.length === 0) {
+      if (keywords.length > 0) {
+        const filterParts = keywords.map(k => `title.ilike.%${k}%,content.ilike.%${k}%`).join(',')
         const { data } = await supabase
           .from('marketing_knowledge')
           .select('title, content, category')
+          .or(filterParts)
+          .limit(3)
+
+        if (data && data.length > 0) {
+          platformKnowledge = data
+        } else {
+          // keyword search returned nothing — fall back to first 2
+          const { data: fallback } = await supabase
+            .from('marketing_knowledge')
+            .select('title, content, category')
+            .limit(2)
+          platformKnowledge = fallback ?? []
+        }
+      } else {
+        const { data: fallback } = await supabase
+          .from('marketing_knowledge')
+          .select('title, content, category')
           .limit(2)
-        return data ?? []
+        platformKnowledge = fallback ?? []
       }
-
-      // Build OR filter for title and content ILIKE each keyword
-      const filterParts = keywords.flatMap((kw) => [
-        `title.ilike.%${kw}%`,
-        `content.ilike.%${kw}%`,
-      ])
-
-      const { data } = await supabase
-        .from('marketing_knowledge')
-        .select('title, content, category')
-        .or(filterParts.join(','))
-        .limit(3)
-
-      return data ?? []
     } catch {
-      return []
+      platformKnowledge = []
     }
+    return platformKnowledge
   })()
 
   // ── 8. Seasonal context (no DB query) ───────────────────────
