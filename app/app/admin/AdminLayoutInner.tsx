@@ -9,7 +9,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { PushNotificationBanner } from '@/components/PushNotificationBanner'
 import {
   LayoutDashboard, UtensilsCrossed, QrCode, CalendarDays,
-  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu, Settings, Globe,
+  Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut, Utensils, Palette, ChefHat, Package, Tag, X, Menu, Settings,
 } from 'lucide-react'
 import AdminChatWidget from '@/components/AdminChatWidget'
 
@@ -34,7 +34,6 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
     { icon: Users,           label: t('nav.staff'),         href: '/admin/staff' },
     { icon: Clock,           label: t('nav.openingHours'),  href: '/admin/opening-hours' },
     { icon: Palette,         label: t('nav.branding'),      href: '/admin/branding' },
-    { icon: Globe,           label: 'Landing Page',         href: '/admin/landing-page' },
     { icon: Package,         label: t('nav.inventory'),     href: '/admin/inventory' },
     { icon: BarChart2,       label: t('nav.stats'),         href: '/admin/stats' },
     { icon: CreditCard,      label: t('nav.billing'),       href: '/admin/billing' },
