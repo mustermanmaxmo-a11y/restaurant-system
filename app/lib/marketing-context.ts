@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseAdmin } from './supabase-admin'
 
 /**
  * Rich context object passed to the Marketing AI Advisor system prompt.
@@ -48,7 +48,7 @@ function getSeasonalContext(): MarketingContext['seasonalContext'] {
     if (month === 12) {
       upcomingHolidays = ['Weihnachten', 'Silvester']
     } else if (month === 1) {
-      upcomingHolidays = ['Silvester (vorbei)', 'Valentinstag']
+      upcomingHolidays = ['Valentinstag']
     } else {
       upcomingHolidays = ['Valentinstag']
     }
@@ -78,10 +78,7 @@ export async function buildMarketingContext(
   restaurantId: string,
   userMessage: string
 ): Promise<MarketingContext> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = createSupabaseAdmin()
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -221,7 +218,11 @@ export async function buildMarketingContext(
   const platformKnowledgePromise = (async () => {
     let platformKnowledge: MarketingContext['platformKnowledge'] = []
     try {
-      const keywords = userMessage.split(/\s+/).filter(w => w.length > 3).slice(0, 5)
+      const keywords = userMessage
+        .split(/\s+/)
+        .map(w => w.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, ''))
+        .filter(w => w.length > 3)
+        .slice(0, 5)
 
       if (keywords.length > 0) {
         const filterParts = keywords.map(k => `title.ilike.%${k}%,content.ilike.%${k}%`).join(',')
