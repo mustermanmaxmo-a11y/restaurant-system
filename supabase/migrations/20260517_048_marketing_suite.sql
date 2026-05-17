@@ -10,6 +10,8 @@
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS scheduled_at timestamptz;
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS template_type text;
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS tracking_pixel_id uuid DEFAULT gen_random_uuid();
+CREATE UNIQUE INDEX IF NOT EXISTS marketing_campaigns_tracking_pixel_id_idx
+  ON public.marketing_campaigns (tracking_pixel_id);
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS open_count int DEFAULT 0;
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS click_count int DEFAULT 0;
 ALTER TABLE public.marketing_campaigns ADD COLUMN IF NOT EXISTS conversion_revenue decimal(10,2) DEFAULT 0;
@@ -21,12 +23,19 @@ ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS last_order_at 
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS birthday date;
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS order_type_preference text CHECK (order_type_preference IN ('dine-in','delivery','pickup'));
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
+-- intentional: overrides 034 default ('order') — marketing subscribers default to 'manual'
 ALTER TABLE public.marketing_subscribers ALTER COLUMN source SET DEFAULT 'manual';
 
 -- ============================================================
 -- marketing_knowledge — Platform-wide knowledge base
 -- Written by platform admin, read server-side by AI (service_role only)
 -- ============================================================
+
+-- Auto-update updated_at (only if function doesn't already exist)
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$;
 
 CREATE TABLE IF NOT EXISTS public.marketing_knowledge (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -39,11 +48,15 @@ CREATE TABLE IF NOT EXISTS public.marketing_knowledge (
   updated_at timestamptz DEFAULT now()
 );
 
+CREATE TRIGGER marketing_knowledge_updated_at
+  BEFORE UPDATE ON public.marketing_knowledge
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
 ALTER TABLE public.marketing_knowledge ENABLE ROW LEVEL SECURITY;
 
 -- No anon or authenticated access — platform admin uses service_role only
+REVOKE ALL ON public.marketing_knowledge FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.marketing_knowledge TO service_role;
-REVOKE ALL ON public.marketing_knowledge FROM anon, authenticated;
 
 -- ============================================================
 -- restaurant_knowledge — Restaurant-specific facts
@@ -84,7 +97,7 @@ CREATE TABLE IF NOT EXISTS public.marketing_automations (
   subject_template text,
   body_template text,
   discount_code_prefix text,
-  discount_percent int DEFAULT 10,
+  discount_percent int DEFAULT 10 CHECK (discount_percent BETWEEN 0 AND 100),
   active boolean DEFAULT false,
   last_run_at timestamptz,
   created_at timestamptz DEFAULT now()
@@ -119,6 +132,9 @@ CREATE TABLE IF NOT EXISTS public.campaign_events (
 
 ALTER TABLE public.campaign_events ENABLE ROW LEVEL SECURITY;
 
+CREATE UNIQUE INDEX IF NOT EXISTS campaign_events_dedup_idx
+  ON public.campaign_events (campaign_id, event_type, tracked_at);
+
 -- No anon or authenticated access — server tracking endpoint uses service_role
+REVOKE ALL ON public.campaign_events FROM PUBLIC, anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.campaign_events TO service_role;
-REVOKE ALL ON public.campaign_events FROM anon, authenticated;
