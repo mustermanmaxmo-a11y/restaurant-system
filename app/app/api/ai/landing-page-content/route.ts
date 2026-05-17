@@ -36,6 +36,7 @@ interface AiGeneratedContent {
   subheadline: string
   about_text: string
   cta_text: string
+  feature_badges?: string[]
 }
 
 // POST — generate AI landing page copy
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `Write landing page copy for a restaurant named ${name}. Category: ${category}. Description: ${description}. Language: ${lang}. Return JSON: { "headline": "...", "subheadline": "...", "about_text": "...", "cta_text": "..." }`,
+          content: `Write landing page copy for a restaurant named "${name}". Category: ${category}. Description: ${description}. Language: ${lang}.\n\nAvailable feature badges: Vegetarisch, Vegan, Glutenfrei, Halal, Lieferung, Reservierung, Takeaway, Catering, Wifi, Terrasse, Parkplatz.\n\nReturn JSON: { "headline": "...", "subheadline": "...", "about_text": "...", "cta_text": "...", "feature_badges": ["badge1", "badge2"] }\nSelect 2-4 relevant badges based on the restaurant category.`,
         },
       ],
     })
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'KI-Antwort konnte nicht verarbeitet werden' }, { status: 500 })
     }
 
-    const { headline, subheadline, about_text, cta_text } = parsed
+    const { headline, subheadline, about_text, cta_text, feature_badges } = parsed
 
     if (
       typeof headline !== 'string' || !headline.trim() ||
@@ -137,6 +138,9 @@ export async function POST(req: NextRequest) {
       subheadline: subheadline.trim(),
       about_text: about_text.trim(),
       cta_text: cta_text.trim(),
+      feature_badges: Array.isArray(feature_badges)
+        ? feature_badges.filter((b): b is string => typeof b === 'string').slice(0, 4)
+        : undefined,
     }
 
     return NextResponse.json(result)
