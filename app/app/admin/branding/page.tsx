@@ -12,6 +12,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
 import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star, RotateCw, Eye } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
+import LandingPageTab from './LandingPageTab'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
 function ShineBorder({ color = '#FF6B2C', children, style }: {
@@ -204,6 +205,7 @@ export default function BrandingPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const { t } = useLanguage()
 
+  const [designSection, setDesignSection] = useState<'order-page' | 'landing-page'>('order-page')
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -761,6 +763,27 @@ export default function BrandingPage() {
           <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>Branding & Design</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', margin: '2px 0 0' }}>Alle Änderungen sind sofort live sichtbar.</p>
         </div>
+        {/* Section switcher */}
+        <div style={{
+          display: 'flex', background: 'var(--surface-2)', borderRadius: '8px',
+          padding: '3px', gap: '2px',
+        }}>
+          {(['order-page', 'landing-page'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setDesignSection(s)}
+              style={{
+                padding: '6px 14px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                fontSize: '0.78rem', fontWeight: designSection === s ? 700 : 500,
+                background: designSection === s ? 'var(--accent)' : 'transparent',
+                color: designSection === s ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {s === 'order-page' ? 'Bestellseite' : 'Landing Page'}
+            </button>
+          ))}
+        </div>
         <button onClick={save} disabled={saving} style={{
           padding: '10px 22px', borderRadius: '8px',
           background: saved ? '#10b981' : pAccent, color: '#fff',
@@ -801,6 +824,9 @@ export default function BrandingPage() {
           })}
         </div>
       )}
+
+      {/* Bestellseite — existing 3-column editor */}
+      <div style={{ display: designSection === 'order-page' ? 'flex' : 'none', flex: 1, overflow: 'hidden' }}>
 
       {/* ── 3-Column Layout ── */}
       <div
@@ -1408,6 +1434,15 @@ export default function BrandingPage() {
         </aside>
 
       </div>{/* end 3-column */}
+
+      </div>{/* end Bestellseite wrapper */}
+
+      {/* Landing Page Tab */}
+      {restaurant && designSection === 'landing-page' && (
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+          <LandingPageTab restaurant={restaurant} />
+        </div>
+      )}
 
       {/* ── Mobile FAB Stack (bottom → top: grün AdminChat / lila KI Design / blau Vorschau) ── */}
       {isMobile && (
