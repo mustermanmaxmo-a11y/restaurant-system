@@ -21,7 +21,12 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // 2. Parse body
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   const { message, history } = body as {
     message: string
     history?: { role: 'user' | 'assistant'; content: string }[]
@@ -45,16 +50,14 @@ export async function POST(request: NextRequest) {
     .limit(1)
     .maybeSingle()
 
-  if (!restaurant) return NextResponse.json({ reply: FALLBACK_MESSAGE })
+  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   // 5. Resolve AI key
   const apiKey = await resolveAiKey(restaurant.id)
 
   // 6. No API key → plan gate message
   if (!apiKey) {
-    return NextResponse.json({
-      reply: 'Der KI-Marketing-Berater ist für deinen aktuellen Plan nicht verfügbar. Upgrade auf Pro.',
-    })
+    return NextResponse.json({ error: 'KI-Feature requires Pro plan.' }, { status: 402 })
   }
 
   // 7. Rate limiting: 30 requests per hour
@@ -73,25 +76,26 @@ export async function POST(request: NextRequest) {
   const systemPrompt = buildMarketingSystemPrompt(ctx)
 
   // 10 & 11. Call Claude streaming and return ReadableStream
-  const messages: { role: 'user' | 'assistant'; content: string }[] = [
-    ...(history ?? []).slice(-10),
-    { role: 'user', content: message.trim() },
-  ]
+  if (Array.isArray(history) && history.length > 50) {
+    return NextResponse.json({ error: 'History too long' }, { status: 400 })
+  }
+
+  const priorMessages: { role: 'user' | 'assistant'; content: string }[] = (history ?? []).slice(-10)
 
   const encoder = new TextEncoder()
+
+  const anthropic = new Anthropic({ apiKey })
+  const anthropicStream = anthropic.messages.stream({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1500,
+    system: systemPrompt,
+    messages: [...priorMessages, { role: 'user', content: message.trim() }],
+  })
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const anthropic = new Anthropic({ apiKey })
-        const stream = await anthropic.messages.stream({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
-          system: systemPrompt,
-          messages,
-        })
-
-        for await (const event of stream) {
+        for await (const event of anthropicStream) {
           if (
             event.type === 'content_block_delta' &&
             event.delta.type === 'text_delta'
@@ -104,6 +108,9 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(FALLBACK_MESSAGE))
         controller.close()
       }
+    },
+    cancel() {
+      anthropicStream.abort()
     },
   })
 

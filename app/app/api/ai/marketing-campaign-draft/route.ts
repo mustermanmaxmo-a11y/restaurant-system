@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // 2. Parse body
-  const body = await request.json()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
   const { prompt, restaurantId, templateType } = body as {
     prompt: string
     restaurantId: string
@@ -52,10 +57,7 @@ export async function POST(request: NextRequest) {
   // 5. Resolve AI key
   const apiKey = await resolveAiKey(restaurant.id)
   if (!apiKey) {
-    return NextResponse.json({
-      success: false,
-      error: 'Der KI-Marketing-Berater ist für deinen aktuellen Plan nicht verfügbar. Upgrade auf Pro.',
-    })
+    return NextResponse.json({ error: 'KI-Feature requires Pro plan.' }, { status: 402 })
   }
 
   // 6. Rate limiting: 20 per hour
@@ -133,7 +135,8 @@ bodyHtml requirements:
       // 11. Parse error fallback
       return NextResponse.json({ success: false, error: 'Kampagnen-Generierung fehlgeschlagen' })
     }
-  } catch {
-    return NextResponse.json({ success: false, error: 'Kampagnen-Generierung fehlgeschlagen' })
+  } catch (err) {
+    const status = (err as { status?: number }).status ?? 500
+    return NextResponse.json({ success: false, error: 'Kampagnen-Generierung fehlgeschlagen' }, { status })
   }
 }
