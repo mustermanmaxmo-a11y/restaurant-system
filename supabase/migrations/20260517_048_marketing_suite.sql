@@ -21,6 +21,7 @@ ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS last_order_at 
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS birthday date;
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS order_type_preference text CHECK (order_type_preference IN ('dine-in','delivery','pickup'));
 ALTER TABLE public.marketing_subscribers ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
+ALTER TABLE public.marketing_subscribers ALTER COLUMN source SET DEFAULT 'manual';
 
 -- ============================================================
 -- marketing_knowledge — Platform-wide knowledge base
@@ -42,6 +43,7 @@ ALTER TABLE public.marketing_knowledge ENABLE ROW LEVEL SECURITY;
 
 -- No anon or authenticated access — platform admin uses service_role only
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.marketing_knowledge TO service_role;
+REVOKE ALL ON public.marketing_knowledge FROM anon, authenticated;
 
 -- ============================================================
 -- restaurant_knowledge — Restaurant-specific facts
@@ -119,3 +121,4 @@ ALTER TABLE public.campaign_events ENABLE ROW LEVEL SECURITY;
 
 -- No anon or authenticated access — server tracking endpoint uses service_role
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.campaign_events TO service_role;
+REVOKE ALL ON public.campaign_events FROM anon, authenticated;
