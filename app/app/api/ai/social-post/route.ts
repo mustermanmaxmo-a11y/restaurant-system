@@ -11,12 +11,22 @@ const TONE_DESCRIPTIONS = {
   luxury: 'luxuriös, exklusiv und elegant',
 }
 
+const PLATFORM_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  whatsapp: 'WhatsApp',
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { restaurantId, itemId, tone = 'warm', language = 'de' } = body
+  const { restaurantId, itemId, subject, platform, tone = 'warm', language = 'de' } = body
 
-  if (!restaurantId || !itemId) {
-    return NextResponse.json({ error: 'restaurantId and itemId required' }, { status: 400 })
+  // Require restaurantId and at least one of itemId or subject
+  if (!restaurantId || (!itemId && !subject?.trim())) {
+    return NextResponse.json(
+      { error: 'restaurantId and either itemId or subject required' },
+      { status: 400 }
+    )
   }
 
   const token = request.headers.get('authorization')?.replace('Bearer ', '')
@@ -34,13 +44,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Zu viele Anfragen.' }, { status: 429 })
   }
 
-  const [{ data: restaurant }, { data: item }] = await Promise.all([
-    supabase.from('restaurants').select('name, plan').eq('id', restaurantId).eq('owner_id', user.id).single(),
-    supabase.from('menu_items').select('name, description, price, allergens, tags').eq('id', itemId).eq('restaurant_id', restaurantId).single(),
-  ])
+  // Always fetch restaurant; only fetch menu item when itemId is provided
+  const restaurantQuery = supabase
+    .from('restaurants')
+    .select('name, plan')
+    .eq('id', restaurantId)
+    .eq('owner_id', user.id)
+    .single()
 
-  if (!restaurant || !item) {
-    return NextResponse.json({ error: 'Nicht gefunden.' }, { status: 404 })
+  let restaurant: { name: string; plan: string } | null = null
+  let item: { name: string; description: string | null; price: number; allergens: string[] | null; tags: string[] | null } | null = null
+
+  if (itemId) {
+    const [{ data: r }, { data: i }] = await Promise.all([
+      restaurantQuery,
+      supabase
+        .from('menu_items')
+        .select('name, description, price, allergens, tags')
+        .eq('id', itemId)
+        .eq('restaurant_id', restaurantId)
+        .single(),
+    ])
+    restaurant = r
+    item = i
+    if (!restaurant || !item) {
+      return NextResponse.json({ error: 'Nicht gefunden.' }, { status: 404 })
+    }
+  } else {
+    const { data: r } = await restaurantQuery
+    restaurant = r
+    if (!restaurant) {
+      return NextResponse.json({ error: 'Restaurant nicht gefunden.' }, { status: 404 })
+    }
   }
 
   const aiKey = await resolveAiKey(restaurantId)
@@ -53,15 +88,22 @@ export async function POST(request: NextRequest) {
   const langMap: Record<string, string> = { de: 'Deutsch', en: 'Englisch', it: 'Italienisch', fr: 'Französisch', es: 'Spanisch' }
   const langName = langMap[language] ?? 'Deutsch'
   const toneDesc = TONE_DESCRIPTIONS[tone as keyof typeof TONE_DESCRIPTIONS] ?? TONE_DESCRIPTIONS.warm
+  const platformLabel = PLATFORM_LABELS[platform] ?? 'Instagram/Facebook'
 
-  const prompt = `Du bist ein Social-Media-Texter für das Restaurant "${restaurant.name}".
-
-Erstelle einen Instagram/Facebook-Post für folgendes Gericht:
+  // Build context block depending on whether we have a menu item or a free-text subject
+  const contextBlock = item
+    ? `Erstelle einen ${platformLabel}-Post für folgendes Gericht:
 - Name: ${item.name}
 - Beschreibung: ${item.description || '(keine)'}
 - Preis: ${item.price.toFixed(2)} €
 - Allergene: ${item.allergens?.join(', ') || 'keine'}
-- Tags: ${item.tags?.join(', ') || 'keine'}
+- Tags: ${item.tags?.join(', ') || 'keine'}`
+    : `Erstelle einen ${platformLabel}-Post zum folgenden Thema:
+- Thema / Kontext: ${subject}`
+
+  const prompt = `Du bist ein Social-Media-Texter für das Restaurant "${restaurant.name}".
+
+${contextBlock}
 
 Anforderungen:
 - Tonalität: ${toneDesc}
