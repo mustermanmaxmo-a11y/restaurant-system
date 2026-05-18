@@ -83,13 +83,14 @@ export async function buildMarketingContext(
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
   // ── 1. Restaurant ────────────────────────────────────────────
-  const restaurantPromise = supabase
-    .from('restaurants')
-    .select('id, name, plan, cuisine_type, design_config')
-    .eq('id', restaurantId)
-    .single()
-    .then(({ data }) => data)
-    .catch(() => null)
+  const restaurantPromise = Promise.resolve(
+    supabase
+      .from('restaurants')
+      .select('id, name, plan, cuisine_type, design_config')
+      .eq('id', restaurantId)
+      .single()
+      .then(({ data }) => data)
+  ).catch(() => null)
 
   // ── 2. Top menu items (JSONB items array in orders) ──────────
   // orders.items is a JSONB array of objects with at least { name, price, quantity }
@@ -175,44 +176,47 @@ export async function buildMarketingContext(
   })()
 
   // ── 4. Recent campaigns ──────────────────────────────────────
-  const recentCampaignsPromise = supabase
-    .from('marketing_campaigns')
-    .select('subject, sent_at, recipient_count, open_count, click_count')
-    .eq('restaurant_id', restaurantId)
-    .eq('status', 'sent')
-    .order('sent_at', { ascending: false })
-    .limit(5)
-    .then(({ data }) =>
-      (data ?? []).map((c) => ({
-        subject: c.subject ?? '',
-        sent_at: c.sent_at ?? '',
-        recipient_count: c.recipient_count ?? 0,
-        open_count: c.open_count ?? 0,
-        click_count: c.click_count ?? 0,
-        open_rate:
-          c.recipient_count && c.recipient_count > 0
-            ? Math.round(((c.open_count ?? 0) / c.recipient_count) * 100) / 100
-            : 0,
-      }))
-    )
-    .catch(() => [])
+  const recentCampaignsPromise = Promise.resolve(
+    supabase
+      .from('marketing_campaigns')
+      .select('subject, sent_at, recipient_count, open_count, click_count')
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'sent')
+      .order('sent_at', { ascending: false })
+      .limit(5)
+      .then(({ data }) =>
+        (data ?? []).map((c) => ({
+          subject: c.subject ?? '',
+          sent_at: c.sent_at ?? '',
+          recipient_count: c.recipient_count ?? 0,
+          open_count: c.open_count ?? 0,
+          click_count: c.click_count ?? 0,
+          open_rate:
+            c.recipient_count && c.recipient_count > 0
+              ? Math.round(((c.open_count ?? 0) / c.recipient_count) * 100) / 100
+              : 0,
+        }))
+      )
+  ).catch(() => [])
 
   // ── 5. Active automations ────────────────────────────────────
-  const activeAutomationsPromise = supabase
-    .from('marketing_automations')
-    .select('trigger_type, active')
-    .eq('restaurant_id', restaurantId)
-    .then(({ data }) => data ?? [])
-    .catch(() => [])
+  const activeAutomationsPromise = Promise.resolve(
+    supabase
+      .from('marketing_automations')
+      .select('trigger_type, active')
+      .eq('restaurant_id', restaurantId)
+      .then(({ data }) => data ?? [])
+  ).catch(() => [])
 
   // ── 6. Restaurant knowledge ──────────────────────────────────
-  const restaurantKnowledgePromise = supabase
-    .from('restaurant_knowledge')
-    .select('fact, category')
-    .eq('restaurant_id', restaurantId)
-    .limit(10)
-    .then(({ data }) => data ?? [])
-    .catch(() => [])
+  const restaurantKnowledgePromise = Promise.resolve(
+    supabase
+      .from('restaurant_knowledge')
+      .select('fact, category')
+      .eq('restaurant_id', restaurantId)
+      .limit(10)
+      .then(({ data }) => data ?? [])
+  ).catch(() => [])
 
   // ── 7. Platform knowledge (keyword search) ───────────────────
   const platformKnowledgePromise = (async () => {
