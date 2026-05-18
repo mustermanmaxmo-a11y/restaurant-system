@@ -151,11 +151,8 @@ export async function POST(
   const { campaign_id, order_id, revenue } = body
 
   // Validate all fields
-  if (!campaign_id || !order_id || revenue === undefined || revenue === null || revenue <= 0) {
-    return NextResponse.json(
-      { error: 'Missing or invalid fields: campaign_id, order_id, revenue (must be > 0)' },
-      { status: 400 }
-    )
+  if (!campaign_id || !order_id || typeof revenue !== 'number' || revenue <= 0) {
+    return NextResponse.json({ error: 'campaign_id, order_id, and positive revenue required' }, { status: 400 })
   }
 
   // Verify shared secret
