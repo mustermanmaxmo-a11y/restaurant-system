@@ -17,30 +17,24 @@ export async function POST(request: NextRequest) {
 
   // --- Body ---
   const body = await request.json()
-  const { prompt, style, restaurantName, brandColor, restaurantId } = body
+  const { prompt, style, restaurantName, brandColor } = body
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
     return NextResponse.json({ success: false, error: 'prompt is required' }, { status: 400 })
   }
-  if (!restaurantId) {
-    return NextResponse.json({ success: false, error: 'restaurantId is required' }, { status: 400 })
-  }
+
+  // --- Restaurant lookup (resolve from session) ---
+  const { data: restaurant } = await supabase
+    .from('restaurants')
+    .select('id, name, plan, design_config')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
+  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   // --- API key check ---
   if (!process.env.FAL_API_KEY) {
     return NextResponse.json({ success: false, error: 'Image generation not configured' }, { status: 503 })
-  }
-
-  // --- Restaurant lookup (verify ownership + plan) ---
-  const { data: restaurant } = await supabase
-    .from('restaurants')
-    .select('id, name, plan')
-    .eq('id', restaurantId)
-    .eq('owner_id', user.id)
-    .single()
-
-  if (!restaurant) {
-    return NextResponse.json({ success: false, error: 'Restaurant nicht gefunden.' }, { status: 404 })
   }
 
   // --- Rate limiting: 10/hour per restaurant ---

@@ -17,30 +17,24 @@ export async function POST(request: NextRequest) {
 
   // --- Body ---
   const body = await request.json()
-  const { imageUrl, prompt, duration, restaurantId } = body
+  const { imageUrl, prompt, duration } = body
 
   if (!imageUrl || typeof imageUrl !== 'string') {
     return NextResponse.json({ success: false, error: 'imageUrl is required' }, { status: 400 })
   }
-  if (!restaurantId) {
-    return NextResponse.json({ success: false, error: 'restaurantId is required' }, { status: 400 })
-  }
+
+  // --- Restaurant lookup (resolve from session) ---
+  const { data: restaurant } = await supabase
+    .from('restaurants')
+    .select('id, plan')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
+  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   // --- API key check ---
   if (!process.env.KLING_API_KEY) {
     return NextResponse.json({ success: false, error: 'Video generation not configured' }, { status: 503 })
-  }
-
-  // --- Restaurant lookup (verify ownership + plan) ---
-  const { data: restaurant } = await supabase
-    .from('restaurants')
-    .select('id, plan')
-    .eq('id', restaurantId)
-    .eq('owner_id', user.id)
-    .single()
-
-  if (!restaurant) {
-    return NextResponse.json({ success: false, error: 'Restaurant nicht gefunden.' }, { status: 404 })
   }
 
   // --- Pro plan only ---
