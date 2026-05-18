@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,6 +85,7 @@ type Subscriber = {
   email: string
   restaurant_id: string
   last_order_at: string | null
+  opted_in_at: string | null
   birthday: string | null
   subscribed: boolean
 }
@@ -144,13 +146,14 @@ export async function POST(request: NextRequest) {
       eligibleSubscribers = (data ?? []) as Subscriber[]
 
     } else if (automation.trigger_type === 'inactivity_14d') {
-      // last_order_at older than 14 days ago, or never ordered
+      // last_order_at older than 14 days ago, OR never ordered but subscribed 14+ days ago
+      // (prevents brand-new subscribers from immediately qualifying)
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, opted_in_at, birthday, subscribed')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
-        .or(`last_order_at.lt.${fourteenDaysAgo},last_order_at.is.null`)
+        .or(`last_order_at.lt.${fourteenDaysAgo},and(last_order_at.is.null,opted_in_at.lt.${fourteenDaysAgo})`)
       eligibleSubscribers = (data ?? []) as Subscriber[]
 
     } else if (automation.trigger_type === 'birthday') {
@@ -222,7 +225,14 @@ export async function POST(request: NextRequest) {
 
       if (alreadySent) continue
 
-      const unsubLink = `${appUrl}/unsubscribe?rid=${restaurant.id}&email=${encodeURIComponent(subscriber.email)}`
+      // DSGVO: use HMAC token instead of raw email in URL (prevents PII exposure in logs/referrers)
+      const unsubSecret = process.env.UNSUBSCRIBE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
+      const unsubToken = crypto
+        .createHmac('sha256', unsubSecret)
+        .update(`${restaurant.id}:${subscriber.email}`)
+        .digest('hex')
+        .slice(0, 32)
+      const unsubLink = `${appUrl}/unsubscribe?rid=${restaurant.id}&token=${unsubToken}`
       const htmlBody = `<p>${body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p><hr style="border:none;border-top:1px solid #eee;margin:20px 0"/><p style="font-size:12px;color:#aaa">Sie erhalten diese E-Mail als Gast von ${restaurant.name}. <a href="${unsubLink}" style="color:#aaa">Abmelden</a></p>`
 
       try {

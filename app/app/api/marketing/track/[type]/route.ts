@@ -51,7 +51,7 @@ export async function GET(
             const campaign_id: string = campaign.id
 
             // One aggregated row per campaign+type+day (ON CONFLICT DO NOTHING)
-            await supabase.from('campaign_events').upsert(
+            const { data: insertedOpen } = await supabase.from('campaign_events').upsert(
               {
                 campaign_id,
                 event_type: 'open',
@@ -62,8 +62,11 @@ export async function GET(
               { onConflict: 'campaign_id,event_type,tracked_at', ignoreDuplicates: true }
             )
 
-            // Atomic increment via DB function (avoids read-modify-write race)
-            await supabase.rpc('increment_campaign_open', { campaign_id_arg: campaign_id })
+            // Atomic increment via DB function — only when a new row was inserted (not a duplicate).
+            // Supabase returns null data on ignoreDuplicates conflict; non-null means a row was inserted.
+            if (insertedOpen !== null) {
+              await supabase.rpc('increment_campaign_open', { campaign_id_arg: campaign_id })
+            }
           }
         } catch {
           // Silently ignore — pixel must always be returned
@@ -79,9 +82,15 @@ export async function GET(
     const pid = searchParams.get('pid')
     const url = searchParams.get('url')
 
-    // Security: only allow absolute http(s) URLs
-    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    // Security: only allow relative paths or same-origin URLs (prevent open redirect)
+    if (!url) {
       return NextResponse.json({ error: 'Invalid or missing url parameter' }, { status: 400 })
+    }
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    const isRelative = url.startsWith('/')
+    const isSameOrigin = appUrl && url.startsWith(appUrl)
+    if (!isRelative && !isSameOrigin) {
+      return NextResponse.json({ error: 'URL not allowed' }, { status: 400 })
     }
 
     if (pid) {
@@ -100,7 +109,7 @@ export async function GET(
           if (campaign) {
             const campaign_id: string = campaign.id
 
-            await supabase.from('campaign_events').upsert(
+            const { data: insertedClick } = await supabase.from('campaign_events').upsert(
               {
                 campaign_id,
                 event_type: 'click',
@@ -111,7 +120,11 @@ export async function GET(
               { onConflict: 'campaign_id,event_type,tracked_at', ignoreDuplicates: true }
             )
 
-            await supabase.rpc('increment_campaign_click', { campaign_id_arg: campaign_id })
+            // Only increment if a new row was inserted (not a duplicate).
+            // Supabase returns null data on ignoreDuplicates conflict; non-null means a row was inserted.
+            if (insertedClick !== null) {
+              await supabase.rpc('increment_campaign_click', { campaign_id_arg: campaign_id })
+            }
           }
         } catch {
           // Silently ignore — redirect must always happen
