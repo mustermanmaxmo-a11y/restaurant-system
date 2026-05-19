@@ -11,14 +11,15 @@ function adminClient() {
 async function verifyAuth(request: NextRequest): Promise<boolean> {
   const token = request.headers.get('authorization')?.replace('Bearer ', '')
   if (!token) return false
-  const anon = createClient(
+  // Call is_platform_owner() with the user's token so auth.uid() resolves correctly
+  const userClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } }
   )
-  const { data: { user } } = await anon.auth.getUser(token)
+  const { data: { user } } = await userClient.auth.getUser()
   if (!user) return false
-  const { data } = await adminClient().rpc('is_platform_owner', { user_id: user.id })
+  const { data } = await userClient.rpc('is_platform_owner')
   return !!data
 }
 
