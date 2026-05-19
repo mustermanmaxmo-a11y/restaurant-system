@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getPlatformSettings } from '@/lib/platform-config'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
-import { getBaseTemplateForTrigger, DISCOUNT_BLOCK } from '@/lib/email-base-templates'
+import { getBaseTemplateForTrigger, DISCOUNT_BLOCK, buildLogoBlock } from '@/lib/email-base-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,6 +73,7 @@ type RestaurantRef = {
   name: string
   slug: string
   plan: string
+  logo_url?: string | null
   design_config?: { primary_color?: string } | null
 }
 
@@ -125,7 +126,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
   // 1. Get all active automations across all restaurants
   const { data: automations, error: autoError } = await supabase
     .from('marketing_automations')
-    .select('*, restaurants(id, name, slug, plan, design_config)')
+    .select('*, restaurants(id, name, slug, plan, logo_url, design_config)')
     .eq('active', true)
 
   if (autoError) throw new Error(autoError.message)
@@ -282,6 +283,8 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       }
       const discountCode = discountCodeMap[automation.trigger_type] ?? ''
 
+      const logoBlockHtml = buildLogoBlock(restaurant.logo_url, restaurant.name)
+
       // Pre-render discount block so renderEmailTemplate gets a clean string
       const discountBlockHtml = discountCode
         ? DISCOUNT_BLOCK(primaryColor)
@@ -296,6 +299,8 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
         htmlBody = renderEmailTemplate(templateRow.body_html, {
           restaurant_name: restaurant.name,
           customer_name: subscriber.email.split('@')[0],
+          logo_url: restaurant.logo_url ?? '',
+          logo_block: logoBlockHtml,
           discount_percent: String(discount),
           discount_code: discountCode,
           discount_block: discountBlockHtml,
@@ -310,6 +315,8 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
         htmlBody = renderEmailTemplate(baseHtml, {
           restaurant_name: restaurant.name,
           customer_name: subscriber.email.split('@')[0],
+          logo_url: restaurant.logo_url ?? '',
+          logo_block: logoBlockHtml,
           hero_text: subject,
           body_text: plainText,
           cta_text: ctaText,

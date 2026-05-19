@@ -1,7 +1,10 @@
 export interface TemplateVars {
   restaurant_name?: string
   customer_name?: string
+  logo_url?: string
+  logo_block?: string
   discount_code?: string
+  discount_block?: string
   discount_percent?: string
   cta_url?: string
   cta_text?: string

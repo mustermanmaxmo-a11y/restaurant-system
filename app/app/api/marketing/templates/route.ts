@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
-import { getBaseTemplateForTrigger, DISCOUNT_BLOCK } from '@/lib/email-base-templates'
+import { getBaseTemplateForTrigger, DISCOUNT_BLOCK, buildLogoBlock } from '@/lib/email-base-templates'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
 
 async function getRestaurant(request: NextRequest) {
@@ -11,11 +11,11 @@ async function getRestaurant(request: NextRequest) {
   const admin = createSupabaseAdmin()
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, name, logo_url')
     .eq('owner_id', user.id)
     .maybeSingle()
   if (!restaurant) return { error: 'Restaurant not found', status: 403 }
-  return { restaurantId: restaurant.id }
+  return { restaurantId: restaurant.id, restaurantName: restaurant.name as string, logoUrl: restaurant.logo_url as string | null }
 }
 
 export async function GET(request: NextRequest) {
@@ -75,9 +75,12 @@ export async function POST(request: NextRequest) {
           .replace('{{discount_code}}', hasCode ? String(discount_code) : '{{discount_code}}')
           .replace('{{discount_percent}}', hasPct ? String(discount_percent) : '{{discount_percent}}')
       : ''
+    const logoBlockHtml = buildLogoBlock(result.logoUrl, result.restaurantName)
     finalHtml = renderEmailTemplate(shell, {
-      restaurant_name: '{{restaurant_name}}',
+      restaurant_name: result.restaurantName,
       customer_name: '{{customer_name}}',
+      logo_url: result.logoUrl ?? '',
+      logo_block: logoBlockHtml,
       hero_text: typeof hero_text === 'string' ? hero_text : String(name),
       body_text: typeof body_text === 'string' ? body_text : '',
       cta_text: typeof cta_text === 'string' ? cta_text : 'Jetzt bestellen',
