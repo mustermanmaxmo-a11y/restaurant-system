@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { getBaseTemplateForTrigger } from '@/lib/email-base-templates'
+import { renderEmailTemplate } from '@/lib/email-template-renderer'
 
 async function getRestaurant(request: NextRequest) {
   const supabase = await createSupabaseServerSSR()
@@ -44,9 +46,42 @@ export async function POST(request: NextRequest) {
   let body: Record<string, unknown>
   try { body = await request.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
 
-  const { name, trigger_type, subject_template, body_html, created_by_ai } = body
-  if (!name || !subject_template || !body_html) {
-    return NextResponse.json({ error: 'name, subject_template and body_html are required' }, { status: 400 })
+  const {
+    name, trigger_type, subject_template, created_by_ai,
+    // fields for server-side HTML generation
+    base_template, hero_text, body_text, cta_text,
+    discount_code, discount_percent, primary_color,
+    // or pre-built html
+    body_html: rawBodyHtml,
+  } = body
+
+  if (!name || !subject_template) {
+    return NextResponse.json({ error: 'name and subject_template are required' }, { status: 400 })
+  }
+
+  // Build full HTML on server if base_template provided, otherwise use raw body_html
+  let finalHtml: string
+  if (base_template && typeof base_template === 'string') {
+    const shell = getBaseTemplateForTrigger(
+      typeof trigger_type === 'string' ? trigger_type : base_template,
+      typeof primary_color === 'string' ? primary_color : '#f97316'
+    )
+    finalHtml = renderEmailTemplate(shell, {
+      restaurant_name: '{{restaurant_name}}',
+      customer_name: '{{customer_name}}',
+      hero_text: typeof hero_text === 'string' ? hero_text : String(name),
+      body_text: typeof body_text === 'string' ? body_text : '',
+      cta_text: typeof cta_text === 'string' ? cta_text : 'Jetzt besuchen',
+      cta_url: '{{cta_url}}',
+      discount_code: typeof discount_code === 'string' ? discount_code : '{{discount_code}}',
+      discount_percent: typeof discount_percent === 'string' ? discount_percent : '{{discount_percent}}',
+      unsubscribe_url: '{{unsubscribe_url}}',
+      primary_color: typeof primary_color === 'string' ? primary_color : '#f97316',
+    })
+  } else if (rawBodyHtml && typeof rawBodyHtml === 'string') {
+    finalHtml = rawBodyHtml
+  } else {
+    return NextResponse.json({ error: 'Either base_template or body_html is required' }, { status: 400 })
   }
 
   const admin = createSupabaseAdmin()
@@ -57,7 +92,7 @@ export async function POST(request: NextRequest) {
       name,
       trigger_type: trigger_type ?? 'manual',
       subject_template,
-      body_html,
+      body_html: finalHtml,
       created_by_ai: created_by_ai === true,
     })
     .select('id, name, trigger_type')
