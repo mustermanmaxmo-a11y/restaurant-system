@@ -514,14 +514,16 @@ export default function BestellenV1() {
       const { data: { user: guestUser } } = await supabase.auth.getUser()
       const emailToSave = guestUser?.email || (marketingOptIn ? marketingEmail.trim() : null)
       if (emailToSave) {
-        await supabase.from('marketing_subscribers').upsert({
+        const upsertData: Record<string, unknown> = {
           restaurant_id: restaurant.id,
           email: emailToSave,
           name: customerName || null,
-          subscribed: marketingOptIn,
           source: 'order',
           last_order_at: new Date().toISOString(),
-        }, { onConflict: 'restaurant_id,email' })
+        }
+        // Only set subscribed:true when user explicitly opts in — never overwrite true→false
+        if (marketingOptIn) upsertData.subscribed = true
+        await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
       }
     }
   }

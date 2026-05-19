@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
-import { getBaseTemplateForTrigger } from '@/lib/email-base-templates'
+import { getBaseTemplateForTrigger, DISCOUNT_BLOCK } from '@/lib/email-base-templates'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
 
 async function getRestaurant(request: NextRequest) {
@@ -62,21 +62,31 @@ export async function POST(request: NextRequest) {
   // Build full HTML on server if base_template provided, otherwise use raw body_html
   let finalHtml: string
   if (base_template && typeof base_template === 'string') {
+    const color = typeof primary_color === 'string' ? primary_color : '#f97316'
     const shell = getBaseTemplateForTrigger(
       typeof trigger_type === 'string' ? trigger_type : base_template,
-      typeof primary_color === 'string' ? primary_color : '#f97316'
+      color
     )
+    // Build discount block: keep as placeholder vars if no code provided yet
+    const hasCode = typeof discount_code === 'string' && discount_code.trim()
+    const hasPct = typeof discount_percent === 'string' && discount_percent.trim()
+    const discountBlockHtml = (hasCode || hasPct)
+      ? DISCOUNT_BLOCK(color)
+          .replace('{{discount_code}}', hasCode ? String(discount_code) : '{{discount_code}}')
+          .replace('{{discount_percent}}', hasPct ? String(discount_percent) : '{{discount_percent}}')
+      : ''
     finalHtml = renderEmailTemplate(shell, {
       restaurant_name: '{{restaurant_name}}',
       customer_name: '{{customer_name}}',
       hero_text: typeof hero_text === 'string' ? hero_text : String(name),
       body_text: typeof body_text === 'string' ? body_text : '',
-      cta_text: typeof cta_text === 'string' ? cta_text : 'Jetzt besuchen',
+      cta_text: typeof cta_text === 'string' ? cta_text : 'Jetzt bestellen',
       cta_url: '{{cta_url}}',
+      discount_block: discountBlockHtml,
       discount_code: typeof discount_code === 'string' ? discount_code : '{{discount_code}}',
       discount_percent: typeof discount_percent === 'string' ? discount_percent : '{{discount_percent}}',
       unsubscribe_url: '{{unsubscribe_url}}',
-      primary_color: typeof primary_color === 'string' ? primary_color : '#f97316',
+      primary_color: color,
     })
   } else if (rawBodyHtml && typeof rawBodyHtml === 'string') {
     finalHtml = rawBodyHtml

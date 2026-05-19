@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getPlatformSettings } from '@/lib/platform-config'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
-import { getBaseTemplateForTrigger } from '@/lib/email-base-templates'
+import { getBaseTemplateForTrigger, DISCOUNT_BLOCK } from '@/lib/email-base-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +71,7 @@ function isSeasonalMatch(today: Date): boolean {
 type RestaurantRef = {
   id: string
   name: string
+  slug: string
   plan: string
   design_config?: { primary_color?: string } | null
 }
@@ -124,7 +125,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
   // 1. Get all active automations across all restaurants
   const { data: automations, error: autoError } = await supabase
     .from('marketing_automations')
-    .select('*, restaurants(id, name, plan, design_config)')
+    .select('*, restaurants(id, name, slug, plan, design_config)')
     .eq('active', true)
 
   if (autoError) throw new Error(autoError.message)
@@ -261,6 +262,33 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
         .slice(0, 32)
       const unsubLink = `${appUrl}/unsubscribe?rid=${restaurant.id}&token=${unsubToken}`
 
+      const orderUrl = `${appUrl}/bestellen/${restaurant.slug}`
+
+      const ctaTextMap: Record<string, string> = {
+        post_order: 'Wieder bestellen',
+        inactivity_14d: 'Gutschein einlösen',
+        birthday: 'Geburtstagsrabatt einlösen',
+        seasonal: 'Jetzt bestellen',
+        scheduled: 'Jetzt bestellen',
+      }
+      const ctaText = ctaTextMap[automation.trigger_type] ?? 'Jetzt bestellen'
+
+      const discountCodeMap: Record<string, string> = {
+        post_order: '',
+        inactivity_14d: `COMEBACK${discount}`,
+        birthday: `BDAY${discount}`,
+        seasonal: `SEASON${discount}`,
+        scheduled: `SPECIAL${discount}`,
+      }
+      const discountCode = discountCodeMap[automation.trigger_type] ?? ''
+
+      // Pre-render discount block so renderEmailTemplate gets a clean string
+      const discountBlockHtml = discountCode
+        ? DISCOUNT_BLOCK(primaryColor)
+            .replace('{{discount_code}}', discountCode)
+            .replace('{{discount_percent}}', String(discount))
+        : ''
+
       let htmlBody: string
 
       if (templateRow) {
@@ -269,7 +297,10 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
           restaurant_name: restaurant.name,
           customer_name: subscriber.email.split('@')[0],
           discount_percent: String(discount),
-          cta_url: appUrl,
+          discount_code: discountCode,
+          discount_block: discountBlockHtml,
+          cta_url: orderUrl,
+          cta_text: ctaText,
           unsubscribe_url: unsubLink,
           primary_color: primaryColor,
         })
@@ -281,8 +312,10 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
           customer_name: subscriber.email.split('@')[0],
           hero_text: subject,
           body_text: plainText,
-          cta_text: 'Jetzt besuchen',
-          cta_url: appUrl,
+          cta_text: ctaText,
+          cta_url: orderUrl,
+          discount_code: discountCode,
+          discount_block: discountBlockHtml,
           discount_percent: String(discount),
           unsubscribe_url: unsubLink,
           primary_color: primaryColor,
