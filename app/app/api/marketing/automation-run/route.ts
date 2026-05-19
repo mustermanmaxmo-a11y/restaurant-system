@@ -294,7 +294,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
 
       try {
         await resend.emails.send({
-          from: `${restaurant.name} <noreply@restaurantos.app>`,
+          from: `${restaurant.name} <onboarding@resend.dev>`,
           to: subscriber.email,
           subject,
           html: htmlBody,
