@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getPlatformSettings } from '@/lib/platform-config'
+import { renderEmailTemplate } from '@/lib/email-template-renderer'
+import { getBaseTemplateForTrigger } from '@/lib/email-base-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +32,7 @@ function buildSubject(automation: AutomationRow, restaurant: RestaurantRef): str
   }
 }
 
-function buildBody(automation: AutomationRow, restaurant: RestaurantRef): string {
+function buildPlainBody(automation: AutomationRow, restaurant: RestaurantRef): string {
   if (automation.body_template) {
     return automation.body_template
       .replace(/\[restaurant\.name\]/g, restaurant.name)
@@ -66,7 +68,12 @@ function isSeasonalMatch(today: Date): boolean {
 
 // ---------- types ----------
 
-type RestaurantRef = { id: string; name: string; plan: string }
+type RestaurantRef = {
+  id: string
+  name: string
+  plan: string
+  design_config?: { primary_color?: string } | null
+}
 
 type AutomationRow = {
   id: string
@@ -76,6 +83,7 @@ type AutomationRow = {
   subject_template: string | null
   body_template: string | null
   discount_percent: number | null
+  template_id: string | null
   active: boolean
   last_run_at: string | null
   restaurants: RestaurantRef
@@ -91,16 +99,16 @@ type Subscriber = {
   subscribed: boolean
 }
 
-// ---------- main handler ----------
+type EmailTemplateRow = {
+  id: string
+  subject_template: string
+  body_html: string
+}
 
-export async function POST(request: NextRequest) {
+// ---------- core logic (exported for Vercel Cron) ----------
+
+export async function runMarketingAutomations(): Promise<{ processed: number; sent: number; errors: number }> {
   const platformSettings = await getPlatformSettings()
-  const authHeader = request.headers.get('authorization')
-  const secret = platformSettings.marketing_automation_secret
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
   const supabase = getAdminClient()
   const resend = new Resend(process.env.RESEND_API_KEY)
   const today = new Date()
@@ -116,16 +124,16 @@ export async function POST(request: NextRequest) {
   // 1. Get all active automations across all restaurants
   const { data: automations, error: autoError } = await supabase
     .from('marketing_automations')
-    .select('*, restaurants(id, name, plan)')
+    .select('*, restaurants(id, name, plan, design_config)')
     .eq('active', true)
 
-  if (autoError) {
-    return NextResponse.json({ error: autoError.message }, { status: 500 })
-  }
+  if (autoError) throw new Error(autoError.message)
 
   let processed = 0
   let sent = 0
   let errors = 0
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://restaurantos.app'
 
   for (const automation of (automations ?? []) as AutomationRow[]) {
     const restaurant = automation.restaurants
@@ -137,7 +145,6 @@ export async function POST(request: NextRequest) {
     let eligibleSubscribers: Subscriber[] = []
 
     if (automation.trigger_type === 'post_order') {
-      // Ordered in the last 2-4 hours (capture recent orders, not instant duplicates)
       const { data } = await supabase
         .from('marketing_subscribers')
         .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
@@ -148,8 +155,6 @@ export async function POST(request: NextRequest) {
       eligibleSubscribers = (data ?? []) as Subscriber[]
 
     } else if (automation.trigger_type === 'inactivity_14d') {
-      // last_order_at older than 14 days ago, OR never ordered but subscribed 14+ days ago
-      // (prevents brand-new subscribers from immediately qualifying)
       const { data } = await supabase
         .from('marketing_subscribers')
         .select('id, email, restaurant_id, last_order_at, opted_in_at, birthday, subscribed')
@@ -159,7 +164,6 @@ export async function POST(request: NextRequest) {
       eligibleSubscribers = (data ?? []) as Subscriber[]
 
     } else if (automation.trigger_type === 'birthday') {
-      // Birthday month + day matches today — filter in JS (Supabase lacks EXTRACT in .filter)
       const { data } = await supabase
         .from('marketing_subscribers')
         .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
@@ -197,7 +201,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (eligibleSubscribers.length === 0) {
-      // Still update last_run_at
       await supabase
         .from('marketing_automations')
         .update({ last_run_at: new Date().toISOString() })
@@ -205,16 +208,40 @@ export async function POST(request: NextRequest) {
       continue
     }
 
-    // 3. Build email content once per automation
-    const subject = buildSubject(automation, restaurant)
-    const body = buildBody(automation, restaurant)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://restaurantos.app'
+    // 3. Fetch template if assigned, else build plain HTML
+    let templateRow: EmailTemplateRow | null = null
+    if (automation.template_id) {
+      const { data } = await supabase
+        .from('email_templates')
+        .select('id, subject_template, body_html')
+        .eq('id', automation.template_id)
+        .maybeSingle()
+      templateRow = data as EmailTemplateRow | null
+    }
+
+    const primaryColor = restaurant.design_config?.primary_color ?? '#f97316'
+    const discount = automation.discount_percent ?? 10
+
+    // Build subject once per automation
+    let subject: string
+    if (templateRow?.subject_template) {
+      subject = renderEmailTemplate(templateRow.subject_template, {
+        restaurant_name: restaurant.name,
+        discount_percent: String(discount),
+      })
+    } else {
+      subject = buildSubject(automation, restaurant)
+    }
+
+    // If no DB template: build a fallback branded shell
+    let baseHtml: string | null = null
+    if (!templateRow) {
+      baseHtml = getBaseTemplateForTrigger(automation.trigger_type, primaryColor)
+    }
+
+    const unsubSecret = platformSettings.unsubscribe_secret ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
 
     for (const subscriber of eligibleSubscribers) {
-      // Deduplication via reengagement_log.
-      // reengagement_log schema: id, restaurant_id, member_id (FK loyalty_members nullable), rule, sent_date, sent_at
-      // We use rule = `auto_<automation.id>_<subscriber.id>` to uniquely identify per-subscriber sends.
-      // member_id is kept null (marketing_subscribers != loyalty_members).
       const dedupeRule = `auto_${automation.id}_${subscriber.id}`
 
       const { data: alreadySent } = await supabase
@@ -227,15 +254,43 @@ export async function POST(request: NextRequest) {
 
       if (alreadySent) continue
 
-      // DSGVO: use HMAC token instead of raw email in URL (prevents PII exposure in logs/referrers)
-      const unsubSecret = platformSettings.unsubscribe_secret ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
       const unsubToken = crypto
         .createHmac('sha256', unsubSecret)
         .update(`${restaurant.id}:${subscriber.email}`)
         .digest('hex')
         .slice(0, 32)
       const unsubLink = `${appUrl}/unsubscribe?rid=${restaurant.id}&token=${unsubToken}`
-      const htmlBody = `<p>${body.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p><hr style="border:none;border-top:1px solid #eee;margin:20px 0"/><p style="font-size:12px;color:#aaa">Sie erhalten diese E-Mail als Gast von ${restaurant.name}. <a href="${unsubLink}" style="color:#aaa">Abmelden</a></p>`
+
+      let htmlBody: string
+
+      if (templateRow) {
+        // Render DB template with per-subscriber vars
+        htmlBody = renderEmailTemplate(templateRow.body_html, {
+          restaurant_name: restaurant.name,
+          customer_name: subscriber.email.split('@')[0],
+          discount_percent: String(discount),
+          cta_url: appUrl,
+          unsubscribe_url: unsubLink,
+          primary_color: primaryColor,
+        })
+      } else if (baseHtml) {
+        // Render fallback shell
+        const plainText = buildPlainBody(automation, restaurant)
+        htmlBody = renderEmailTemplate(baseHtml, {
+          restaurant_name: restaurant.name,
+          customer_name: subscriber.email.split('@')[0],
+          hero_text: subject,
+          body_text: plainText,
+          cta_text: 'Jetzt besuchen',
+          cta_url: appUrl,
+          discount_percent: String(discount),
+          unsubscribe_url: unsubLink,
+          primary_color: primaryColor,
+        })
+      } else {
+        const plainText = buildPlainBody(automation, restaurant)
+        htmlBody = `<p>${plainText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p><hr style="border:none;border-top:1px solid #eee;margin:20px 0"/><p style="font-size:12px;color:#aaa">Sie erhalten diese E-Mail als Gast von ${restaurant.name}. <a href="${unsubLink}" style="color:#aaa">Abmelden</a></p>`
+      }
 
       try {
         await resend.emails.send({
@@ -245,7 +300,6 @@ export async function POST(request: NextRequest) {
           html: htmlBody,
         })
 
-        // Log send for deduplication
         await supabase.from('reengagement_log').insert({
           restaurant_id: restaurant.id,
           member_id: null,
@@ -267,5 +321,24 @@ export async function POST(request: NextRequest) {
       .eq('id', automation.id)
   }
 
-  return NextResponse.json({ processed, sent, errors })
+  return { processed, sent, errors }
+}
+
+// ---------- POST handler (N8N webhook) ----------
+
+export async function POST(request: NextRequest) {
+  const platformSettings = await getPlatformSettings()
+  const authHeader = request.headers.get('authorization')
+  const secret = platformSettings.marketing_automation_secret
+  if (!secret || authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const result = await runMarketingAutomations()
+    return NextResponse.json(result)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

@@ -1,0 +1,249 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface Template {
+  id: string
+  name: string
+  trigger_type: string | null
+  subject_template: string
+  body_html: string
+  is_active: boolean
+  created_by_ai: boolean
+  created_at: string
+}
+
+const TRIGGER_LABELS: Record<string, string> = {
+  birthday: '🎂 Geburtstag',
+  inactivity_14d: '💌 Comeback',
+  seasonal: '🌿 Saisonal',
+  post_order: '📦 Nach Bestellung',
+  scheduled: '📅 Geplant',
+  manual: '✋ Manuell',
+}
+
+const FILTER_OPTIONS = [
+  { value: 'all', label: 'Alle' },
+  { value: 'birthday', label: '🎂 Geburtstag' },
+  { value: 'inactivity_14d', label: '💌 Comeback' },
+  { value: 'seasonal', label: '🌿 Saisonal' },
+  { value: 'manual', label: '✋ Manuell' },
+]
+
+export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTemplates: Template[], restaurantId: string }) {
+  const router = useRouter()
+  const [templates, setTemplates] = useState<Template[]>(initialTemplates)
+  const [filter, setFilter] = useState('all')
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editSubject, setEditSubject] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const filtered = filter === 'all' ? templates : templates.filter(t => t.trigger_type === filter)
+
+  async function toggleActive(id: string, current: boolean) {
+    await fetch('/api/marketing/templates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_active: !current }),
+    })
+    setTemplates(prev => prev.map(t => t.id === id ? { ...t, is_active: !current } : t))
+  }
+
+  async function deleteTemplate(id: string) {
+    if (!confirm('Template wirklich löschen?')) return
+    await fetch(`/api/marketing/templates?id=${id}`, { method: 'DELETE' })
+    setTemplates(prev => prev.filter(t => t.id !== id))
+  }
+
+  async function saveEdit(id: string) {
+    setSaving(true)
+    await fetch('/api/marketing/templates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name: editName, subject_template: editSubject }),
+    })
+    setTemplates(prev => prev.map(t => t.id === id ? { ...t, name: editName, subject_template: editSubject } : t))
+    setEditingId(null)
+    setSaving(false)
+  }
+
+  return (
+    <div style={{ padding: '28px 24px', maxWidth: '1100px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em' }}>Email-Templates</h1>
+          <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: 0 }}>KI-generierte Templates für Automationen — werden beim Versand mit Branding befüllt</p>
+        </div>
+        <button
+          onClick={() => router.push('/admin/marketing/advisor')}
+          style={{ background: '#8b5cf6', border: 'none', borderRadius: '10px', padding: '10px 18px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+        >
+          + KI-Berater öffnen
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        {FILTER_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setFilter(opt.value)}
+            style={{
+              background: filter === opt.value ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${filter === opt.value ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
+              borderRadius: '8px',
+              padding: '6px 14px',
+              color: filter === opt.value ? '#8b5cf6' : '#9ca3af',
+              fontWeight: filter === opt.value ? 700 : 500,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '48px', textAlign: 'center' }}>
+          <p style={{ color: '#4b5563', fontSize: '0.95rem', margin: '0 0 16px' }}>Noch keine Templates. Lass die KI eines erstellen.</p>
+          <button
+            onClick={() => router.push('/admin/marketing/advisor')}
+            style={{ background: '#8b5cf6', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+          >
+            KI-Berater öffnen →
+          </button>
+        </div>
+      )}
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+        {filtered.map(tpl => (
+          <div
+            key={tpl.id}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: `1px solid ${tpl.is_active ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.07)'}`,
+              borderRadius: '14px',
+              overflow: 'hidden',
+              opacity: tpl.is_active ? 1 : 0.6,
+            }}
+          >
+            {/* Preview iframe */}
+            <div style={{ height: '200px', background: '#1a1a1a', position: 'relative', overflow: 'hidden' }}>
+              <iframe
+                srcDoc={tpl.body_html}
+                style={{ width: '200%', height: '400px', border: 'none', transform: 'scale(0.5)', transformOrigin: '0 0', pointerEvents: 'none' }}
+                sandbox="allow-same-origin"
+                title={tpl.name}
+              />
+              <button
+                onClick={() => setPreviewTemplate(tpl)}
+                style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+              >
+                <span style={{ background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '8px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>Vorschau öffnen</span>
+              </button>
+            </div>
+
+            {/* Info */}
+            <div style={{ padding: '14px 16px' }}>
+              {editingId === tpl.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Template Name"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '0.82rem', outline: 'none' }}
+                  />
+                  <input
+                    value={editSubject}
+                    onChange={e => setEditSubject(e.target.value)}
+                    placeholder="Betreff-Template"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '0.82rem', outline: 'none' }}
+                  />
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button onClick={() => saveEdit(tpl.id)} disabled={saving} style={{ background: '#8b5cf6', border: 'none', borderRadius: '6px', padding: '5px 12px', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                      {saving ? '...' : 'Speichern'}
+                    </button>
+                    <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '5px 12px', color: '#9ca3af', fontSize: '0.78rem', cursor: 'pointer' }}>
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{tpl.name}</p>
+                    {tpl.created_by_ai && (
+                      <span style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>✨ KI</span>
+                    )}
+                  </div>
+                  {tpl.trigger_type && (
+                    <p style={{ color: '#6b7280', fontSize: '0.75rem', margin: '0 0 4px' }}>{TRIGGER_LABELS[tpl.trigger_type] ?? tpl.trigger_type}</p>
+                  )}
+                  <p style={{ color: '#9ca3af', fontSize: '0.78rem', margin: '0 0 12px', fontStyle: 'italic' }}>
+                    Betreff: {tpl.subject_template}
+                  </p>
+                </>
+              )}
+
+              {/* Actions */}
+              {editingId !== tpl.id && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { setEditingId(tpl.id); setEditName(tpl.name); setEditSubject(tpl.subject_template) }}
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '5px 10px', color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    ✏️ Bearbeiten
+                  </button>
+                  <button
+                    onClick={() => toggleActive(tpl.id, tpl.is_active)}
+                    style={{ background: tpl.is_active ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${tpl.is_active ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '6px', padding: '5px 10px', color: tpl.is_active ? '#22c55e' : '#6b7280', fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    {tpl.is_active ? '✓ Aktiv' : '○ Inaktiv'}
+                  </button>
+                  <button
+                    onClick={() => deleteTemplate(tpl.id)}
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', padding: '5px 10px', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    🗑
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Preview Modal */}
+      {previewTemplate && (
+        <div
+          onClick={() => setPreviewTemplate(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', width: '100%', maxWidth: '640px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{previewTemplate.name}</p>
+              <button onClick={() => setPreviewTemplate(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f5f5f5' }}>
+              <iframe
+                srcDoc={previewTemplate.body_html}
+                style={{ width: '100%', height: '600px', border: 'none' }}
+                sandbox="allow-same-origin"
+                title={previewTemplate.name}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

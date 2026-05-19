@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     body_template,
     discount_code_prefix,
     discount_percent,
+    template_id,
     active,
   } = body
 
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
         body_template: body_template ?? null,
         discount_code_prefix: discount_code_prefix ?? null,
         discount_percent: discount_percent ?? null,
+        template_id: template_id ?? null,
         active: active ?? true,
       },
       { onConflict: 'restaurant_id,trigger_type' }
@@ -100,16 +102,27 @@ export async function PATCH(request: NextRequest) {
   if (error === 'not_found' || !restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   const body = await request.json().catch(() => ({}))
-  const { id, active } = body
+  const { id, active, template_id } = body
 
-  if (!id || typeof active !== 'boolean') {
-    return NextResponse.json({ error: 'id and active (boolean) required' }, { status: 400 })
+  if (!id) {
+    return NextResponse.json({ error: 'id required' }, { status: 400 })
+  }
+  if (active !== undefined && typeof active !== 'boolean') {
+    return NextResponse.json({ error: 'active must be boolean' }, { status: 400 })
+  }
+
+  const patch: Record<string, unknown> = {}
+  if (active !== undefined) patch.active = active
+  if ('template_id' in body) patch.template_id = template_id ?? null
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   }
 
   const supabase = createSupabaseAdmin()
   const { error: dbError } = await supabase
     .from('marketing_automations')
-    .update({ active })
+    .update(patch)
     .eq('id', id)
     .eq('restaurant_id', restaurant.id)
 

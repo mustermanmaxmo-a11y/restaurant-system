@@ -27,16 +27,25 @@ export default async function AutomationsPage() {
     )
   }
 
-  const { data: automations } = await supabase
-    .from('marketing_automations')
-    .select('*')
-    .eq('restaurant_id', restaurant.id)
-    .order('created_at', { ascending: true })
+  const [{ data: automations }, { data: templates }] = await Promise.all([
+    supabase
+      .from('marketing_automations')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('email_templates')
+      .select('id, name, trigger_type, is_active')
+      .eq('restaurant_id', restaurant.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false }),
+  ])
 
   return (
     <AutomationRules
       automations={automations ?? []}
       restaurantId={restaurant.id}
+      templates={templates ?? []}
     />
   )
 }
