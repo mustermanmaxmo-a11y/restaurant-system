@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { KeyRound, CheckCircle2, Sparkles, Bell } from 'lucide-react'
+import { KeyRound, CheckCircle2, Sparkles, Bell, Image, Video, Webhook, Lock } from 'lucide-react'
 
 export default function PlatformSettingsPage() {
   const [newPassword, setNewPassword] = useState('')
@@ -21,18 +21,36 @@ export default function PlatformSettingsPage() {
   const [notifyEmailSuccess, setNotifyEmailSuccess] = useState(false)
   const [notifyEmailError, setNotifyEmailError] = useState('')
 
+  // Marketing API keys
+  const [falKey, setFalKey] = useState('')
+  const [klingKey, setKlingKey] = useState('')
+  const [automationSecret, setAutomationSecret] = useState('')
+  const [unsubscribeSecret, setUnsubscribeSecret] = useState('')
+  const [marketingKeysSet, setMarketingKeysSet] = useState({ fal_api_key: false, kling_api_key: false, marketing_automation_secret: false, unsubscribe_secret: false })
+  const [marketingKeysSaving, setMarketingKeysSaving] = useState(false)
+  const [marketingKeysSuccess, setMarketingKeysSuccess] = useState(false)
+  const [marketingKeysError, setMarketingKeysError] = useState('')
+
   useEffect(() => {
-    async function loadNotifyEmail() {
+    async function loadSettings() {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/platform/notification-email', {
-        headers: { 'Authorization': `Bearer ${session?.access_token ?? ''}` },
-      })
-      if (res.ok) {
-        const json = await res.json()
+      const headers = { 'Authorization': `Bearer ${session?.access_token ?? ''}` }
+
+      const [emailRes, mktRes] = await Promise.all([
+        fetch('/api/platform/notification-email', { headers }),
+        fetch('/api/platform/marketing-keys', { headers }),
+      ])
+
+      if (emailRes.ok) {
+        const json = await emailRes.json()
         setNotifyEmail(json.email ?? '')
       }
+      if (mktRes.ok) {
+        const json = await mktRes.json()
+        setMarketingKeysSet(json)
+      }
     }
-    loadNotifyEmail()
+    loadSettings()
   }, [])
 
   async function handleAiKeySave() {
@@ -88,6 +106,52 @@ export default function PlatformSettingsPage() {
       setNotifyEmailError('Speichern fehlgeschlagen.')
     }
     setNotifyEmailSaving(false)
+  }
+
+  async function handleMarketingKeysSave() {
+    const payload: Record<string, string> = {}
+    if (falKey.trim()) payload.fal_api_key = falKey.trim()
+    if (klingKey.trim()) payload.kling_api_key = klingKey.trim()
+    if (automationSecret.trim()) payload.marketing_automation_secret = automationSecret.trim()
+    if (unsubscribeSecret.trim()) payload.unsubscribe_secret = unsubscribeSecret.trim()
+
+    if (Object.keys(payload).length === 0) {
+      setMarketingKeysError('Bitte mindestens einen Key eingeben.')
+      return
+    }
+
+    setMarketingKeysSaving(true)
+    setMarketingKeysError('')
+    setMarketingKeysSuccess(false)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/platform/marketing-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify(payload),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setMarketingKeysError('Fehler: ' + (json.error ?? 'Unbekannt'))
+      } else {
+        setMarketingKeysSuccess(true)
+        setFalKey('')
+        setKlingKey('')
+        setAutomationSecret('')
+        setUnsubscribeSecret('')
+        setMarketingKeysSet(prev => ({
+          ...prev,
+          ...(payload.fal_api_key ? { fal_api_key: true } : {}),
+          ...(payload.kling_api_key ? { kling_api_key: true } : {}),
+          ...(payload.marketing_automation_secret ? { marketing_automation_secret: true } : {}),
+          ...(payload.unsubscribe_secret ? { unsubscribe_secret: true } : {}),
+        }))
+      }
+    } catch {
+      setMarketingKeysError('Speichern fehlgeschlagen.')
+    }
+    setMarketingKeysSaving(false)
   }
 
   async function handlePasswordChange() {
@@ -164,6 +228,78 @@ export default function PlatformSettingsPage() {
               {aiKeySaving ? 'Wird gespeichert...' : 'Key speichern'}
             </button>
           </div>
+        </div>
+      </Section>
+
+      <Section title="Marketing API Keys">
+        <div style={{
+          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px',
+        }}>
+          <p style={{ color: '#666', fontSize: '0.78rem', marginTop: 0 }}>
+            Diese Keys werden für Bildgenerierung (fal.ai), Videogenerierung (Kling AI) und die N8N-Automationen verwendet.
+          </p>
+
+          <KeyField
+            icon={<Image size={16} color="#e85d26" />}
+            iconBg="rgba(232,93,38,0.12)"
+            label="fal.ai API Key"
+            description="Bildgenerierung im Social Media Hub"
+            placeholder="fal_..."
+            value={falKey}
+            isSet={marketingKeysSet.fal_api_key}
+            onChange={v => { setFalKey(v); setMarketingKeysSuccess(false) }}
+          />
+          <KeyField
+            icon={<Video size={16} color="#8b5cf6" />}
+            iconBg="rgba(139,92,246,0.12)"
+            label="Kling AI API Key"
+            description="Videogenerierung (Pro-Plan)"
+            placeholder="Bearer ..."
+            value={klingKey}
+            isSet={marketingKeysSet.kling_api_key}
+            onChange={v => { setKlingKey(v); setMarketingKeysSuccess(false) }}
+          />
+          <KeyField
+            icon={<Webhook size={16} color="#10b981" />}
+            iconBg="rgba(16,185,129,0.12)"
+            label="N8N Automation Secret"
+            description="Sichert den /api/marketing/automation-run Webhook"
+            placeholder="Zufälliger langer String..."
+            value={automationSecret}
+            isSet={marketingKeysSet.marketing_automation_secret}
+            onChange={v => { setAutomationSecret(v); setMarketingKeysSuccess(false) }}
+          />
+          <KeyField
+            icon={<Lock size={16} color="#f59e0b" />}
+            iconBg="rgba(245,158,11,0.12)"
+            label="Unsubscribe Secret"
+            description="HMAC-Token für sichere Abmelde-Links in Automations-Emails"
+            placeholder="Zufälliger langer String..."
+            value={unsubscribeSecret}
+            isSet={marketingKeysSet.unsubscribe_secret}
+            onChange={v => { setUnsubscribeSecret(v); setMarketingKeysSuccess(false) }}
+          />
+
+          {marketingKeysError && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{marketingKeysError}</p>}
+          {marketingKeysSuccess && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem' }}>
+              <CheckCircle2 size={14} /> Keys gespeichert
+            </div>
+          )}
+          <button
+            onClick={handleMarketingKeysSave}
+            disabled={marketingKeysSaving || (!falKey && !klingKey && !automationSecret && !unsubscribeSecret)}
+            style={{
+              alignSelf: 'flex-start', padding: '9px 18px', borderRadius: '8px',
+              border: 'none', background: '#e85d26', color: '#fff',
+              fontSize: '0.82rem', fontWeight: 700,
+              cursor: marketingKeysSaving || (!falKey && !klingKey && !automationSecret && !unsubscribeSecret) ? 'not-allowed' : 'pointer',
+              opacity: marketingKeysSaving || (!falKey && !klingKey && !automationSecret && !unsubscribeSecret) ? 0.6 : 1,
+            }}
+          >
+            {marketingKeysSaving ? 'Wird gespeichert...' : 'Keys speichern'}
+          </button>
         </div>
       </Section>
 
@@ -281,6 +417,47 @@ export default function PlatformSettingsPage() {
           </div>
         </div>
       </Section>
+    </div>
+  )
+}
+
+function KeyField({ icon, iconBg, label, description, placeholder, value, isSet, onChange }: {
+  icon: React.ReactNode
+  iconBg: string
+  label: string
+  description: string
+  placeholder: string
+  value: string
+  isSet: boolean
+  onChange: (v: string) => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {icon}
+        </div>
+        <div>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.82rem', marginBottom: 0 }}>
+            {label}
+            {isSet && <span style={{ marginLeft: '8px', background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: '0.7rem', padding: '1px 6px', borderRadius: '4px' }}>✓ gesetzt</span>}
+          </p>
+          <p style={{ color: '#666', fontSize: '0.75rem' }}>{description}</p>
+        </div>
+      </div>
+      <input
+        type="password"
+        placeholder={isSet ? '••••••••••••••••' : placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          padding: '9px 12px', borderRadius: '8px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(255,255,255,0.05)', color: '#fff',
+          fontSize: '0.82rem', outline: 'none',
+          width: '100%', boxSizing: 'border-box' as const, fontFamily: 'monospace',
+        }}
+      />
     </div>
   )
 }

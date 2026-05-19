@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import crypto from 'crypto'
+import { getPlatformSettings } from '@/lib/platform-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,8 +94,9 @@ type Subscriber = {
 // ---------- main handler ----------
 
 export async function POST(request: NextRequest) {
+  const platformSettings = await getPlatformSettings()
   const authHeader = request.headers.get('authorization')
-  const secret = process.env.MARKETING_AUTOMATION_SECRET
+  const secret = platformSettings.marketing_automation_secret
   if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -226,7 +228,7 @@ export async function POST(request: NextRequest) {
       if (alreadySent) continue
 
       // DSGVO: use HMAC token instead of raw email in URL (prevents PII exposure in logs/referrers)
-      const unsubSecret = process.env.UNSUBSCRIBE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
+      const unsubSecret = platformSettings.unsubscribe_secret ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
       const unsubToken = crypto
         .createHmac('sha256', unsubSecret)
         .update(`${restaurant.id}:${subscriber.email}`)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getPlatformSettings } from '@/lib/platform-config'
 
 export async function GET(request: NextRequest) {
   // --- Auth ---
@@ -22,7 +23,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'task_id is required' }, { status: 400 })
   }
 
-  if (!process.env.KLING_API_KEY) {
+  const platformSettings = await getPlatformSettings()
+  if (!platformSettings.kling_api_key) {
     return NextResponse.json({ success: false, error: 'Video generation not configured' }, { status: 503 })
   }
 
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
     const klingResponse = await fetch(`https://api.klingai.com/v1/videos/image2video/${taskId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${process.env.KLING_API_KEY}`,
+        'Authorization': `Bearer ${platformSettings.kling_api_key}`,
       },
     })
 

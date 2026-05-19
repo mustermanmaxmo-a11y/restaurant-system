@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
+import { getPlatformSettings } from '@/lib/platform-config'
 
 export async function POST(request: NextRequest) {
   // --- Auth ---
@@ -33,7 +34,8 @@ export async function POST(request: NextRequest) {
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   // --- API key check ---
-  if (!process.env.FAL_API_KEY) {
+  const platformSettings = await getPlatformSettings()
+  if (!platformSettings.fal_api_key) {
     return NextResponse.json({ success: false, error: 'Image generation not configured' }, { status: 503 })
   }
 
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
     const falResponse = await fetch(`https://fal.run/${model}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${process.env.FAL_API_KEY}`,
+        'Authorization': `Key ${platformSettings.fal_api_key}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

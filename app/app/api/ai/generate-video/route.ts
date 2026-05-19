@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
+import { getPlatformSettings } from '@/lib/platform-config'
 
 export async function POST(request: NextRequest) {
   // --- Auth ---
@@ -33,7 +34,8 @@ export async function POST(request: NextRequest) {
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   // --- API key check ---
-  if (!process.env.KLING_API_KEY) {
+  const platformSettings = await getPlatformSettings()
+  if (!platformSettings.kling_api_key) {
     return NextResponse.json({ success: false, error: 'Video generation not configured' }, { status: 503 })
   }
 
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
     const klingResponse = await fetch('https://api.klingai.com/v1/videos/image2video', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.KLING_API_KEY}`,
+        'Authorization': `Bearer ${platformSettings.kling_api_key}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
