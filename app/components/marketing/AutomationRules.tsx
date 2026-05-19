@@ -8,13 +8,22 @@ interface Automation {
   active: boolean
   discount_percent: number | null
   trigger_config: { weekday?: string; time?: string } | null
+  template_id: string | null
   last_run_at: string | null
   created_at: string
+}
+
+interface EmailTemplate {
+  id: string
+  name: string
+  trigger_type: string | null
+  is_active: boolean
 }
 
 interface Props {
   automations: Automation[]
   restaurantId: string
+  templates?: EmailTemplate[]
 }
 
 const AUTOMATION_TYPES = [
@@ -91,13 +100,14 @@ interface CardState {
   discount: number
   weekday: string
   time: string
+  templateId: string | null
   saving: boolean
   toggling: boolean
   savedMsg: string | null
   error: string | null
 }
 
-export function AutomationRules({ automations, restaurantId }: Props) {
+export function AutomationRules({ automations, restaurantId, templates = [] }: Props) {
   // Build initial state per trigger_type from DB data
   const initialStates: Record<string, CardState> = {}
   for (const type of AUTOMATION_TYPES) {
@@ -107,6 +117,7 @@ export function AutomationRules({ automations, restaurantId }: Props) {
       discount: record?.discount_percent ?? 10,
       weekday: record?.trigger_config?.weekday ?? 'friday',
       time: record?.trigger_config?.time ?? '17:00',
+      templateId: record?.template_id ?? null,
       saving: false,
       toggling: false,
       savedMsg: null,
@@ -165,6 +176,7 @@ export function AutomationRules({ automations, restaurantId }: Props) {
             active: newActive,
             discount_percent: current.discount,
             trigger_config: { weekday: current.weekday, time: current.time },
+            template_id: current.templateId,
           }),
         })
         const data = await res.json()
@@ -195,6 +207,7 @@ export function AutomationRules({ automations, restaurantId }: Props) {
           active: current.active,
           discount_percent: current.discount,
           trigger_config: { weekday: current.weekday, time: current.time },
+          template_id: current.templateId,
         }),
       })
       const data = await res.json()
@@ -418,6 +431,40 @@ export function AutomationRules({ automations, restaurantId }: Props) {
                         outline: 'none',
                       }}
                     />
+                  </div>
+                )}
+
+                {/* Template dropdown */}
+                {templates.length > 0 && (
+                  <div style={{ marginTop: type.hasDiscount || type.hasSchedule ? '10px' : '0' }}>
+                    <div style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                      Email-Template
+                    </div>
+                    <select
+                      value={s.templateId ?? ''}
+                      onChange={e => update(type.trigger_type, { templateId: e.target.value || null })}
+                      style={{
+                        width: '100%',
+                        background: 'rgba(255,255,255,0.07)',
+                        border: `1px solid ${s.templateId ? 'rgba(139,92,246,0.35)' : 'rgba(255,255,255,0.14)'}`,
+                        borderRadius: '8px',
+                        color: s.templateId ? '#c4b5fd' : '#6b7280',
+                        fontSize: '0.83rem',
+                        padding: '7px 10px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <option value="" style={{ background: '#1a1a2e', color: '#9ca3af' }}>— Kein Template (Nur Text) —</option>
+                      {templates
+                        .filter(t => t.is_active && (t.trigger_type === null || t.trigger_type === type.trigger_type))
+                        .map(t => (
+                          <option key={t.id} value={t.id} style={{ background: '#1a1a2e', color: '#f3f4f6' }}>
+                            {t.name}
+                          </option>
+                        ))
+                      }
+                    </select>
                   </div>
                 )}
               </div>

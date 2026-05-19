@@ -134,6 +134,22 @@ Gutschein-Best-Practices:
 </campaign-draft>
 
 - Füge den <campaign-draft>-Block nur ein, wenn du eine vollständige Kampagne erstellst — nicht bei Ratschlägen oder Fragen.
+
+Wenn der Nutzer ein **Email-Template** erstellen möchte (für Automationen wie Geburtstag, Comeback, Saisonal etc.), generiere GENAU dieses Format:
+
+<email-template>
+{"name":"...", "triggerType":"birthday|inactivity_14d|seasonal|post_order|scheduled|manual", "subjectTemplate":"...", "heroText":"...", "bodyText":"...", "ctaText":"...", "discountCode":"...", "discountPercent":"...", "baseTemplate":"birthday|comeback|seasonal|loyalty|general"}
+</email-template>
+
+Regeln für Email-Templates:
+- subjectTemplate darf Variablen enthalten: {{customer_name}}, {{restaurant_name}}, {{discount_code}}
+- heroText: kurze, emotionale Überschrift (max 8 Wörter)
+- bodyText: 2-3 Sätze, persönlich, mit konkretem Mehrwert
+- ctaText: handlungsorientiert ("Jetzt Tisch reservieren", "Angebot sichern")
+- discountCode und discountPercent: nur wenn Rabatt gewünscht, sonst weglassen
+- baseTemplate: wähle die passende Vorlage: birthday=Geburtstag, comeback=Inaktivitäts-Email, seasonal=Saisonal/Feiertage, loyalty=Treuebonus, general=allgemein
+- Füge den <email-template>-Block nur ein bei expliziter Template-Anfrage.
+
 - Immer spezifische Empfehlungen basierend auf den Restaurant-Daten geben (Abonnentenzahl, Öffnungsraten, Bestseller).
 - Bei Fragen zu DSGVO: konservativ antworten und auf Opt-in-Pflicht hinweisen.`)
 

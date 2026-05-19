@@ -4,6 +4,7 @@ const navItems = [
   { href: '/admin/marketing/advisor',     icon: '🤖', label: 'KI-Berater',   badge: null },
   { href: '/admin/marketing/campaigns',   icon: '📧', label: 'Kampagnen',    badge: null },
   { href: '/admin/marketing/automations', icon: '⚡', label: 'Automationen', badge: null },
+  { href: '/admin/marketing/templates',   icon: '📨', label: 'Templates',    badge: null },
   { href: '/admin/marketing/social',      icon: '📱', label: 'Social Media', badge: null },
   { href: '/admin/marketing/analytics',   icon: '📊', label: 'Analytics',    badge: null },
   { href: '/admin/marketing/subscribers', icon: '👥', label: 'Abonnenten',   badge: null },

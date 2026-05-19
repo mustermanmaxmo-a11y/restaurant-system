@@ -13,6 +13,18 @@ interface CampaignDraft {
   templateType: string
 }
 
+interface EmailTemplate {
+  name: string
+  triggerType: string
+  subjectTemplate: string
+  heroText: string
+  bodyText: string
+  ctaText: string
+  discountCode?: string
+  discountPercent?: string
+  baseTemplate: string
+}
+
 interface InitialStats {
   campaignCount: number
   avgOpenRate: number
@@ -34,7 +46,8 @@ const QUICK_CHIPS = [
   { label: '💡 Nächste Aktionsidee', text: 'Was wäre die nächste gute Aktionsidee für mein Restaurant?' },
   { label: '📊 Was funktioniert am besten?', text: 'Was funktioniert bei meinem Marketing am besten?' },
   { label: '⚡ Automation erstellen', text: 'Hilf mir eine Marketing-Automation zu erstellen.' },
-  { label: '📱 Social Post dazu', text: 'Erstelle mir einen Social Media Post für meine neueste Kampagne.' },
+  { label: '📧 Geburtstags-Template', text: 'Erstelle mir ein Geburtstags-Email-Template mit 15% Rabatt für meine Stammkunden.' },
+  { label: '💌 Comeback-Template', text: 'Erstelle mir ein Email-Template für inaktive Kunden die länger als 14 Tage nicht bestellt haben.' },
 ]
 
 export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
@@ -52,6 +65,9 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [campaignDraft, setCampaignDraft] = useState<CampaignDraft | null>(null)
+  const [emailTemplate, setEmailTemplate] = useState<EmailTemplate | null>(null)
+  const [templateSaving, setTemplateSaving] = useState(false)
+  const [templateSaved, setTemplateSaved] = useState(false)
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -121,9 +137,17 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
         try {
           const draft = JSON.parse(draftMatch[1].trim())
           setCampaignDraft(draft)
-        } catch {
-          // silently ignore parse error
-        }
+        } catch { /* silently ignore */ }
+      }
+
+      // Check for email template
+      const templateMatch = fullText.match(/<email-template>([\s\S]*?)<\/email-template>/)
+      if (templateMatch) {
+        try {
+          const tpl = JSON.parse(templateMatch[1].trim())
+          setEmailTemplate(tpl)
+          setTemplateSaved(false)
+        } catch { /* silently ignore */ }
       }
     } finally {
       setLoading(false)
@@ -141,6 +165,34 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
     if (!campaignDraft) return
     localStorage.setItem('marketing_campaign_draft', JSON.stringify(campaignDraft))
     router.push('/admin/marketing/campaigns')
+  }
+
+  async function saveEmailTemplate() {
+    if (!emailTemplate) return
+    setTemplateSaving(true)
+    try {
+      const res = await fetch('/api/marketing/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: emailTemplate.name,
+          trigger_type: emailTemplate.triggerType,
+          subject_template: emailTemplate.subjectTemplate,
+          body_html: buildTemplateHtml(emailTemplate),
+          created_by_ai: true,
+        }),
+      })
+      if (res.ok) setTemplateSaved(true)
+    } catch { /* ignore */ }
+    setTemplateSaving(false)
+  }
+
+  function buildTemplateHtml(tpl: EmailTemplate): string {
+    // Build simple placeholder HTML — base template rendering happens server-side at send time
+    return `<!-- base:${tpl.baseTemplate} -->
+<div data-hero="${encodeURIComponent(tpl.heroText)}" data-body="${encodeURIComponent(tpl.bodyText)}" data-cta="${encodeURIComponent(tpl.ctaText)}"${tpl.discountCode ? ` data-code="${tpl.discountCode}" data-pct="${tpl.discountPercent ?? '10'}"` : ''}>
+{{restaurant_name}} · ${tpl.name}
+</div>`
   }
 
   const stats = [
@@ -492,6 +544,36 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
               >
                 🔄 Neu generieren
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Email Template Card */}
+        {emailTemplate && (
+          <div style={{ margin: '0 20px 12px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '12px', padding: '14px 16px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <p style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>
+                📧 Email-Template bereit
+              </p>
+              <button onClick={() => setEmailTemplate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #6b7280)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px' }}>✕</button>
+            </div>
+            <p style={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 600, margin: '0 0 2px' }}>{emailTemplate.name}</p>
+            <p style={{ color: 'var(--text-muted, #6b7280)', fontSize: '0.78rem', margin: '0 0 10px' }}>
+              Betreff: {emailTemplate.subjectTemplate}
+            </p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={saveEmailTemplate}
+                disabled={templateSaving || templateSaved}
+                style={{ background: templateSaved ? '#22c55e' : '#8b5cf6', border: 'none', borderRadius: '8px', padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: templateSaving || templateSaved ? 'default' : 'pointer', opacity: templateSaving ? 0.7 : 1 }}
+              >
+                {templateSaved ? '✓ Gespeichert' : templateSaving ? 'Speichern...' : '💾 Als Template speichern'}
+              </button>
+              {templateSaved && (
+                <button onClick={() => router.push('/admin/marketing/templates')} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 14px', color: 'var(--text-muted, #9ca3af)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+                  📚 Zur Template-Bibliothek
+                </button>
+              )}
             </div>
           </div>
         )}
