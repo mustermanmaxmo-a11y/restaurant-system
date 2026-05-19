@@ -116,6 +116,7 @@ export default function BestellenV1() {
   const [zip, setZip] = useState('')
   const [note, setNote] = useState('')
   const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [marketingEmail, setMarketingEmail] = useState('')
 
   // Group ordering
   const [orderMode, setOrderMode] = useState<OrderMode>('confirmed-solo')
@@ -509,16 +510,18 @@ export default function BestellenV1() {
     }
 
     // Email marketing opt-in
-    if (marketingOptIn && restaurant.email_marketing_enabled) {
-      // We don't collect email in this form, but save name if available via loyalty auth
+    if (restaurant.email_marketing_enabled) {
       const { data: { user: guestUser } } = await supabase.auth.getUser()
-      if (guestUser?.email) {
+      const emailToSave = guestUser?.email || (marketingOptIn ? marketingEmail.trim() : null)
+      if (emailToSave) {
         await supabase.from('marketing_subscribers').upsert({
           restaurant_id: restaurant.id,
-          email: guestUser.email,
+          email: emailToSave,
           name: customerName || null,
+          subscribed: marketingOptIn,
           source: 'order',
-        }, { onConflict: 'restaurant_id,email', ignoreDuplicates: true })
+          last_order_at: new Date().toISOString(),
+        }, { onConflict: 'restaurant_id,email' })
       }
     }
   }
@@ -965,12 +968,32 @@ export default function BestellenV1() {
 
           {/* Email Marketing Opt-in */}
           {restaurant?.email_marketing_enabled && (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px', cursor: 'pointer' }}>
-              <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
-                Ich möchte Angebote & News von {restaurant.name} per Email erhalten (jederzeit abbestellbar).
-              </span>
-            </label>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5 }}>
+                  Ich möchte Angebote & News von {restaurant.name} per Email erhalten (jederzeit abbestellbar).
+                </span>
+              </label>
+              {marketingOptIn && (
+                <input
+                  type="email"
+                  value={marketingEmail}
+                  onChange={e => setMarketingEmail(e.target.value)}
+                  placeholder="Ihre Email-Adresse"
+                  style={{
+                    marginTop: '8px',
+                    width: '100%',
+                    padding: '9px 12px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              )}
+            </div>
           )}
 
           {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
