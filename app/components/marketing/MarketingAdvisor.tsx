@@ -178,21 +178,18 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
           name: emailTemplate.name,
           trigger_type: emailTemplate.triggerType,
           subject_template: emailTemplate.subjectTemplate,
-          body_html: buildTemplateHtml(emailTemplate),
+          base_template: emailTemplate.baseTemplate,
+          hero_text: emailTemplate.heroText,
+          body_text: emailTemplate.bodyText,
+          cta_text: emailTemplate.ctaText,
+          discount_code: emailTemplate.discountCode,
+          discount_percent: emailTemplate.discountPercent,
           created_by_ai: true,
         }),
       })
       if (res.ok) setTemplateSaved(true)
     } catch { /* ignore */ }
     setTemplateSaving(false)
-  }
-
-  function buildTemplateHtml(tpl: EmailTemplate): string {
-    // Build simple placeholder HTML — base template rendering happens server-side at send time
-    return `<!-- base:${tpl.baseTemplate} -->
-<div data-hero="${encodeURIComponent(tpl.heroText)}" data-body="${encodeURIComponent(tpl.bodyText)}" data-cta="${encodeURIComponent(tpl.ctaText)}"${tpl.discountCode ? ` data-code="${tpl.discountCode}" data-pct="${tpl.discountPercent ?? '10'}"` : ''}>
-{{restaurant_name}} · ${tpl.name}
-</div>`
   }
 
   const stats = [
