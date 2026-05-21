@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Template {
@@ -51,6 +51,19 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
   const [editStyle, setEditStyle] = useState('')
   const [saving, setSaving] = useState(false)
   const [previewMobile, setPreviewMobile] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState<string>('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  useEffect(() => {
+    if (!previewTemplate) { setPreviewHtml(''); return }
+    setPreviewLoading(true)
+    setPreviewHtml('')
+    fetch(`/api/marketing/templates?preview=${previewTemplate.id}`, { credentials: 'include' })
+      .then(r => r.ok ? r.text() : Promise.reject(new Error(`Status ${r.status}`)))
+      .then(html => setPreviewHtml(html))
+      .catch(() => setPreviewHtml(previewTemplate.body_html || '<p style="padding:40px;text-align:center;color:#888;font-family:sans-serif">Vorschau konnte nicht geladen werden.</p>'))
+      .finally(() => setPreviewLoading(false))
+  }, [previewTemplate])
 
   const filtered = filter === 'all' ? templates : templates.filter(t => t.trigger_type === filter)
 
@@ -266,12 +279,16 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
               <button onClick={() => { setPreviewTemplate(null); setPreviewMobile(false) }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', background: '#f5f5f5', display: 'flex', justifyContent: 'center', padding: previewMobile ? '20px 0' : '0' }}>
-              <iframe
-                src={`/api/marketing/templates?preview=${previewTemplate.id}`}
-                style={{ width: previewMobile ? '380px' : '100%', height: '720px', border: previewMobile ? '1px solid rgba(0,0,0,0.15)' : 'none', borderRadius: previewMobile ? '12px' : '0', background: '#fff' }}
-                sandbox="allow-same-origin"
-                title={previewTemplate.name}
-              />
+              {previewLoading ? (
+                <div style={{ alignSelf: 'center', color: '#888', fontSize: '0.85rem' }}>Lade Vorschau…</div>
+              ) : (
+                <iframe
+                  srcDoc={previewHtml}
+                  style={{ width: previewMobile ? '380px' : '100%', height: '720px', border: previewMobile ? '1px solid rgba(0,0,0,0.15)' : 'none', borderRadius: previewMobile ? '12px' : '0', background: '#fff' }}
+                  sandbox="allow-same-origin"
+                  title={previewTemplate.name}
+                />
+              )}
             </div>
           </div>
         </div>
