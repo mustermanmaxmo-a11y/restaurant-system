@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2, Smartphone, Bell } from 'lucide-react'
+import { Download, Trash2, ShieldCheck, AlertTriangle, KeyRound, CheckCircle2, Smartphone, Bell, Eye, EyeOff } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 export default function SettingsPage() {
@@ -54,6 +54,8 @@ export default function SettingsPage() {
   // Password change state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPwNew, setShowPwNew] = useState(false)
+  const [showPwConfirm, setShowPwConfirm] = useState(false)
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
@@ -850,28 +852,38 @@ export default function SettingsPage() {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input
-              type="password"
-              placeholder="Neues Passwort"
-              value={newPassword}
-              onChange={e => { setNewPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
-              style={{
-                padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
-                background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
-                outline: 'none', width: '100%', boxSizing: 'border-box',
-              }}
-            />
-            <input
-              type="password"
-              placeholder="Passwort bestätigen"
-              value={confirmPassword}
-              onChange={e => { setConfirmPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
-              style={{
-                padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
-                background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
-                outline: 'none', width: '100%', boxSizing: 'border-box',
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPwNew ? 'text' : 'password'}
+                placeholder="Neues Passwort"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
+                style={{
+                  padding: '10px 40px 10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
+                  outline: 'none', width: '100%', boxSizing: 'border-box',
+                }}
+              />
+              <button type="button" onClick={() => setShowPwNew(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                {showPwNew ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPwConfirm ? 'text' : 'password'}
+                placeholder="Passwort bestätigen"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setPwError(''); setPwSuccess(false) }}
+                style={{
+                  padding: '10px 40px 10px 12px', borderRadius: '8px', border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem',
+                  outline: 'none', width: '100%', boxSizing: 'border-box',
+                }}
+              />
+              <button type="button" onClick={() => setShowPwConfirm(v => !v)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                {showPwConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             {pwError && <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>{pwError}</p>}
             {pwSuccess && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.82rem' }}>

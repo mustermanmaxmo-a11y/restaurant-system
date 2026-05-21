@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
@@ -228,6 +229,7 @@ function LoyaltyModal({
   const [mode, setMode] = useState<'login' | 'register' | 'magic'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [magicSent, setMagicSent] = useState(false)
@@ -250,6 +252,13 @@ function LoyaltyModal({
           .from('loyalty_members')
           .upsert({ user_id: data.user.id, restaurant_id: restaurantId }, { onConflict: 'user_id,restaurant_id' })
           .select('id, stamp_count, points, dietary_preferences, favorite_item_ids').single()
+        await supabase.from('marketing_subscribers').upsert({
+          restaurant_id: restaurantId,
+          email,
+          name: null,
+          subscribed: true,
+          source: 'loyalty',
+        }, { onConflict: 'restaurant_id,email' })
         onSuccess(data.user, mem ? { ...mem, dietary_preferences: mem.dietary_preferences ?? [], favorite_item_ids: mem.favorite_item_ids ?? [] } : null)
       }
     } else {
@@ -314,14 +323,30 @@ function LoyaltyModal({
               style={inputStyle}
             />
             {mode !== 'magic' && (
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Passwort"
-                style={{ ...inputStyle, marginTop: '10px' }}
-                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              />
+              <>
+                <div style={{ position: 'relative', marginTop: '10px' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Passwort"
+                    style={{ ...inputStyle, paddingRight: '44px' }}
+                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#8B8B93', padding: '4px', display: 'flex', alignItems: 'center' }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {mode === 'register' && (
+                  <p style={{ fontSize: '0.72rem', color: '#8B8B93', marginTop: '8px', lineHeight: 1.5 }}>
+                    Mit der Registrierung erhältst du auch Angebote &amp; News per Email (jederzeit abbestellbar).
+                  </p>
+                )}
+              </>
             )}
             {error && <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '8px' }}>{error}</p>}
             <button

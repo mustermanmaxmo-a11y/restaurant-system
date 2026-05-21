@@ -12,6 +12,7 @@ import {
   ChefHat, CheckCircle2, Clock, Bell, Receipt, Sparkles,
 } from 'lucide-react'
 import { OrderRating } from '@/components/order/OrderRating'
+import { LoyaltyButton, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 
 type CartItem = { item: MenuItem; qty: number }
 type View = 'menu' | 'cart' | 'status'
@@ -55,7 +56,11 @@ export default function OrderV2() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null)
   const [note, setNote] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [marketingEmail, setMarketingEmail] = useState('')
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  const { program: loyaltyProgram, creditStamp } = useLoyalty(restaurant?.id ?? '')
 
   useEffect(() => {
     async function load() {
@@ -197,6 +202,23 @@ export default function OrderV2() {
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, 'dine_in')
+    }
+    if (loyaltyProgram?.enabled) creditStamp(total)
+    // Marketing subscriber capture
+    if (restaurant.email_marketing_enabled) {
+      const { data: { user: guestUser } } = await supabase.auth.getUser()
+      const emailToSave = guestUser?.email || (marketingOptIn ? marketingEmail.trim() : null)
+      if (emailToSave) {
+        const upsertData: Record<string, unknown> = {
+          restaurant_id: restaurant.id,
+          email: emailToSave,
+          name: null,
+          source: 'order_table',
+          last_order_at: new Date().toISOString(),
+        }
+        if (marketingOptIn) upsertData.subscribed = true
+        await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
+      }
     }
   }
 
@@ -495,6 +517,27 @@ export default function OrderV2() {
                   </div>
                 </div>
 
+                {/* Email Marketing Opt-in */}
+                {restaurant?.email_marketing_enabled && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <span style={{ color: C.muted, fontSize: '0.8rem', lineHeight: 1.5 }}>
+                        Angebote &amp; News von {restaurant.name} per Email erhalten (jederzeit abbestellbar).
+                      </span>
+                    </label>
+                    {marketingOptIn && (
+                      <input
+                        type="email"
+                        value={marketingEmail}
+                        onChange={e => setMarketingEmail(e.target.value)}
+                        placeholder="Ihre Email-Adresse"
+                        style={{ marginTop: '8px', width: '100%', padding: '9px 12px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', color: C.text, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    )}
+                  </div>
+                )}
+
                 {error && (
                   <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>
                 )}
@@ -539,6 +582,7 @@ export default function OrderV2() {
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', background: 'rgba(255,255,255,0.15)', borderRadius: '999px', fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#fff' }}>
                   Tisch {tableName}
                 </div>
+                {restaurant && <LoyaltyButton restaurantId={restaurant.id} accentColor="#fff" />}
               </div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#fff', fontFamily: `${fontPair.heading}, system-ui, sans-serif` }}>
                 {restaurant?.name}

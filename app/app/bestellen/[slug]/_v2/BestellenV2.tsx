@@ -87,6 +87,8 @@ export default function BestellenV2() {
   const [city, setCity] = useState('')
   const [zip, setZip] = useState('')
   const [note, setNote] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [marketingEmail, setMarketingEmail] = useState('')
   const [filterResult, setFilterResult] = useState<{
     suitable: string[]
     unsuitable: { id: string; reason: string }[]
@@ -212,6 +214,22 @@ export default function BestellenV2() {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, orderType)
     }
+    // Marketing subscriber capture
+    if (restaurant.email_marketing_enabled) {
+      const { data: { user: guestUser } } = await supabase.auth.getUser()
+      const emailToSave = guestUser?.email || (marketingOptIn ? marketingEmail.trim() : null)
+      if (emailToSave) {
+        const upsertData: Record<string, unknown> = {
+          restaurant_id: restaurant.id,
+          email: emailToSave,
+          name: customerName || null,
+          source: 'order',
+          last_order_at: new Date().toISOString(),
+        }
+        if (marketingOptIn) upsertData.subscribed = true
+        await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
+      }
+    }
   }
 
   if (showV1) return <BestellenV1 />
@@ -289,6 +307,10 @@ export default function BestellenV2() {
           submitting={submitting}
           onBack={() => { setView('menu'); setError('') }}
           onSubmit={submitOrder}
+          restaurantEmailMarketing={restaurant?.email_marketing_enabled ?? false}
+          restaurantName={restaurant?.name}
+          marketingOptIn={marketingOptIn} setMarketingOptIn={setMarketingOptIn}
+          marketingEmail={marketingEmail} setMarketingEmail={setMarketingEmail}
         />
       )}
 
@@ -612,8 +634,11 @@ function CheckoutView(props: {
   note: string; setNote: (v: string) => void;
   error: string; submitting: boolean;
   onBack: () => void; onSubmit: () => void;
+  restaurantEmailMarketing?: boolean; restaurantName?: string;
+  marketingOptIn: boolean; setMarketingOptIn: (v: boolean) => void;
+  marketingEmail: string; setMarketingEmail: (v: string) => void;
 }) {
-  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit } = props
+  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit, restaurantEmailMarketing, restaurantName, marketingOptIn, setMarketingOptIn, marketingEmail, setMarketingEmail } = props
 
   return (
     <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto' }}>
@@ -691,6 +716,26 @@ function CheckoutView(props: {
           style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
         />
       </div>
+
+      {restaurantEmailMarketing && (
+        <div style={{ marginTop: '16px' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+            <span style={{ color: V2.textDim, fontSize: '13px', lineHeight: 1.5 }}>
+              Angebote &amp; News von {restaurantName} per Email erhalten (jederzeit abbestellbar).
+            </span>
+          </label>
+          {marketingOptIn && (
+            <input
+              type="email"
+              value={marketingEmail}
+              onChange={e => setMarketingEmail(e.target.value)}
+              placeholder="Deine Email-Adresse"
+              style={{ ...inputStyle, marginTop: '8px' }}
+            />
+          )}
+        </div>
+      )}
 
       {error && (
         <div style={{ marginTop: '12px', padding: '12px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', fontSize: '13px' }}>

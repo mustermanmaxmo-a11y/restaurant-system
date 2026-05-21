@@ -12,6 +12,7 @@ import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
 import { OrderRating } from '@/components/order/OrderRating'
+import { LoyaltyButton } from '@/components/bestellen/LoyaltyWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import type { LucideIcon } from 'lucide-react'
@@ -133,6 +134,10 @@ export default function OrderV1() {
   const [splitPersonNames, setSplitPersonNames] = useState('')
   const [splitToken, setSplitToken] = useState<string | null>(null)
   const [splitCreating, setSplitCreating] = useState(false)
+
+  // Marketing opt-in
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [marketingEmail, setMarketingEmail] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -417,6 +422,22 @@ export default function OrderV1() {
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, 'dine_in')
+    }
+    // Marketing subscriber capture
+    if (restaurant.email_marketing_enabled) {
+      const { data: { user: guestUser } } = await supabase.auth.getUser()
+      const emailToSave = guestUser?.email || (marketingOptIn ? marketingEmail.trim() : null)
+      if (emailToSave) {
+        const upsertData: Record<string, unknown> = {
+          restaurant_id: restaurant.id,
+          email: emailToSave,
+          name: null,
+          source: 'order_table',
+          last_order_at: new Date().toISOString(),
+        }
+        if (marketingOptIn) upsertData.subscribed = true
+        await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
+      }
     }
   }
 
@@ -782,6 +803,27 @@ export default function OrderV1() {
                 </div>
               </div>
 
+              {/* Email Marketing Opt-in */}
+              {restaurant?.email_marketing_enabled && (
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <span style={{ color: C.muted, fontSize: '0.8rem', lineHeight: 1.5 }}>
+                      Angebote &amp; News von {restaurant.name} per Email erhalten (jederzeit abbestellbar).
+                    </span>
+                  </label>
+                  {marketingOptIn && (
+                    <input
+                      type="email"
+                      value={marketingEmail}
+                      onChange={e => setMarketingEmail(e.target.value)}
+                      placeholder="Ihre Email-Adresse"
+                      style={{ marginTop: '8px', width: '100%', padding: '9px 12px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '8px', color: C.text, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  )}
+                </div>
+              )}
+
               {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
 
               <motion.button
@@ -852,6 +894,7 @@ export default function OrderV1() {
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <LanguageSelector direction="down" />
+            {restaurant && <LoyaltyButton restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? C.accent} />}
             <motion.button onClick={() => setShowMenu(true)} whileTap={{ scale: 0.88 }} transition={springBouncy}
               style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: '12px', width: '42px', height: '42px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5px', flexShrink: 0 }}>
               {[0, 1, 2].map(i => (
