@@ -524,6 +524,7 @@ export default function BestellenV1() {
         // Only set subscribed:true when user explicitly opts in — never overwrite true→false
         if (marketingOptIn) upsertData.subscribed = true
         await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
+        await supabase.rpc('bump_subscriber_stats', { p_restaurant_id: restaurant.id, p_email: emailToSave, p_spent: total })
       }
     }
   }

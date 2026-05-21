@@ -10,6 +10,20 @@ interface Subscriber {
   last_order_at: string | null
   order_type_preference: 'dine-in' | 'delivery' | 'pickup' | null
   source: string | null
+  order_count?: number | null
+  total_spent?: number | null
+}
+
+function classifySegment(s: Subscriber): { key: string; label: string; color: string } {
+  const count = s.order_count ?? 0
+  const spent = Number(s.total_spent ?? 0)
+  const lapsedCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+  const lapsed = s.last_order_at && new Date(s.last_order_at).getTime() < lapsedCutoff
+  if (count >= 10 || spent >= 300) return { key: 'vip', label: 'VIP', color: '#f59e0b' }
+  if (lapsed) return { key: 'lapsed', label: 'Lapsed', color: '#dc2626' }
+  if (count >= 4) return { key: 'loyal', label: 'Treu', color: '#22c55e' }
+  if (count >= 1) return { key: 'occasional', label: 'Gelegentlich', color: '#3b82f6' }
+  return { key: 'new', label: 'Neu', color: '#a855f7' }
 }
 
 interface Props {
@@ -179,7 +193,7 @@ export function SubscriberList({ subscribers, totalCount, loyaltyCount }: Props)
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  {['Email', 'Name', 'Seit', 'Letzte Bestellung', 'Quelle'].map((h) => (
+                  {['Email', 'Name', 'Segment', 'Seit', 'Letzte Bestellung', 'Quelle'].map((h) => (
                     <th
                       key={h}
                       style={{
@@ -209,6 +223,16 @@ export function SubscriberList({ subscribers, totalCount, loyaltyCount }: Props)
                     </td>
                     <td style={{ padding: '12px 16px', color: '#d1d5db' }}>
                       {s.name ?? '—'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {(() => {
+                        const seg = classifySegment(s)
+                        return (
+                          <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, color: '#fff', backgroundColor: seg.color }}>
+                            {seg.label}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td style={{ padding: '12px 16px', color: '#9ca3af', whiteSpace: 'nowrap' }}>
                       {formatDate(s.opted_in_at)}

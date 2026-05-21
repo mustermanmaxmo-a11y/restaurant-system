@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     discount_code_prefix,
     discount_percent,
     template_id,
+    segment,
     active,
   } = body
 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         discount_code_prefix: discount_code_prefix ?? null,
         discount_percent: discount_percent ?? null,
         template_id: template_id ?? null,
+        segment: typeof segment === 'string' ? segment : null,
         active: active ?? true,
       },
       { onConflict: 'restaurant_id,trigger_type' }
@@ -102,7 +104,7 @@ export async function PATCH(request: NextRequest) {
   if (error === 'not_found' || !restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
 
   const body = await request.json().catch(() => ({}))
-  const { id, active, template_id } = body
+  const { id, active, template_id, segment } = body
 
   if (!id) {
     return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -114,6 +116,7 @@ export async function PATCH(request: NextRequest) {
   const patch: Record<string, unknown> = {}
   if (active !== undefined) patch.active = active
   if ('template_id' in body) patch.template_id = template_id ?? null
+  if ('segment' in body) patch.segment = typeof segment === 'string' ? segment : null
 
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

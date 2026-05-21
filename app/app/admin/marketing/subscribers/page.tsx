@@ -30,7 +30,7 @@ export default async function SubscribersPage() {
   const { data: subscribers, count } = await supabase
     .from('marketing_subscribers')
     .select(
-      'id, email, name, opted_in_at, last_order_at, order_type_preference, source',
+      'id, email, name, opted_in_at, last_order_at, order_type_preference, source, order_count, total_spent',
       { count: 'exact' }
     )
     .eq('restaurant_id', restaurant.id)

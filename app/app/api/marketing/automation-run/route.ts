@@ -4,7 +4,16 @@ import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getPlatformSettings } from '@/lib/platform-config'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
-import { getBaseTemplateForTrigger, DISCOUNT_BLOCK, buildLogoBlock } from '@/lib/email-base-templates'
+import {
+  getBaseTemplateForTrigger,
+  DISCOUNT_BLOCK,
+  buildLogoBlock,
+  buildEmail,
+  htmlToPlainText,
+  resolveEmailStyle,
+  type EmailContext,
+  type TriggerType,
+} from '@/lib/email-base-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,6 +84,11 @@ type RestaurantRef = {
   plan: string
   logo_url?: string | null
   design_config?: { primary_color?: string } | null
+  design_package?: string | null
+  email_style_override?: string | null
+  contact_email?: string | null
+  contact_address?: string | null
+  primary_color?: string | null
 }
 
 type AutomationRow = {
@@ -86,6 +100,7 @@ type AutomationRow = {
   body_template: string | null
   discount_percent: number | null
   template_id: string | null
+  segment: string | null
   active: boolean
   last_run_at: string | null
   restaurants: RestaurantRef
@@ -99,12 +114,23 @@ type Subscriber = {
   opted_in_at: string | null
   birthday: string | null
   subscribed: boolean
+  order_count?: number | null
+  total_spent?: number | null
 }
 
 type EmailTemplateRow = {
   id: string
   subject_template: string
   body_html: string
+  style: string | null
+  uses_style: boolean | null
+}
+
+type OrderLookup = {
+  id: string
+  customer_email: string | null
+  customer_name: string | null
+  items: Array<{ name: string; qty: number; price?: number }> | null
 }
 
 // ---------- core logic (exported for Vercel Cron) ----------
@@ -123,10 +149,12 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
   const fourHoursAgo = new Date(today.getTime() - 4 * 60 * 60 * 1000).toISOString()
   const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()
 
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
   // 1. Get all active automations across all restaurants
   const { data: automations, error: autoError } = await supabase
     .from('marketing_automations')
-    .select('*, restaurants(id, name, slug, plan, logo_url, design_config)')
+    .select('*, restaurants(id, name, slug, plan, logo_url, design_config, design_package, email_style_override, contact_email, contact_address, primary_color)')
     .eq('active', true)
 
   if (autoError) throw new Error(autoError.message)
@@ -149,7 +177,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
     if (automation.trigger_type === 'post_order') {
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, birthday, subscribed, order_count, total_spent')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
         .gte('last_order_at', fourHoursAgo)
@@ -159,7 +187,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
     } else if (automation.trigger_type === 'inactivity_14d') {
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, opted_in_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, opted_in_at, birthday, subscribed, order_count, total_spent')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
         .or(`last_order_at.lt.${fourteenDaysAgo},and(last_order_at.is.null,opted_in_at.lt.${fourteenDaysAgo})`)
@@ -168,7 +196,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
     } else if (automation.trigger_type === 'birthday') {
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, birthday, subscribed, order_count, total_spent')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
         .not('birthday', 'is', null)
@@ -182,7 +210,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       if (!isSeasonalMatch(today)) continue
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, birthday, subscribed, order_count, total_spent')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
       eligibleSubscribers = (data ?? []) as Subscriber[]
@@ -193,13 +221,31 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       if (targetWeekday !== null && currentWeekday !== targetWeekday) continue
       const { data } = await supabase
         .from('marketing_subscribers')
-        .select('id, email, restaurant_id, last_order_at, birthday, subscribed')
+        .select('id, email, restaurant_id, last_order_at, birthday, subscribed, order_count, total_spent')
         .eq('restaurant_id', restaurant.id)
         .eq('subscribed', true)
       eligibleSubscribers = (data ?? []) as Subscriber[]
 
     } else {
       continue
+    }
+
+    // Segment filter
+    const segment = automation.segment ?? 'all'
+    if (segment !== 'all') {
+      eligibleSubscribers = eligibleSubscribers.filter(sub => {
+        const count = sub.order_count ?? 0
+        const spent = Number(sub.total_spent ?? 0)
+        if (segment === 'new') return count === 0
+        if (segment === 'occasional') return count >= 1 && count <= 3
+        if (segment === 'loyal') return count >= 4
+        if (segment === 'vip') return count >= 10 || spent >= 300
+        if (segment === 'lapsed') {
+          if (!sub.last_order_at) return false
+          return new Date(sub.last_order_at).getTime() < new Date(thirtyDaysAgo).getTime()
+        }
+        return true
+      })
     }
 
     if (eligibleSubscribers.length === 0) {
@@ -215,14 +261,33 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
     if (automation.template_id) {
       const { data } = await supabase
         .from('email_templates')
-        .select('id, subject_template, body_html')
+        .select('id, subject_template, body_html, style, uses_style')
         .eq('id', automation.template_id)
         .maybeSingle()
       templateRow = data as EmailTemplateRow | null
     }
 
-    const primaryColor = restaurant.design_config?.primary_color ?? '#f97316'
+    const primaryColor = restaurant.primary_color ?? restaurant.design_config?.primary_color ?? '#f97316'
     const discount = automation.discount_percent ?? 10
+    const emailStyle = resolveEmailStyle({
+      designPackage: restaurant.design_package,
+      emailStyleOverride: restaurant.email_style_override,
+      templateStyle: templateRow?.style,
+    })
+
+    // For post_order: load recent orders to attach customer_name, items, and rating link
+    const orderByEmail = new Map<string, OrderLookup>()
+    if (automation.trigger_type === 'post_order') {
+      const { data: recentOrders } = await supabase
+        .from('orders')
+        .select('id, customer_email, customer_name, items, created_at')
+        .eq('restaurant_id', restaurant.id)
+        .gte('created_at', fourHoursAgo)
+        .lte('created_at', twoHoursAgo)
+      for (const o of (recentOrders ?? []) as OrderLookup[]) {
+        if (o.customer_email) orderByEmail.set(o.customer_email, o)
+      }
+    }
 
     // Build subject once per automation
     let subject: string
@@ -233,12 +298,6 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       })
     } else {
       subject = buildSubject(automation, restaurant)
-    }
-
-    // If no DB template: build a fallback branded shell
-    let baseHtml: string | null = null
-    if (!templateRow) {
-      baseHtml = getBaseTemplateForTrigger(automation.trigger_type, primaryColor)
     }
 
     const unsubSecret = platformSettings.unsubscribe_secret ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'fallback'
@@ -261,7 +320,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
         .update(`${restaurant.id}:${subscriber.email}`)
         .digest('hex')
         .slice(0, 32)
-      const unsubLink = `${appUrl}/unsubscribe?rid=${restaurant.id}&token=${unsubToken}`
+      const unsubLink = `${appUrl}/unsubscribe/${unsubToken}?email=${encodeURIComponent(subscriber.email)}&rid=${restaurant.id}`
 
       const orderUrl = `${appUrl}/bestellen/${restaurant.slug}`
 
@@ -283,9 +342,65 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       }
       const discountCode = discountCodeMap[automation.trigger_type] ?? ''
 
+      const triggerLabelMap: Record<string, string> = {
+        post_order: 'Danke für deine Bestellung',
+        inactivity_14d: 'Wir vermissen dich',
+        birthday: 'Happy Birthday',
+        seasonal: 'Saisonales Angebot',
+        scheduled: '',
+        manual: '',
+      }
+
+      // Post-Order: look up matching order for items + customer_name + rating link
+      const matchedOrder = automation.trigger_type === 'post_order' ? orderByEmail.get(subscriber.email) ?? null : null
+      const customerName = matchedOrder?.customer_name?.trim() || subscriber.email.split('@')[0]
+      const orderItems = matchedOrder?.items ?? undefined
+
+      // Rating link: only when we have an order to bind the token to
+      let ratingBaseUrl: string | undefined
+      if (matchedOrder) {
+        // We embed s=N in the URL the user clicks; token is per-stars HMAC of `${orderId}:${stars}`
+        // So build a partial URL that the email block appends `5` (etc) to via s={n}
+        // The block builder uses `${ratingBaseUrl}${n}`; provide a URL ending with `&s=` minus the value
+        // We have to encode per-star tokens — easiest: embed 5 distinct URLs server-side and build the block here.
+      }
+
+      // Build per-star rating links (token bound per stars value)
+      let ratingBlockHtml: string | undefined
+      if (matchedOrder) {
+        const starLinks = [1, 2, 3, 4, 5].map(n => {
+          const t = crypto.createHmac('sha256', unsubSecret).update(`${matchedOrder.id}:${n}`).digest('hex').slice(0, 32)
+          return `${appUrl}/api/feedback?o=${matchedOrder.id}&s=${n}&t=${t}`
+        })
+        const starsHtml = starLinks.map(href => `<a href="${href}" style="display:inline-block;padding:6px 8px;text-decoration:none;font-size:32px;line-height:1;color:#d4d4d8;">&#9733;</a>`).join('')
+        ratingBlockHtml = `
+  <tr><td style="padding:8px 48px 16px;">
+    <div style="background:#fafafa;border:1px solid #e4e4e7;border-radius:12px;padding:24px 20px;text-align:center;">
+      <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.12em;">Wie war dein Erlebnis?</p>
+      <div style="margin:0 0 8px;">${starsHtml}</div>
+      <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Ein Klick reicht — danach kannst du optional Feedback hinzufügen.</p>
+    </div>
+  </td></tr>`
+      }
+
       const logoBlockHtml = buildLogoBlock(restaurant.logo_url, restaurant.name)
 
-      // Pre-render discount block so renderEmailTemplate gets a clean string
+      // Order items block (HTML, pre-rendered)
+      let orderItemsBlockHtml = ''
+      if (automation.trigger_type === 'post_order' && orderItems && orderItems.length > 0) {
+        const rows = orderItems.slice(0, 3).map(it => `
+          <tr><td style="padding:10px 0;border-bottom:1px solid #e4e4e7;">
+            <span style="display:inline-block;min-width:30px;color:#71717a;font-weight:600;">${it.qty}×</span>
+            <span style="color:#0a0a0a;font-weight:500;">${String(it.name).replace(/</g, '&lt;')}</span>
+          </td></tr>`).join('')
+        orderItemsBlockHtml = `
+  <tr><td style="padding:8px 48px 16px;">
+    <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:0.12em;">Deine letzte Bestellung</p>
+    <table style="width:100%;border-collapse:collapse;font-size:16px;">${rows}</table>
+  </td></tr>`
+      }
+
+      // Pre-render discount block
       const discountBlockHtml = discountCode
         ? DISCOUNT_BLOCK(primaryColor)
             .replace('{{discount_code}}', discountCode)
@@ -294,50 +409,88 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
 
       let htmlBody: string
 
-      if (templateRow) {
-        // Render DB template with per-subscriber vars
+      if (templateRow && templateRow.uses_style === false) {
+        // Custom HTML — render with per-subscriber vars only
         htmlBody = renderEmailTemplate(templateRow.body_html, {
           restaurant_name: restaurant.name,
-          customer_name: subscriber.email.split('@')[0],
+          customer_name: customerName,
           logo_url: restaurant.logo_url ?? '',
           logo_block: logoBlockHtml,
           discount_percent: String(discount),
           discount_code: discountCode,
           discount_block: discountBlockHtml,
+          rating_block: ratingBlockHtml ?? '',
+          order_items_block: orderItemsBlockHtml,
           cta_url: orderUrl,
           cta_text: ctaText,
           unsubscribe_url: unsubLink,
           primary_color: primaryColor,
         })
-      } else if (baseHtml) {
-        // Render fallback shell
-        const plainText = buildPlainBody(automation, restaurant)
-        htmlBody = renderEmailTemplate(baseHtml, {
+      } else if (templateRow) {
+        // Style-aware template — re-render with current style + per-subscriber vars
+        const styledShell = getBaseTemplateForTrigger(automation.trigger_type, primaryColor, emailStyle)
+        htmlBody = renderEmailTemplate(styledShell, {
           restaurant_name: restaurant.name,
-          customer_name: subscriber.email.split('@')[0],
+          customer_name: customerName,
           logo_url: restaurant.logo_url ?? '',
           logo_block: logoBlockHtml,
           hero_text: subject,
-          body_text: plainText,
+          body_text: renderEmailTemplate(templateRow.body_html, { restaurant_name: restaurant.name, customer_name: customerName }),
           cta_text: ctaText,
           cta_url: orderUrl,
           discount_code: discountCode,
           discount_block: discountBlockHtml,
           discount_percent: String(discount),
+          rating_block: ratingBlockHtml ?? '',
+          order_items_block: orderItemsBlockHtml,
           unsubscribe_url: unsubLink,
           primary_color: primaryColor,
         })
       } else {
-        const plainText = buildPlainBody(automation, restaurant)
-        htmlBody = `<p>${plainText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p><hr style="border:none;border-top:1px solid #eee;margin:20px 0"/><p style="font-size:12px;color:#aaa">Sie erhalten diese E-Mail als Gast von ${restaurant.name}. <a href="${unsubLink}" style="color:#aaa">Abmelden</a></p>`
+        // No template assigned: use buildEmail() directly with the resolved style
+        const ctx: EmailContext = {
+          restaurantName: restaurant.name,
+          logoUrl: restaurant.logo_url,
+          customerName,
+          primaryColor,
+          triggerLabel: triggerLabelMap[automation.trigger_type] || undefined,
+          heroText: subject,
+          bodyText: buildPlainBody(automation, restaurant),
+          ctaText,
+          ctaUrl: orderUrl,
+          discountCode: discountCode || undefined,
+          discountPercent: discountCode ? discount : undefined,
+          orderItems,
+          unsubscribeUrl: unsubLink,
+          addressLine: restaurant.contact_address,
+        }
+        // Inject ratingBaseUrl marker (we handle the actual block via custom HTML)
+        htmlBody = buildEmail(emailStyle, automation.trigger_type as TriggerType, ctx)
+        // Replace the auto rating block (if any) with our token-bound version
+        if (ratingBlockHtml) {
+          // buildEmail won't include a rating block since we didn't pass ratingBaseUrl.
+          // Inject our token-bound block right before the CTA.
+          htmlBody = htmlBody.replace(
+            /<tr><td style="padding:24px [^"]+;text-align:center;">[\s\S]*?<\/a>\s*<\/td><\/tr>/,
+            `${ratingBlockHtml}$&`,
+          )
+        }
       }
+
+      const plainText = htmlToPlainText(htmlBody)
 
       try {
         await resend.emails.send({
-          from: `${restaurant.name} <onboarding@resend.dev>`,
+          from: `${restaurant.name} <${process.env.RESEND_FROM ?? 'onboarding@resend.dev'}>`,
           to: subscriber.email,
           subject,
           html: htmlBody,
+          text: plainText,
+          replyTo: restaurant.contact_email ?? undefined,
+          headers: {
+            'List-Unsubscribe': `<${unsubLink}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         })
 
         await supabase.from('reengagement_log').insert({

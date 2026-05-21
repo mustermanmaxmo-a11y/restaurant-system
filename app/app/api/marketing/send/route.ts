@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import crypto from 'crypto'
+import { buildEmail, htmlToPlainText, resolveEmailStyle, type EmailContext } from '@/lib/email-base-templates'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('name, email_marketing_enabled')
+    .select('name, slug, logo_url, primary_color, email_marketing_enabled, design_package, email_style_override, contact_email, contact_address')
     .eq('id', restaurantId)
     .eq('owner_id', user.id)
     .single()
@@ -82,8 +83,13 @@ export async function POST(request: NextRequest) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.restaurantos.app'
+  const primaryColor = restaurant.primary_color ?? '#ea580c'
+  const style = resolveEmailStyle({
+    designPackage: restaurant.design_package,
+    emailStyleOverride: restaurant.email_style_override,
+  })
 
-  // Send emails in batches of 50
+  // Send emails in batches
   let sent = 0
   for (const sub of subscribers) {
     const unsub_token = crypto
@@ -93,24 +99,36 @@ export async function POST(request: NextRequest) {
       .slice(0, 32)
 
     const unsubLink = `${baseUrl}/unsubscribe/${unsub_token}?email=${encodeURIComponent(sub.email)}&rid=${restaurantId}`
+    const ctaUrl = `${baseUrl}/bestellen/${restaurant.slug ?? ''}`
+    const customerName = (sub.name && sub.name.trim()) || sub.email.split('@')[0]
 
-    const html = `
-<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
-  <h2>${restaurant.name}</h2>
-  <div style="white-space:pre-wrap;line-height:1.6">${campaign.body}</div>
-  <hr style="margin:32px 0;border:none;border-top:1px solid #eee">
-  <p style="color:#999;font-size:12px">
-    Du erhältst diese Email weil du dich für Angebote von ${restaurant.name} angemeldet hast.<br>
-    <a href="${unsubLink}" style="color:#999">Abmelden</a>
-  </p>
-</div>`
+    const ctx: EmailContext = {
+      restaurantName: restaurant.name,
+      logoUrl: restaurant.logo_url,
+      customerName,
+      primaryColor,
+      heroText: campaign.subject,
+      bodyText: campaign.body,
+      ctaText: 'Jetzt bestellen',
+      ctaUrl,
+      unsubscribeUrl: unsubLink,
+      addressLine: restaurant.contact_address,
+    }
+    const html = buildEmail(style, 'manual', ctx)
+    const text = htmlToPlainText(html)
 
     try {
       await resend.emails.send({
-        from: FROM,
+        from: `${restaurant.name} <${FROM}>`,
         to: sub.email,
         subject: campaign.subject,
         html,
+        text,
+        replyTo: restaurant.contact_email ?? undefined,
+        headers: {
+          'List-Unsubscribe': `<${unsubLink}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
       sent++
     } catch { /* continue on error */ }

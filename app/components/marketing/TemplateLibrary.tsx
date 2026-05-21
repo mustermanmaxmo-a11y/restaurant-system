@@ -12,7 +12,16 @@ interface Template {
   is_active: boolean
   created_by_ai: boolean
   created_at: string
+  style?: string | null
+  uses_style?: boolean | null
 }
+
+const STYLE_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Vom Branding übernehmen' },
+  { value: 'modern-classic', label: 'Modern Classic' },
+  { value: 'elegant-gold', label: 'Elegant Gold' },
+  { value: 'warm-trattoria', label: 'Warm Trattoria' },
+]
 
 const TRIGGER_LABELS: Record<string, string> = {
   birthday: '🎂 Geburtstag',
@@ -39,7 +48,9 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
   const [editSubject, setEditSubject] = useState('')
+  const [editStyle, setEditStyle] = useState('')
   const [saving, setSaving] = useState(false)
+  const [previewMobile, setPreviewMobile] = useState(false)
 
   const filtered = filter === 'all' ? templates : templates.filter(t => t.trigger_type === filter)
 
@@ -60,12 +71,16 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
 
   async function saveEdit(id: string) {
     setSaving(true)
+    const payload: Record<string, unknown> = { id, name: editName, subject_template: editSubject }
+    // Only attach style when the template is style-based (not custom HTML)
+    const tpl = templates.find(t => t.id === id)
+    if (tpl?.uses_style !== false) payload.style = editStyle || null
     await fetch('/api/marketing/templates', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, name: editName, subject_template: editSubject }),
+      body: JSON.stringify(payload),
     })
-    setTemplates(prev => prev.map(t => t.id === id ? { ...t, name: editName, subject_template: editSubject } : t))
+    setTemplates(prev => prev.map(t => t.id === id ? { ...t, name: editName, subject_template: editSubject, style: editStyle || null } : t))
     setEditingId(null)
     setSaving(false)
   }
@@ -168,6 +183,19 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
                     placeholder="Betreff-Template"
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '0.82rem', outline: 'none' }}
                   />
+                  {tpl.uses_style !== false ? (
+                    <select
+                      value={editStyle}
+                      onChange={e => setEditStyle(e.target.value)}
+                      style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '6px 10px', color: '#fff', fontSize: '0.82rem', outline: 'none' }}
+                    >
+                      {STYLE_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value} style={{ background: '#1a1a1a' }}>{opt.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p style={{ color: '#6b7280', fontSize: '0.72rem', margin: 0, fontStyle: 'italic' }}>Eigenes HTML — Style wird ignoriert.</p>
+                  )}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button onClick={() => saveEdit(tpl.id)} disabled={saving} style={{ background: '#8b5cf6', border: 'none', borderRadius: '6px', padding: '5px 12px', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
                       {saving ? '...' : 'Speichern'}
@@ -198,7 +226,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
               {editingId !== tpl.id && (
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => { setEditingId(tpl.id); setEditName(tpl.name); setEditSubject(tpl.subject_template) }}
+                    onClick={() => { setEditingId(tpl.id); setEditName(tpl.name); setEditSubject(tpl.subject_template); setEditStyle(tpl.style ?? '') }}
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '5px 10px', color: '#9ca3af', fontSize: '0.75rem', cursor: 'pointer' }}
                   >
                     ✏️ Bearbeiten
@@ -225,18 +253,22 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
       {/* Preview Modal */}
       {previewTemplate && (
         <div
-          onClick={() => setPreviewTemplate(null)}
+          onClick={() => { setPreviewTemplate(null); setPreviewMobile(false) }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
         >
-          <div onClick={e => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', width: '100%', maxWidth: '640px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{previewTemplate.name}</p>
-              <button onClick={() => setPreviewTemplate(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '16px', overflow: 'hidden', width: '100%', maxWidth: '760px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{previewTemplate.name}</p>
+              <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '3px' }}>
+                <button onClick={() => setPreviewMobile(false)} style={{ background: !previewMobile ? '#8b5cf6' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: !previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Desktop</button>
+                <button onClick={() => setPreviewMobile(true)} style={{ background: previewMobile ? '#8b5cf6' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Mobile</button>
+              </div>
+              <button onClick={() => { setPreviewTemplate(null); setPreviewMobile(false) }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', background: '#f5f5f5' }}>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#f5f5f5', display: 'flex', justifyContent: 'center', padding: previewMobile ? '20px 0' : '0' }}>
               <iframe
-                srcDoc={previewTemplate.body_html}
-                style={{ width: '100%', height: '600px', border: 'none' }}
+                src={`/api/marketing/templates?preview=${previewTemplate.id}`}
+                style={{ width: previewMobile ? '380px' : '100%', height: '720px', border: previewMobile ? '1px solid rgba(0,0,0,0.15)' : 'none', borderRadius: previewMobile ? '12px' : '0', background: '#fff' }}
                 sandbox="allow-same-origin"
                 title={previewTemplate.name}
               />

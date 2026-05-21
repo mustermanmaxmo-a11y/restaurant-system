@@ -437,6 +437,7 @@ export default function OrderV1() {
         }
         if (marketingOptIn) upsertData.subscribed = true
         await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
+        await supabase.rpc('bump_subscriber_stats', { p_restaurant_id: restaurant.id, p_email: emailToSave, p_spent: subtotal })
       }
     }
   }

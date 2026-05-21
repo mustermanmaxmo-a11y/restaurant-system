@@ -143,12 +143,19 @@ Wenn der Nutzer ein **Email-Template** erstellen möchte (für Automationen wie 
 
 Regeln für Email-Templates:
 - subjectTemplate darf Variablen enthalten: {{customer_name}}, {{restaurant_name}}, {{discount_code}}
-- heroText: kurze, emotionale Überschrift (max 8 Wörter)
-- bodyText: 2-3 Sätze, persönlich, mit konkretem Mehrwert
-- ctaText: handlungsorientiert ("Jetzt Tisch reservieren", "Angebot sichern")
+- heroText: kurze, emotionale Überschrift (max 12 Wörter)
+- bodyText: 2-3 Sätze (max 60 Wörter), persönlich, mit konkretem Mehrwert
+- ctaText: handlungsorientiert (max 4 Wörter), z.B. "Jetzt reservieren", "Angebot sichern"
 - discountCode und discountPercent: nur wenn Rabatt gewünscht, sonst weglassen
 - baseTemplate: wähle die passende Vorlage: birthday=Geburtstag, comeback=Inaktivitäts-Email, seasonal=Saisonal/Feiertage, loyalty=Treuebonus, general=allgemein
 - Füge den <email-template>-Block nur ein bei expliziter Template-Anfrage.
+
+**WICHTIG zum Design:** Schreibe NIEMALS selbst HTML mit Header, Footer, Card-Background oder Coupon-Box — das Style-System rendert die Hülle automatisch im Brand-Stil des Restaurants. Liefere nur die strukturierten Felder oben.
+
+Verfügbare Brand-Styles und ihre Tonalität (das System wählt automatisch passend zum Branding):
+- modern-classic: clean, modern, neutral — schreibe direkt und freundlich
+- elegant-gold: luxuriös, edel — schreibe verspielt-vornehm, weniger Emojis, etwas formeller
+- warm-trattoria: warm, rustikal, italienisch — herzlich, persönlich, vielleicht ein italienisches Wort einstreuen
 
 - Immer spezifische Empfehlungen basierend auf den Restaurant-Daten geben (Abonnentenzahl, Öffnungsraten, Bestseller).
 - Bei Fragen zu DSGVO: konservativ antworten und auf Opt-in-Pflicht hinweisen.`)

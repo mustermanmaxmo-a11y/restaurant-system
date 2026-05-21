@@ -882,6 +882,17 @@ export default function BrandingPage() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px' }}>50+ kuratierte Designs — wähle eines, das zu deinem Restaurant passt.</p>
               </div>
               <label style={sectionLabel}>Design-Paket</label>
+              {(() => {
+                const emailReady = ['modern-classic', 'elegant-gold', 'warm-trattoria'].includes(designPackage)
+                const currentName = DESIGN_PACKAGES.find(p => p.id === designPackage)?.name ?? 'Modern Classic'
+                return (
+                  <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    📧 Deine Marketing-Emails nutzen automatisch den Stil <strong style={{ color: 'var(--text)' }}>{emailReady ? currentName : 'Modern Classic'}</strong>
+                    {!emailReady && <span> (für „{currentName}" folgt der dedizierte Email-Stil bald)</span>}
+                    . Pro Template lässt sich der Stil im Template-Editor überschreiben.
+                  </div>
+                )
+              })()}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', marginBottom: '28px' }}>
                 {DESIGN_PACKAGES.map(p => {
                   const isActive = p.id === designPackage

@@ -9,9 +9,19 @@ interface Automation {
   discount_percent: number | null
   trigger_config: { weekday?: string; time?: string } | null
   template_id: string | null
+  segment: string | null
   last_run_at: string | null
   created_at: string
 }
+
+const SEGMENT_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'Alle Abonnenten' },
+  { value: 'new', label: 'Neu (0 Bestellungen)' },
+  { value: 'occasional', label: 'Gelegentlich (1-3)' },
+  { value: 'loyal', label: 'Treu (4+)' },
+  { value: 'vip', label: 'VIP (10+ oder >300€)' },
+  { value: 'lapsed', label: 'Lapsed (>30 Tage)' },
+]
 
 interface EmailTemplate {
   id: string
@@ -101,6 +111,7 @@ interface CardState {
   weekday: string
   time: string
   templateId: string | null
+  segment: string
   saving: boolean
   toggling: boolean
   savedMsg: string | null
@@ -118,6 +129,7 @@ export function AutomationRules({ automations, restaurantId, templates = [] }: P
       weekday: record?.trigger_config?.weekday ?? 'friday',
       time: record?.trigger_config?.time ?? '17:00',
       templateId: record?.template_id ?? null,
+      segment: record?.segment ?? 'all',
       saving: false,
       toggling: false,
       savedMsg: null,
@@ -177,6 +189,7 @@ export function AutomationRules({ automations, restaurantId, templates = [] }: P
             discount_percent: current.discount,
             trigger_config: { weekday: current.weekday, time: current.time },
             template_id: current.templateId,
+            segment: current.segment,
           }),
         })
         const data = await res.json()
@@ -467,6 +480,32 @@ export function AutomationRules({ automations, restaurantId, templates = [] }: P
                     </select>
                   </div>
                 )}
+
+                {/* Segment filter */}
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                    Segment
+                  </div>
+                  <select
+                    value={s.segment}
+                    onChange={e => update(type.trigger_type, { segment: e.target.value })}
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.07)',
+                      border: `1px solid ${s.segment !== 'all' ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.14)'}`,
+                      borderRadius: '8px',
+                      color: s.segment !== 'all' ? '#86efac' : '#9ca3af',
+                      fontSize: '0.83rem',
+                      padding: '7px 10px',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {SEGMENT_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value} style={{ background: '#1a1a2e', color: '#f3f4f6' }}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Error */}
