@@ -23,6 +23,25 @@ const STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'warm-trattoria', label: 'Warm Trattoria' },
 ]
 
+const PACKAGE_TO_STYLE_LABEL: Record<string, string> = {
+  'modern-classic': 'Modern Classic',
+  'elegant-gold': 'Elegant Gold',
+  'warm-trattoria': 'Warm Trattoria',
+  'minimalist-light': 'Modern Classic', // fallback
+  'bold-street': 'Modern Classic',
+  'zen-garden': 'Modern Classic',
+  'biergarten-fresh': 'Modern Classic',
+  'neon-nights': 'Modern Classic',
+}
+
+const SUGGESTABLE_TRIGGERS: { trigger: string; icon: string; title: string; description: string }[] = [
+  { trigger: 'birthday', icon: '🎂', title: 'Geburtstags-Email', description: 'Persönlicher Glückwunsch + Gutschein als Geschenk' },
+  { trigger: 'inactivity_14d', icon: '💌', title: 'Comeback nach 14 Tagen', description: 'Reaktiviert Gäste, die eine Weile nicht da waren' },
+  { trigger: 'post_order', icon: '📦', title: 'Dankeschön nach Bestellung', description: 'Mit Sterne-Bewertung & Wieder-Bestellen-Button' },
+  { trigger: 'seasonal', icon: '🌿', title: 'Saisonales Angebot', description: 'Für Weihnachten, Valentinstag, Ostern usw.' },
+  { trigger: 'manual', icon: '✋', title: 'Allgemeine Kampagne', description: 'Für Specials, News, Events — flexibel einsetzbar' },
+]
+
 const TRIGGER_LABELS: Record<string, string> = {
   birthday: '🎂 Geburtstag',
   inactivity_14d: '💌 Comeback',
@@ -40,10 +59,49 @@ const FILTER_OPTIONS = [
   { value: 'manual', label: '✋ Manuell' },
 ]
 
-export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTemplates: Template[], restaurantId: string }) {
+interface TemplateLibraryProps {
+  initialTemplates: Template[]
+  restaurantId: string
+  designPackage?: string | null
+  emailStyleOverride?: string | null
+}
+
+export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId, designPackage, emailStyleOverride }: TemplateLibraryProps) {
   const router = useRouter()
   const [templates, setTemplates] = useState<Template[]>(initialTemplates)
   const [filter, setFilter] = useState('all')
+  const [generatingTrigger, setGeneratingTrigger] = useState<string | null>(null)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+
+  const resolvedStyleLabel = emailStyleOverride
+    ? (STYLE_OPTIONS.find(s => s.value === emailStyleOverride)?.label ?? 'Modern Classic')
+    : (designPackage ? PACKAGE_TO_STYLE_LABEL[designPackage] ?? 'Modern Classic' : 'Modern Classic')
+
+  const missingTriggers = SUGGESTABLE_TRIGGERS.filter(
+    s => !templates.some(t => t.trigger_type === s.trigger && t.is_active)
+  )
+
+  async function generateSuggestion(trigger: string) {
+    setGeneratingTrigger(trigger)
+    setGenerateError(null)
+    try {
+      const res = await fetch('/api/marketing/templates/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trigger_type: trigger }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setGenerateError(data.error ?? 'Konnte Vorschlag nicht erstellen')
+      } else if (data.template) {
+        setTemplates(prev => [data.template as Template, ...prev])
+      }
+    } catch {
+      setGenerateError('Netzwerkfehler. Bitte erneut versuchen.')
+    } finally {
+      setGeneratingTrigger(null)
+    }
+  }
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -135,6 +193,63 @@ export function TemplateLibrary({ initialTemplates, restaurantId }: { initialTem
           </button>
         ))}
       </div>
+
+      {/* AI Suggestions Panel */}
+      {missingTriggers.length > 0 && (
+        <div style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))', border: '1px solid rgba(139,92,246,0.18)', borderRadius: '14px', padding: '18px 20px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '1.1rem' }}>✨</span>
+              <div>
+                <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>KI-Vorschläge</p>
+                <p style={{ color: '#9ca3af', fontSize: '0.75rem', margin: '2px 0 0' }}>
+                  Auf deinen Brand-Stil <strong style={{ color: '#c4b5fd' }}>{resolvedStyleLabel}</strong> abgestimmt — ein Klick erstellt das Template.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {generateError && (
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '8px 12px', color: '#fca5a5', fontSize: '0.8rem', marginBottom: '10px' }}>
+              {generateError}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+            {missingTriggers.map(s => {
+              const isGen = generatingTrigger === s.trigger
+              return (
+                <button
+                  key={s.trigger}
+                  onClick={() => generateSuggestion(s.trigger)}
+                  disabled={isGen || generatingTrigger !== null}
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                    textAlign: 'left',
+                    cursor: isGen || generatingTrigger !== null ? 'wait' : 'pointer',
+                    opacity: generatingTrigger && !isGen ? 0.4 : 1,
+                    transition: 'border-color 0.15s, background 0.15s',
+                  }}
+                  onMouseEnter={e => { if (!generatingTrigger) e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '1rem' }}>{s.icon}</span>
+                    <span style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '0.82rem' }}>{s.title}</span>
+                  </div>
+                  <p style={{ color: '#9ca3af', fontSize: '0.72rem', margin: '0 0 8px', lineHeight: 1.4 }}>{s.description}</p>
+                  <span style={{ display: 'inline-block', background: isGen ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.12)', color: '#c4b5fd', fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px' }}>
+                    {isGen ? '✨ generiert…' : '+ Erstellen'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {filtered.length === 0 && (

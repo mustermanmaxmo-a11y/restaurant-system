@@ -13,7 +13,7 @@ export default async function TemplatesPage() {
   const admin = createSupabaseAdmin()
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, design_package, email_style_override')
     .eq('owner_id', user.id)
     .maybeSingle()
 
@@ -21,9 +21,16 @@ export default async function TemplatesPage() {
 
   const { data: templates } = await admin
     .from('email_templates')
-    .select('id, name, trigger_type, subject_template, body_html, is_active, created_by_ai, created_at')
+    .select('id, name, trigger_type, subject_template, body_html, style, uses_style, is_active, created_by_ai, created_at')
     .eq('restaurant_id', restaurant.id)
     .order('created_at', { ascending: false })
 
-  return <TemplateLibrary initialTemplates={templates ?? []} restaurantId={restaurant.id} />
+  return (
+    <TemplateLibrary
+      initialTemplates={templates ?? []}
+      restaurantId={restaurant.id}
+      designPackage={restaurant.design_package ?? null}
+      emailStyleOverride={restaurant.email_style_override ?? null}
+    />
+  )
 }
