@@ -184,6 +184,13 @@ export default function OrderV2() {
     if (!restaurant || !tableId || cart.length === 0) return
     setSubmitting(true)
     setError('')
+    const trimmedEmail = marketingEmail.trim()
+    // Trigger needs a non-empty email when opt-in is true, otherwise it would create an invalid subscriber.
+    if (marketingOptIn && !trimmedEmail) {
+      setError('Bitte E-Mail eingeben, um Angebote zu erhalten.')
+      setSubmitting(false)
+      return
+    }
     const { data, error: err } = await supabase.from('orders').insert({
       restaurant_id: restaurant.id,
       order_type: 'dine_in',
@@ -192,6 +199,8 @@ export default function OrderV2() {
       items: cart.map(c => ({ item_id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty })),
       note: note || null,
       total: parseFloat(total.toFixed(2)),
+      customer_email: trimmedEmail || null,
+      marketing_opt_in: marketingOptIn,
     }).select().single()
     if (err || !data) { setError('Fehler beim Bestellen.'); setSubmitting(false); return }
     setOrder(data as Order)
