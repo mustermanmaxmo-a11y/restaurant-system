@@ -187,6 +187,9 @@ export default function BestellenV2() {
     const phoneErr = validatePhone(customerPhone)
     if (phoneErr) { setError(phoneErr); return }
     if (orderType === 'delivery' && (!street.trim() || !city.trim() || !zip.trim())) { setError('Lieferadresse vollständig angeben.'); return }
+    const trimmedEmail = marketingEmail.trim()
+    // Trigger needs a non-empty email when opt-in is true, otherwise it would create an invalid subscriber.
+    if (marketingOptIn && !trimmedEmail) { setError('Bitte E-Mail eingeben, um Angebote zu erhalten.'); return }
     setSubmitting(true)
     setError('')
     const { data, error: err } = await supabase.from('orders').insert({
@@ -200,6 +203,8 @@ export default function BestellenV2() {
       customer_name: customerName,
       customer_phone: customerPhone,
       delivery_address: orderType === 'delivery' ? { street, city, zip } : null,
+      customer_email: trimmedEmail || null,
+      marketing_opt_in: marketingOptIn,
     }).select().single()
     if (err || !data) { setError('Fehler beim Bestellen.'); setSubmitting(false); return }
     setOrder(data as Order)
