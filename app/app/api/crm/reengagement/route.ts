@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/marketing/sendEmail'
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     .eq('active', true)
     .or('crm_rule_inactive.eq.true,crm_rule_almost_goal.eq.true,crm_rule_welcome.eq.true')
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
   let totalSent = 0
 
   for (const resto of restaurants ?? []) {
@@ -78,11 +77,17 @@ export async function POST(request: NextRequest) {
       const unsubLink = `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?rid=${resto.id}&email=${encodeURIComponent(email)}`
 
       try {
-        await resend.emails.send({
-          from: `${resto.name} <noreply@restaurantos.app>`,
-          to: email,
+        const fullText = body + `\n\n---\nAbmelden: ${unsubLink}`
+        const html = `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111;white-space:pre-wrap;">${fullText.replace(/</g, '&lt;')}</div>`
+        await sendEmail({
+          restaurantId: resto.id,
+          fromEmail: 'noreply@restaurantos.app',
+          fromName: resto.name,
+          toEmail: email,
+          toSubscriberId: null,
           subject,
-          text: body + `\n\n---\nAbmelden: ${unsubLink}`,
+          html,
+          campaignId: null,
         })
 
         await adminClient.from('reengagement_log').insert({

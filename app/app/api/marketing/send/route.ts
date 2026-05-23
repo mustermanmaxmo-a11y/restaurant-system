@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import crypto from 'crypto'
-import { buildEmail, htmlToPlainText, resolveEmailStyle, type EmailContext } from '@/lib/email-base-templates'
+import { buildEmail, resolveEmailStyle, type EmailContext } from '@/lib/email-base-templates'
+import { sendEmail } from '@/lib/marketing/sendEmail'
 
-const resend = new Resend(process.env.RESEND_API_KEY!)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 
 export async function POST(request: NextRequest) {
@@ -56,7 +55,7 @@ export async function POST(request: NextRequest) {
   // Load subscribers based on target
   let query = supabase
     .from('marketing_subscribers')
-    .select('email, name')
+    .select('id, email, name')
     .eq('restaurant_id', restaurantId)
     .is('unsubscribed_at', null)
 
@@ -115,20 +114,23 @@ export async function POST(request: NextRequest) {
       addressLine: restaurant.contact_address,
     }
     const html = buildEmail(style, 'manual', ctx)
-    const text = htmlToPlainText(html)
 
     try {
-      await resend.emails.send({
-        from: `${restaurant.name} <${FROM}>`,
-        to: sub.email,
+      await sendEmail({
+        restaurantId,
+        fromEmail: FROM,
+        fromName: restaurant.name,
+        toEmail: sub.email,
+        toSubscriberId: sub.id ?? null,
+        replyTo: restaurant.contact_email ?? undefined,
         subject: campaign.subject,
         html,
-        text,
-        replyTo: restaurant.contact_email ?? undefined,
+        // RFC 8058 one-click unsubscribe — required by Gmail/Yahoo bulk sender policy
         headers: {
           'List-Unsubscribe': `<${unsubLink}>`,
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
+        campaignId,
       })
       sent++
     } catch { /* continue on error */ }

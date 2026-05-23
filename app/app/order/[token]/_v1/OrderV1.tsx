@@ -410,11 +410,19 @@ export default function OrderV1() {
 
   async function submitOrderLater() {
     if (!table || !restaurant) return
+    const trimmedEmail = marketingEmail.trim()
+    // Trigger needs a non-empty email when opt-in is true, otherwise it would create an invalid subscriber.
+    if (marketingOptIn && !trimmedEmail) {
+      setError('Bitte E-Mail eingeben, um Angebote zu erhalten.')
+      return
+    }
     setSubmitting(true); setError('')
     const { data, error: err } = await supabase.from('orders').insert({
       restaurant_id: restaurant.id, order_type: 'dine_in', table_id: table.id,
       status: 'new', items: cart.map(c => ({ item_id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty, note: c.note || null })),
       note: note || null, total: parseFloat(subtotal.toFixed(2)),
+      customer_email: trimmedEmail || null,
+      marketing_opt_in: marketingOptIn,
     }).select().single()
     if (err || !data) { setError('Fehler beim Bestellen. Bitte versuche es erneut.'); setSubmitting(false); return }
     setOrder(data as Order); setView('status'); setSubmitting(false)

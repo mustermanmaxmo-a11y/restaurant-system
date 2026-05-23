@@ -147,6 +147,8 @@ export default function StaffOrderPanel({
       })),
       note: note.trim() || null,
       total,
+      // Staff-created order: no valid customer opt-in possible, force false.
+      marketing_opt_in: false,
     })
     setSubmitting(false)
     if (error) {
