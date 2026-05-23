@@ -450,6 +450,12 @@ export default function BestellenV1() {
     if (!restaurant) return
     const phoneErr = validatePhone(customerPhone)
     if (phoneErr) { setError(phoneErr); return }
+    const trimmedEmail = marketingEmail.trim()
+    // Trigger needs a non-empty email when opt-in is true, otherwise it would create an invalid subscriber.
+    if (marketingOptIn && !trimmedEmail) {
+      setError('Bitte E-Mail eingeben, um Angebote zu erhalten.')
+      return
+    }
     setSubmitting(true)
     setError('')
 
@@ -466,6 +472,8 @@ export default function BestellenV1() {
         customer_name: customerName,
         customer_phone: customerPhone,
         delivery_address: orderType === 'delivery' ? { street, city, zip } : null,
+        customer_email: trimmedEmail || null,
+        marketing_opt_in: marketingOptIn,
       })
       .select()
       .single()
