@@ -485,6 +485,11 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
           replyTo: restaurant.contact_email ?? undefined,
           subject,
           html: htmlBody,
+          // RFC 8058 one-click unsubscribe — required by Gmail/Yahoo bulk sender policy
+          headers: {
+            'List-Unsubscribe': `<${unsubLink}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
           campaignId: null,
         })
 

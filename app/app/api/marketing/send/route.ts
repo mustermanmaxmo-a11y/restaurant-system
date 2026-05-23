@@ -125,6 +125,11 @@ export async function POST(request: NextRequest) {
         replyTo: restaurant.contact_email ?? undefined,
         subject: campaign.subject,
         html,
+        // RFC 8058 one-click unsubscribe — required by Gmail/Yahoo bulk sender policy
+        headers: {
+          'List-Unsubscribe': `<${unsubLink}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
         campaignId,
       })
       sent++

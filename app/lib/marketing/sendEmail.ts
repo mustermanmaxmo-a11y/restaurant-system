@@ -10,6 +10,10 @@ export interface QueueEmailInput {
   replyTo?: string;
   subject: string;
   html: string;
+  /** Plain-text alternative body — improves deliverability and accessibility. */
+  text?: string;
+  /** Custom headers, e.g. List-Unsubscribe (RFC 8058). Stored as JSON in queue, passed to Resend on send. */
+  headers?: Record<string, string>;
   campaignId?: string | null;
 }
 
@@ -33,7 +37,9 @@ export async function sendEmail(
       to: input.toEmail,
       subject: input.subject,
       html: input.html,
+      text: input.text,
       replyTo: input.replyTo,
+      headers: input.headers,
     });
     if (result.error) throw new Error(result.error.message);
     return { queued: false, id: result.data?.id };
@@ -51,6 +57,8 @@ export async function sendEmail(
       reply_to: input.replyTo ?? null,
       subject: input.subject,
       html: input.html,
+      text_body: input.text ?? null,
+      headers: input.headers ?? null,
       campaign_id: input.campaignId ?? null,
       status: 'pending',
       next_retry_at: new Date().toISOString(),

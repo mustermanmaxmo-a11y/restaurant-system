@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
         to: row.to_email,
         subject: row.subject,
         html: row.html,
+        text: row.text_body ?? undefined,
         replyTo: row.reply_to ?? undefined,
+        headers: row.headers ?? undefined,
       })
       if (result.error) throw new Error(result.error.message)
 
