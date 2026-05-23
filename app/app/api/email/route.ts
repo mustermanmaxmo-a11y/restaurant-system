@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { sendEmail } from '@/lib/marketing/sendEmail'
 
-const resend = new Resend(process.env.RESEND_API_KEY!)
 const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -177,7 +176,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await resend.emails.send({ from: FROM, to, subject, html })
+    await sendEmail({
+      restaurantId: '',
+      fromEmail: FROM,
+      toEmail: to,
+      subject,
+      html,
+      immediate: true,
+    })
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('Email send error:', err)
