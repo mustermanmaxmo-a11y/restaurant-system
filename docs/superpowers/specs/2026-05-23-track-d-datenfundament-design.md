@@ -170,13 +170,20 @@ END $$;
 
 ## Application-Code-Änderungen
 
-### Subscriber-Match beim Order-Insert
-Datei: `app/app/api/orders/route.ts`
+### Subscriber-Match beim Order-Insert (Discovery-Update 2026-05-23)
+**Korrektur:** Es gibt keinen zentralen `app/app/api/orders/route.ts` — Bestellungen werden direkt aus 5 Client-Komponenten (OrderV1/V2, BestellenV1/V2, StaffOrderPanel) per Supabase-Client geschrieben. Statt eines Server-Refactors implementieren wir die Logik als **PostgreSQL AFTER INSERT Trigger** auf `orders`.
 
-Heute: Insert legt nur Order an. Neu:
-1. Order-Insert wie bisher
-2. **Nur wenn `marketing_opt_in === true` im Order-Payload**: Subscriber upserten (per email/restaurant_id), `consent_timestamp` setzen, `acquisition_source` ableiten (`qr_table_<n>` oder `online_order`), Order's `customer_id` setzen
-3. `marketing_events` Insert mit `event_type='placed_order'`, `props={ order_id, total_cents, item_count }`
+**Schema-Änderung:** `orders` bekommt zwei neue Spalten:
+- `marketing_opt_in boolean NOT NULL DEFAULT false`
+- `customer_email text` (falls noch nicht als Spalte existiert — `information_schema`-Check in Migration)
+
+**Trigger-Logik (PL/pgSQL):**
+1. `IF NEW.marketing_opt_in IS TRUE AND NEW.customer_email IS NOT NULL`:
+   - UPSERT in `marketing_subscribers` (per `(restaurant_id, lower(email))`), setze `consent_timestamp=NOW()`, `consent_source='order_checkout'`, `acquisition_source` aus Source-Spalte falls vorhanden
+   - Setze `NEW.customer_id = <subscriber.id>`
+2. Schreibe `marketing_events` Eintrag mit `event_type='placed_order'`, `props={ order_id, total_cents, item_count }` (auch wenn `subscriber_id=NULL`)
+
+**Client-Änderung:** Die 5 Insert-Sites bekommen ein Opt-in-Checkbox-Feld im Checkout-UI (falls noch nicht vorhanden) und schreiben `marketing_opt_in: boolean` ins Insert-Payload.
 
 ### Event-Logging-Helper
 Datei: `app/lib/marketing/events.ts` (neu)
