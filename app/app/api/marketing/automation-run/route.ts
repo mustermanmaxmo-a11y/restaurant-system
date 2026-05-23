@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 import crypto from 'crypto'
 import { getPlatformSettings } from '@/lib/platform-config'
 import { renderEmailTemplate } from '@/lib/email-template-renderer'
+import { sendEmail } from '@/lib/marketing/sendEmail'
 import {
   getBaseTemplateForTrigger,
   DISCOUNT_BLOCK,
   buildLogoBlock,
   buildEmail,
-  htmlToPlainText,
   resolveEmailStyle,
   type EmailContext,
   type TriggerType,
@@ -138,7 +137,6 @@ type OrderLookup = {
 export async function runMarketingAutomations(): Promise<{ processed: number; sent: number; errors: number }> {
   const platformSettings = await getPlatformSettings()
   const supabase = getAdminClient()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
   const currentMonth = today.getMonth() + 1
@@ -477,20 +475,17 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
         }
       }
 
-      const plainText = htmlToPlainText(htmlBody)
-
       try {
-        await resend.emails.send({
-          from: `${restaurant.name} <${process.env.RESEND_FROM ?? 'onboarding@resend.dev'}>`,
-          to: subscriber.email,
+        await sendEmail({
+          restaurantId: restaurant.id,
+          fromEmail: process.env.RESEND_FROM ?? 'onboarding@resend.dev',
+          fromName: restaurant.name,
+          toEmail: subscriber.email,
+          toSubscriberId: subscriber.id ?? null,
+          replyTo: restaurant.contact_email ?? undefined,
           subject,
           html: htmlBody,
-          text: plainText,
-          replyTo: restaurant.contact_email ?? undefined,
-          headers: {
-            'List-Unsubscribe': `<${unsubLink}>`,
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          },
+          campaignId: null,
         })
 
         await supabase.from('reengagement_log').insert({
