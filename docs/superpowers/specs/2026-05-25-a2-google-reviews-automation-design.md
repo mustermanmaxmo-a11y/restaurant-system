@@ -36,7 +36,7 @@ Heute muss der Owner manuell eine `post_order`-Automation in `/admin/marketing/a
 - **A/B-Tests verschiedener Subject-Lines / Templates** — späteres Polish
 - **Multi-Channel (SMS, Push)** — nur Email
 - **Custom Email-Template Editor** — Owner kann Inhalt nicht editieren (kommt mit später Template-Engine)
-- **Vollständiges Conversion-Funnel-Dashboard** — nur Mini-Stats in `/admin/settings`
+- **Multi-Restaurant Vergleich / Benchmarks im Stats-Dashboard** — pro-Restaurant Stats reichen; Cross-Restaurant kommt mit Platform-Level Analytics
 - **Sub-Stunden-Delays** (z.B. 30 Min) — Range 1-72h reicht für Restaurant-Use-Case
 - **Loyalty-übergreifende Rating-Aggregation** — jedes Restaurant isoliert
 
@@ -274,35 +274,89 @@ export const POST = verifySignature(handler)
 
 ### Owner-UI
 
-**Erweiterung in `app/app/admin/settings/page.tsx`** — neue Sektion "Auto-Rating-Email" unter dem bestehenden Google-Review-URL-Feld:
+Zwei Touchpoints — analog zur A1-Trennung (`/admin/settings` = Mini-Link, `/admin/marketing/loyalty` = Hauptseite):
+
+**1. Mini-Sektion in `app/app/admin/settings/page.tsx`** — nur Toggle + Delay + Link zur Hauptseite. Bleibt eng beim bestehenden `google_review_url` Feld, weil das thematisch verwandt ist.
 
 ```tsx
 <section>
-  <h2>Auto-Rating-Email</h2>
-  <p>Sende automatisch eine Email mit Bewertungs-Sternen X Stunden nach der Bestellung.</p>
+  <h2>Google Reviews</h2>
 
+  {/* Existierendes google_review_url Feld bleibt */}
+  <label>Google Reviews URL
+    <input type="text" value={restaurant.google_review_url ?? ''} onChange={...} />
+  </label>
+
+  {/* Neue Auto-Email-Config */}
   <label>
     <input type="checkbox" checked={restaurant.rating_email_enabled} onChange={...} />
-    Aktiviert
+    Automatisch Bewertungs-Email senden
   </label>
 
   <label>Delay (Stunden nach 'serviert')
     <input type="number" min={1} max={72} value={restaurant.rating_email_delay_hours} onChange={...} />
-    <small>Default 4h. Pizzerien: 2h. Fine-Dining: 24h. Maximum 72h.</small>
+    <small>Default 4h. Pizzerien: 2h. Fine-Dining: 24h.</small>
   </label>
 
-  {/* Existierendes google_review_url Feld bleibt darunter */}
-
-  {/* Mini-Stats */}
-  <div>
-    Letzte 30 Tage: {stats.emails_sent} Emails verschickt, {stats.ratings_received} Bewertungen erhalten
-  </div>
+  <a href="/admin/marketing/reviews">→ Reviews-Dashboard öffnen</a>
 </section>
 ```
 
-Stats werden bei Page-Load aus `marketing_events` gelesen:
-- `emails_sent` = COUNT WHERE event_type='rating_email_sent' AND occurred_at > now() - 30 days
-- `ratings_received` = COUNT FROM order_ratings WHERE restaurant_id=? AND created_at > now() - 30 days
+**2. Neue Hauptseite `app/app/admin/marketing/reviews/page.tsx`** — vollständiges Stats-Dashboard:
+
+```tsx
+<div>
+  <h1>⭐ Google Reviews</h1>
+
+  {/* Stats-Tiles (letzte 30 Tage) */}
+  <section>
+    <h2>Letzte 30 Tage</h2>
+    <Grid>
+      <StatTile label="Rating-Emails verschickt" value={stats.emails_sent} />
+      <StatTile label="Bewertungen erhalten" value={stats.ratings_received} />
+      <StatTile label="Davon 4-5 Sterne" value={stats.positive_ratings} subline={`${stats.positive_percent}%`} />
+      <StatTile label="Klicks auf Google-Button" value={stats.google_clicks} />
+    </Grid>
+  </section>
+
+  {/* Sternverteilung */}
+  <section>
+    <h2>Sternverteilung (letzte 30 Tage)</h2>
+    <BarChart data={[
+      { stars: 5, count: stats.by_stars[5] },
+      { stars: 4, count: stats.by_stars[4] },
+      { stars: 3, count: stats.by_stars[3] },
+      { stars: 2, count: stats.by_stars[2] },
+      { stars: 1, count: stats.by_stars[1] },
+    ]} />
+  </section>
+
+  {/* Letzte 10 Bewertungen mit Feedback-Text */}
+  <section>
+    <h2>Letzte Bewertungen mit Feedback</h2>
+    <table>
+      <thead><tr><th>Datum</th><th>Sterne</th><th>Feedback</th></tr></thead>
+      <tbody>
+        {recentFeedback.map(r => (
+          <tr><td>{formatDate(r.created_at)}</td><td>{'⭐'.repeat(r.stars)}</td><td>{r.feedback}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+
+  {/* Konfig-Shortcut */}
+  <a href="/admin/settings">→ Auto-Email-Einstellungen ändern</a>
+</div>
+```
+
+Stats werden bei Page-Load berechnet:
+- `emails_sent` = COUNT WHERE `marketing_events.event_type='rating_email_sent'` AND `occurred_at > now() - 30 days`
+- `ratings_received` = COUNT FROM `order_ratings` WHERE `restaurant_id=?` AND `created_at > now() - 30 days`
+- `positive_ratings` = COUNT FROM `order_ratings` WHERE `stars >= 4` AND `created_at > now() - 30 days`
+- `positive_percent` = `positive_ratings / ratings_received * 100` (gerundet)
+- `google_clicks` = COUNT WHERE `marketing_events.event_type='google_review_clicked'` AND `occurred_at > now() - 30 days` — **Hinweis:** dieser Event existiert heute nicht; A2 muss ihn beim Klick auf den Google-Button in `/feedback/[orderId]` und in der OrderRating-Komponente schreiben (kleine Erweiterung).
+- `by_stars[N]` = COUNT FROM `order_ratings` WHERE `stars=N` AND `created_at > now() - 30 days`
+- `recentFeedback` = SELECT * FROM `order_ratings` WHERE `feedback IS NOT NULL` ORDER BY `created_at DESC` LIMIT 10
 
 ### ENV-Variablen (Setup einmalig)
 
@@ -408,3 +462,4 @@ Email kommt beim Gast an
 - **`marketing_subscribers.opted_in` Feldname** — Track D nutzte `opted_in` oder `subscribed`? Beim Plan verifizieren.
 - **`@upstash/qstash` Version** — neueste stable verwenden, ggf. Breaking-Changes prüfen.
 - **`buildRatingEmailHtml` Refactor:** existierender `ratingBlockHtml` Code in `automation-run/route.ts` Zeile ~368-381 ist eng mit dem dortigen Template-System verwoben — Extraktion sauber machen, beide Call-Sites müssen funktionieren.
+- **`google_review_clicked` Event-Tracking:** Stats-Dashboard zeigt "Klicks auf Google-Button" — dieser Event existiert heute nicht. Bei Plan-Erstellung 2 Call-Sites identifizieren: `OrderRating.tsx` (in-app Klick) und `app/feedback/[orderId]/FeedbackClient.tsx` (Email-Landing-Klick). Beide müssen einen `marketing_events.insert` mit `event_type='google_review_clicked'` machen — vermutlich via fire-and-forget Endpoint `/api/events/track` (oder direkter Supabase RPC, je nach RLS-Stand).
