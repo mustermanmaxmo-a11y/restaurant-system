@@ -17,7 +17,7 @@ UPDATE public.loyalty_members lm
 SET subscriber_id = ms.id
 FROM auth.users au, public.marketing_subscribers ms
 WHERE lm.user_id = au.id
-  AND au.email = ms.email
+  AND lower(au.email) = lower(ms.email)
   AND ms.restaurant_id = lm.restaurant_id
   AND lm.subscriber_id IS NULL;
 
@@ -159,35 +159,40 @@ DECLARE
   v_program loyalty_programs%ROWTYPE;
   v_member_id uuid;
 BEGIN
-  IF NEW.status = 'served'
-     AND OLD.status IS DISTINCT FROM 'served'
-     AND NEW.customer_id IS NOT NULL THEN
+  BEGIN
+    IF NEW.status = 'served'
+       AND OLD.status IS DISTINCT FROM 'served'
+       AND NEW.customer_id IS NOT NULL THEN
 
-    SELECT * INTO v_program FROM loyalty_programs
-      WHERE restaurant_id = NEW.restaurant_id AND enabled = true;
-    IF NOT FOUND THEN RETURN NEW; END IF;
+      SELECT * INTO v_program FROM loyalty_programs
+        WHERE restaurant_id = NEW.restaurant_id AND enabled = true;
+      IF NOT FOUND THEN RETURN NEW; END IF;
 
-    INSERT INTO loyalty_members (subscriber_id, restaurant_id)
-      VALUES (NEW.customer_id, NEW.restaurant_id)
-      ON CONFLICT (subscriber_id, restaurant_id) WHERE subscriber_id IS NOT NULL DO NOTHING;
+      INSERT INTO loyalty_members (subscriber_id, restaurant_id)
+        VALUES (NEW.customer_id, NEW.restaurant_id)
+        ON CONFLICT (subscriber_id, restaurant_id) WHERE subscriber_id IS NOT NULL DO NOTHING;
 
-    SELECT id INTO v_member_id FROM loyalty_members
-      WHERE subscriber_id = NEW.customer_id AND restaurant_id = NEW.restaurant_id;
+      SELECT id INTO v_member_id FROM loyalty_members
+        WHERE subscriber_id = NEW.customer_id AND restaurant_id = NEW.restaurant_id;
 
-    IF v_program.mechanic = 'stamps' THEN
-      UPDATE loyalty_members SET stamp_count = stamp_count + 1 WHERE id = v_member_id;
-    ELSE
-      UPDATE loyalty_members
-        SET points = points + FLOOR(NEW.total * v_program.points_per_euro)
-        WHERE id = v_member_id;
+      IF v_program.mechanic = 'stamps' THEN
+        UPDATE loyalty_members SET stamp_count = stamp_count + 1 WHERE id = v_member_id;
+      ELSE
+        UPDATE loyalty_members
+          SET points = points + FLOOR(NEW.total * v_program.points_per_euro)
+          WHERE id = v_member_id;
+      END IF;
+
+      INSERT INTO marketing_events (restaurant_id, subscriber_id, event_type, props)
+        VALUES (NEW.restaurant_id, NEW.customer_id, 'loyalty_credited',
+                jsonb_build_object('order_id', NEW.id,
+                                   'mechanic', v_program.mechanic,
+                                   'order_total', NEW.total));
     END IF;
-
-    INSERT INTO marketing_events (restaurant_id, subscriber_id, event_type, props)
-      VALUES (NEW.restaurant_id, NEW.customer_id, 'loyalty_credited',
-              jsonb_build_object('order_id', NEW.id,
-                                 'mechanic', v_program.mechanic,
-                                 'order_total', NEW.total));
-  END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'credit_loyalty_on_served failed for order %: % (%)',
+      NEW.id, SQLERRM, SQLSTATE;
+  END;
   RETURN NEW;
 END;
 $$;
