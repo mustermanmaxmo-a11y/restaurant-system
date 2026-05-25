@@ -143,3 +143,15 @@ app/.env.local
 app/.env
 .superpowers/
 .worktrees/
+.vercel
+
+# Editor settings (per-machine)
+.vscode/
+
+# Local Claude Code settings (per-machine, not shared)
+.claude/settings.local.json
+
+# Local prototypes / demo artifacts (kept locally, not shared)
+branding-layout-concepts.html
+preview-concepts.html
+Restaurant_Demo_Ablaufplan.pdf
