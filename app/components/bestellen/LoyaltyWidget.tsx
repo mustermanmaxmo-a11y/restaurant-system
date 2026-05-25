@@ -5,25 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
-
-interface LoyaltyProgram {
-  id: string
-  enabled: boolean
-  mechanic: 'stamps' | 'points'
-  goal: number
-  points_per_euro: number
-  reward_text: string
-  show_banner: boolean
-  email_link_enabled: boolean
-}
-
-interface LoyaltyMember {
-  id: string
-  stamp_count: number
-  points: number
-  dietary_preferences: string[]
-  favorite_item_ids: string[]
-}
+import { fetchLoyaltyStatus, type LoyaltyMember, type LoyaltyProgram } from '@/lib/loyalty/api'
+import { getLoyaltyEmail, saveLoyaltyEmail } from '@/lib/loyalty/storage'
 
 interface Props {
   restaurantId: string
@@ -37,18 +20,10 @@ export function useLoyalty(restaurantId: string) {
   const [program, setProgram] = useState<LoyaltyProgram | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [member, setMember] = useState<LoyaltyMember | null>(null)
+  const [subscriberId, setSubscriberId] = useState<string | null>(null)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
 
-  useEffect(() => {
-    supabase
-      .from('loyalty_programs')
-      .select('*')
-      .eq('restaurant_id', restaurantId)
-      .eq('enabled', true)
-      .maybeSingle()
-      .then(({ data }) => setProgram(data))
-  }, [restaurantId])
-
+  // Auth-Watch (registrierte User)
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -57,49 +32,42 @@ export function useLoyalty(restaurantId: string) {
     return () => subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    if (!user || !program) { setMember(null); return }
-    supabase
-      .from('loyalty_members')
-      .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
-      .eq('user_id', user.id)
-      .eq('restaurant_id', restaurantId)
-      .maybeSingle()
-      .then(({ data }) => setMember(data ? { ...data, dietary_preferences: data.dietary_preferences ?? [], favorite_item_ids: data.favorite_item_ids ?? [] } : null))
-  }, [user, program, restaurantId])
+  // Load status (anon + registered)
+  const reload = useCallback(async () => {
+    if (!restaurantId) return
+    const email = user?.email ?? getLoyaltyEmail(restaurantId)
+    const status = await fetchLoyaltyStatus({
+      restaurantId,
+      subscriberId: null,
+      email: email ?? null,
+    })
+    setProgram(status?.program ?? null)
+    setMember((status?.member as LoyaltyMember | null) ?? null)
+    setSubscriberId(status?.subscriber_id ?? null)
+  }, [restaurantId, user])
 
-  const creditStamp = useCallback(async (orderTotal: number) => {
-    if (!user || !program) return
-    let mem = member
-    if (!mem) {
-      const { data } = await supabase
-        .from('loyalty_members')
-        .upsert({ user_id: user.id, restaurant_id: restaurantId }, { onConflict: 'user_id,restaurant_id' })
-        .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
-        .single()
-      mem = data ? { ...data, dietary_preferences: data.dietary_preferences ?? [], favorite_item_ids: data.favorite_item_ids ?? [] } : null
-    }
-    if (!mem) return
+  useEffect(() => { reload() }, [reload])
 
-    if (program.mechanic === 'stamps') {
-      await supabase.from('loyalty_members').update({ stamp_count: mem.stamp_count + 1 }).eq('id', mem.id)
-      setMember({ ...mem, stamp_count: mem.stamp_count + 1 })
-      setToastMsg('+1 Stempel 🎉')
-    } else {
-      const earned = Math.floor(orderTotal * program.points_per_euro)
-      await supabase.from('loyalty_members').update({ points: mem.points + earned }).eq('id', mem.id)
-      setMember({ ...mem, points: mem.points + earned })
-      setToastMsg(`+${earned} Punkte 🎉`)
-    }
+  // Re-Load wenn Email gerade gespeichert wurde
+  const refreshFromEmail = useCallback(async (email: string) => {
+    saveLoyaltyEmail(restaurantId, email)
+    await reload()
+  }, [restaurantId, reload])
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 4000)
-  }, [user, program, member, restaurantId])
+  }, [])
 
-  return { program, user, member, toastMsg, setUser, setMember, creditStamp }
+  return {
+    program, user, member, subscriberId, toastMsg,
+    setUser, setMember, refreshFromEmail, reload, showToast,
+  }
 }
 
 // ─── LoyaltyButton (top-right header) ────────────────────────────────────────
 export function LoyaltyButton({ restaurantId, accentColor = '#EA580C' }: Props) {
-  const { program, user, member, toastMsg, setUser, setMember, creditStamp: _ } = useLoyalty(restaurantId)
+  const { program, user, member, toastMsg, setUser, setMember } = useLoyalty(restaurantId)
   const [showModal, setShowModal] = useState(false)
   const [showCard, setShowCard] = useState(false)
 
@@ -251,7 +219,7 @@ function LoyaltyModal({
         const { data: mem } = await supabase
           .from('loyalty_members')
           .upsert({ user_id: data.user.id, restaurant_id: restaurantId }, { onConflict: 'user_id,restaurant_id' })
-          .select('id, stamp_count, points, dietary_preferences, favorite_item_ids').single()
+          .select('id, subscriber_id, user_id, restaurant_id, stamp_count, points, total_redeemed, dietary_preferences, favorite_item_ids').single()
         await supabase.from('marketing_subscribers').upsert({
           restaurant_id: restaurantId,
           email,
@@ -267,7 +235,7 @@ function LoyaltyModal({
       if (data.user) {
         const { data: mem } = await supabase
           .from('loyalty_members')
-          .select('id, stamp_count, points, dietary_preferences, favorite_item_ids')
+          .select('id, subscriber_id, user_id, restaurant_id, stamp_count, points, total_redeemed, dietary_preferences, favorite_item_ids')
           .eq('user_id', data.user.id)
           .eq('restaurant_id', restaurantId)
           .maybeSingle()
