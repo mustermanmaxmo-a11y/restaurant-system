@@ -12,6 +12,7 @@ import {
 import StaffOrderPanel from './StaffOrderPanel'
 import ShiftHandoverModal from './ShiftHandoverModal'
 import { timeAgo } from '@/lib/utils'
+import { setOrderStatus } from '@/lib/orders/setOrderStatus'
 import { PushNotificationBanner } from '@/components/PushNotificationBanner'
 
 type Session = { staff: Staff; restaurant: Restaurant }
@@ -229,12 +230,12 @@ export default function DashboardPage() {
 
   async function updateOrderStatus(orderId: string, newStatus: Column | 'out_for_delivery') {
     setUpdatingOrder(orderId)
-    const update: Record<string, unknown> = { status: newStatus }
+    const extra: Record<string, unknown> = {}
     if (newStatus === 'cooking' && session) {
-      update.claimed_by = session.staff.id
-      update.claimed_at = new Date().toISOString()
+      extra.claimed_by = session.staff.id
+      extra.claimed_at = new Date().toISOString()
     }
-    await supabase.from('orders').update(update).eq('id', orderId)
+    await setOrderStatus(orderId, newStatus, { extra })
     setUpdatingOrder(null)
   }
 
