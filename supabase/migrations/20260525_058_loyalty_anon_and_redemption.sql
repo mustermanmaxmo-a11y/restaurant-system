@@ -40,4 +40,13 @@ ALTER TABLE public.loyalty_programs
 ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS reward_applied jsonb;
 
+-- GRANTs (Pflicht laut feedback_supabase_grants)
+GRANT SELECT ON public.loyalty_programs TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.loyalty_programs TO authenticated;
+GRANT ALL ON public.loyalty_programs TO service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.loyalty_members TO authenticated;
+GRANT ALL ON public.loyalty_members TO service_role;
+-- Anon hat KEIN direct table access — geht nur über RPCs (Task 3 + 4)
+
 COMMIT;
