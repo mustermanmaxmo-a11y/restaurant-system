@@ -83,4 +83,70 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_loyalty_status(uuid, uuid, text) TO anon, authenticated;
 
+-- RPC: Race-safe Reward-Einlösung
+CREATE OR REPLACE FUNCTION public.redeem_loyalty_reward(
+  p_subscriber_id uuid,
+  p_restaurant_id uuid,
+  p_order_id uuid
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_program loyalty_programs%ROWTYPE;
+  v_member loyalty_members%ROWTYPE;
+  v_current int;
+BEGIN
+  SELECT * INTO v_program FROM loyalty_programs
+    WHERE restaurant_id = p_restaurant_id AND enabled = true;
+  IF NOT FOUND THEN RAISE EXCEPTION 'no_program'; END IF;
+
+  -- Lock member row (verhindert Double-Spend bei parallelen Calls)
+  SELECT * INTO v_member FROM loyalty_members
+    WHERE subscriber_id = p_subscriber_id AND restaurant_id = p_restaurant_id
+    FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'no_member'; END IF;
+
+  v_current := CASE v_program.mechanic
+                 WHEN 'stamps' THEN v_member.stamp_count
+                 ELSE v_member.points
+               END;
+  IF v_current < v_program.goal THEN RAISE EXCEPTION 'insufficient_balance'; END IF;
+
+  IF v_program.mechanic = 'stamps' THEN
+    UPDATE loyalty_members
+      SET stamp_count = stamp_count - v_program.goal,
+          total_redeemed = total_redeemed + 1
+      WHERE id = v_member.id;
+  ELSE
+    UPDATE loyalty_members
+      SET points = points - v_program.goal,
+          total_redeemed = total_redeemed + 1
+      WHERE id = v_member.id;
+  END IF;
+
+  UPDATE orders
+    SET reward_applied = jsonb_build_object(
+      'reward_text', v_program.reward_text,
+      'value_cents', v_program.reward_value_cents,
+      'member_id', v_member.id,
+      'redeemed_at', now()
+    )
+    WHERE id = p_order_id;
+
+  INSERT INTO marketing_events (restaurant_id, subscriber_id, event_type, props)
+    VALUES (p_restaurant_id, p_subscriber_id, 'redeemed_reward',
+            jsonb_build_object('order_id', p_order_id,
+                               'reward_text', v_program.reward_text,
+                               'value_cents', v_program.reward_value_cents));
+
+  RETURN jsonb_build_object('success', true,
+                            'reward_text', v_program.reward_text,
+                            'value_cents', v_program.reward_value_cents);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.redeem_loyalty_reward(uuid, uuid, uuid) TO anon, authenticated;
+
 COMMIT;
