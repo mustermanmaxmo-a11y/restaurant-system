@@ -149,4 +149,52 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.redeem_loyalty_reward(uuid, uuid, uuid) TO anon, authenticated;
 
+-- Trigger: server-side point/stamp crediting bei status='served'
+CREATE OR REPLACE FUNCTION public.credit_loyalty_on_served() RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_program loyalty_programs%ROWTYPE;
+  v_member_id uuid;
+BEGIN
+  IF NEW.status = 'served'
+     AND OLD.status IS DISTINCT FROM 'served'
+     AND NEW.customer_id IS NOT NULL THEN
+
+    SELECT * INTO v_program FROM loyalty_programs
+      WHERE restaurant_id = NEW.restaurant_id AND enabled = true;
+    IF NOT FOUND THEN RETURN NEW; END IF;
+
+    INSERT INTO loyalty_members (subscriber_id, restaurant_id)
+      VALUES (NEW.customer_id, NEW.restaurant_id)
+      ON CONFLICT (subscriber_id, restaurant_id) DO NOTHING;
+
+    SELECT id INTO v_member_id FROM loyalty_members
+      WHERE subscriber_id = NEW.customer_id AND restaurant_id = NEW.restaurant_id;
+
+    IF v_program.mechanic = 'stamps' THEN
+      UPDATE loyalty_members SET stamp_count = stamp_count + 1 WHERE id = v_member_id;
+    ELSE
+      UPDATE loyalty_members
+        SET points = points + FLOOR(NEW.total * v_program.points_per_euro)
+        WHERE id = v_member_id;
+    END IF;
+
+    INSERT INTO marketing_events (restaurant_id, subscriber_id, event_type, props)
+      VALUES (NEW.restaurant_id, NEW.customer_id, 'loyalty_credited',
+              jsonb_build_object('order_id', NEW.id,
+                                 'mechanic', v_program.mechanic,
+                                 'order_total', NEW.total));
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_loyalty_credit_on_served ON public.orders;
+CREATE TRIGGER trg_loyalty_credit_on_served
+  AFTER UPDATE OF status ON public.orders
+  FOR EACH ROW EXECUTE FUNCTION public.credit_loyalty_on_served();
+
 COMMIT;
