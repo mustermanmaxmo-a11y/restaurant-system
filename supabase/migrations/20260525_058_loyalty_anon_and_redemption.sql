@@ -169,7 +169,7 @@ BEGIN
 
     INSERT INTO loyalty_members (subscriber_id, restaurant_id)
       VALUES (NEW.customer_id, NEW.restaurant_id)
-      ON CONFLICT (subscriber_id, restaurant_id) DO NOTHING;
+      ON CONFLICT (subscriber_id, restaurant_id) WHERE subscriber_id IS NOT NULL DO NOTHING;
 
     SELECT id INTO v_member_id FROM loyalty_members
       WHERE subscriber_id = NEW.customer_id AND restaurant_id = NEW.restaurant_id;
