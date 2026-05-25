@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import { OrderRating } from '@/components/order/OrderRating'
 import { LoyaltyButton, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
+import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
+import { redeemLoyaltyReward } from '@/lib/loyalty/api'
 
 type CartItem = { item: MenuItem; qty: number }
 type View = 'menu' | 'cart' | 'status'
@@ -60,7 +62,15 @@ export default function OrderV2() {
   const [marketingEmail, setMarketingEmail] = useState('')
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
-  const { program: loyaltyProgram, creditStamp } = useLoyalty(restaurant?.id ?? '')
+  const loyaltyRestaurantId = restaurant?.id ?? ''
+  const {
+    program: loyaltyProgram,
+    member: loyaltyMember,
+    subscriberId: loyaltySubscriberId,
+    refreshFromEmail,
+    showToast,
+  } = useLoyalty(loyaltyRestaurantId)
+  const [applyReward, setApplyReward] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -212,7 +222,27 @@ export default function OrderV2() {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, 'dine_in')
     }
-    if (loyaltyProgram?.enabled) creditStamp(total)
+    // Punkte werden jetzt server-seitig bei status=served gutgeschrieben (Trigger).
+    // Hier nur noch: Email-Persistenz + Reward-Einlösung (falls aktiviert).
+    if (trimmedEmail && loyaltyProgram?.enabled) {
+      await refreshFromEmail(trimmedEmail)
+    }
+
+    if (applyReward && loyaltySubscriberId && data?.id) {
+      const result = await redeemLoyaltyReward({
+        subscriberId: loyaltySubscriberId,
+        restaurantId: loyaltyRestaurantId,
+        orderId: data.id,
+      })
+      if (result.success) {
+        showToast(`✓ Belohnung „${result.reward_text}" eingelöst`)
+      } else if (result.reason === 'insufficient_balance') {
+        showToast('Belohnung nicht mehr verfügbar — Bestellung wird normal verarbeitet')
+      } else {
+        showToast('Belohnung konnte nicht eingelöst werden')
+      }
+      setApplyReward(false)
+    }
     // Marketing subscriber capture
     if (restaurant.email_marketing_enabled) {
       const { data: { user: guestUser } } = await supabase.auth.getUser()
@@ -551,6 +581,14 @@ export default function OrderV2() {
                 {error && (
                   <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>
                 )}
+
+                <LoyaltyRedeemBlock
+                  program={loyaltyProgram}
+                  member={loyaltyMember}
+                  applyReward={applyReward}
+                  onToggle={setApplyReward}
+                  accentColor={C.accent}
+                />
 
                 <button
                   onClick={submitOrder}
