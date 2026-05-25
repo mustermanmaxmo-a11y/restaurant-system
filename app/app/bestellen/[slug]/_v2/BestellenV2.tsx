@@ -12,6 +12,8 @@ import {
 import BestellenV1 from '../_v1/BestellenV1'
 import SmartFilter from '../_components/SmartFilter'
 import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
+import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
+import { redeemLoyaltyReward, type LoyaltyMember, type LoyaltyProgram } from '@/lib/loyalty/api'
 import { OrderRating } from '@/components/order/OrderRating'
 import { useLanguage } from '@/components/providers/language-provider'
 
@@ -163,7 +165,14 @@ export default function BestellenV2() {
   const cartCount = cart.reduce((s, c) => s + c.qty, 0)
 
   const loyaltyRestaurantId = restaurant?.id ?? ''
-  const { program: loyaltyProgram, creditStamp } = useLoyalty(loyaltyRestaurantId)
+  const {
+    program: loyaltyProgram,
+    member: loyaltyMember,
+    subscriberId: loyaltySubscriberId,
+    refreshFromEmail,
+    showToast,
+  } = useLoyalty(loyaltyRestaurantId)
+  const [applyReward, setApplyReward] = useState(false)
 
   const [alertSettings, setAlertSettings] = useState<{ show_sold_out_label: boolean; auto_hide_item: boolean } | null>(null)
 
@@ -211,8 +220,27 @@ export default function BestellenV2() {
     setView('status')
     setCart([])
     setSubmitting(false)
-    if (loyaltyProgram?.enabled) {
-      creditStamp(total)
+    const insertedOrderId = data.id as string
+    // Punkte werden jetzt server-seitig bei status=served gutgeschrieben (Trigger).
+    // Hier nur noch: Email-Persistenz + Reward-Einlösung (falls aktiviert).
+    if (trimmedEmail && loyaltyProgram?.enabled) {
+      await refreshFromEmail(trimmedEmail)
+    }
+
+    if (applyReward && loyaltySubscriberId && insertedOrderId) {
+      const result = await redeemLoyaltyReward({
+        subscriberId: loyaltySubscriberId,
+        restaurantId: loyaltyRestaurantId,
+        orderId: insertedOrderId,
+      })
+      if (result.success) {
+        showToast(`✓ Belohnung „${result.reward_text}" eingelöst`)
+      } else if (result.reason === 'insufficient_balance') {
+        showToast('Belohnung nicht mehr verfügbar — Bestellung wird normal verarbeitet')
+      } else {
+        showToast('Belohnung konnte nicht eingelöst werden')
+      }
+      setApplyReward(false)
     }
     // After successful insert, calculate ETA (non-blocking)
     if (data?.id) {
@@ -317,6 +345,11 @@ export default function BestellenV2() {
           restaurantName={restaurant?.name}
           marketingOptIn={marketingOptIn} setMarketingOptIn={setMarketingOptIn}
           marketingEmail={marketingEmail} setMarketingEmail={setMarketingEmail}
+          loyaltyProgram={loyaltyProgram}
+          loyaltyMember={loyaltyMember}
+          applyReward={applyReward}
+          setApplyReward={setApplyReward}
+          accentColor={restaurant?.primary_color ?? V2.accent}
         />
       )}
 
@@ -643,8 +676,13 @@ function CheckoutView(props: {
   restaurantEmailMarketing?: boolean; restaurantName?: string;
   marketingOptIn: boolean; setMarketingOptIn: (v: boolean) => void;
   marketingEmail: string; setMarketingEmail: (v: string) => void;
+  loyaltyProgram: LoyaltyProgram | null;
+  loyaltyMember: LoyaltyMember | null;
+  applyReward: boolean;
+  setApplyReward: (v: boolean) => void;
+  accentColor: string;
 }) {
-  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit, restaurantEmailMarketing, restaurantName, marketingOptIn, setMarketingOptIn, marketingEmail, setMarketingEmail } = props
+  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit, restaurantEmailMarketing, restaurantName, marketingOptIn, setMarketingOptIn, marketingEmail, setMarketingEmail, loyaltyProgram, loyaltyMember, applyReward, setApplyReward, accentColor } = props
 
   return (
     <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto' }}>
@@ -748,6 +786,16 @@ function CheckoutView(props: {
           {error}
         </div>
       )}
+
+      <div style={{ marginTop: '16px' }}>
+        <LoyaltyRedeemBlock
+          program={loyaltyProgram}
+          member={loyaltyMember}
+          applyReward={applyReward}
+          onToggle={setApplyReward}
+          accentColor={accentColor}
+        />
+      </div>
 
       <button
         onClick={onSubmit}

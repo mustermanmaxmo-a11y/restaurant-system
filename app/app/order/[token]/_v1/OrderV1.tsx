@@ -12,7 +12,9 @@ import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import type { MenuItem, MenuCategory, Order, Table, Restaurant, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
 import { OrderRating } from '@/components/order/OrderRating'
-import { LoyaltyButton } from '@/components/bestellen/LoyaltyWidget'
+import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
+import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
+import { redeemLoyaltyReward } from '@/lib/loyalty/api'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import type { LucideIcon } from 'lucide-react'
@@ -138,6 +140,17 @@ export default function OrderV1() {
   // Marketing opt-in
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [marketingEmail, setMarketingEmail] = useState('')
+
+  // Loyalty
+  const loyaltyRestaurantId = restaurant?.id ?? ''
+  const {
+    program: loyaltyProgram,
+    member: loyaltyMember,
+    subscriberId: loyaltySubscriberId,
+    refreshFromEmail,
+    showToast,
+  } = useLoyalty(loyaltyRestaurantId)
+  const [applyReward, setApplyReward] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -430,6 +443,27 @@ export default function OrderV1() {
     if (data?.id) {
       const cartItems = cart.map(c => ({ item_id: c.item.id, qty: c.qty }))
       calculateAndStoreEta(data.id, restaurant.id, cartItems, 'dine_in')
+    }
+    // Punkte werden jetzt server-seitig bei status=served gutgeschrieben (Trigger).
+    // Hier nur noch: Email-Persistenz + Reward-Einlösung (falls aktiviert).
+    if (trimmedEmail && loyaltyProgram?.enabled) {
+      await refreshFromEmail(trimmedEmail)
+    }
+
+    if (applyReward && loyaltySubscriberId && data?.id) {
+      const result = await redeemLoyaltyReward({
+        subscriberId: loyaltySubscriberId,
+        restaurantId: loyaltyRestaurantId,
+        orderId: data.id,
+      })
+      if (result.success) {
+        showToast(`✓ Belohnung „${result.reward_text}" eingelöst`)
+      } else if (result.reason === 'insufficient_balance') {
+        showToast('Belohnung nicht mehr verfügbar — Bestellung wird normal verarbeitet')
+      } else {
+        showToast('Belohnung konnte nicht eingelöst werden')
+      }
+      setApplyReward(false)
     }
     // Marketing subscriber capture
     if (restaurant.email_marketing_enabled) {
@@ -835,6 +869,14 @@ export default function OrderV1() {
 
               {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
 
+              <LoyaltyRedeemBlock
+                program={loyaltyProgram}
+                member={loyaltyMember}
+                applyReward={applyReward}
+                onToggle={setApplyReward}
+                accentColor={C.accent}
+              />
+
               <motion.button
                 onClick={submitOrderLater}
                 disabled={submitting}
@@ -912,6 +954,11 @@ export default function OrderV1() {
             </motion.button>
           </div>
         </motion.div>
+
+        {/* ── Loyalty Banner ── */}
+        {restaurant && (
+          <LoyaltyBanner restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? C.accent} />
+        )}
 
         {/* ── Category Pills ── */}
         {categories.length > 0 && (
