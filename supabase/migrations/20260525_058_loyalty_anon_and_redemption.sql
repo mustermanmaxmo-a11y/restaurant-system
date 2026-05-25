@@ -49,4 +49,38 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.loyalty_members TO authenticated;
 GRANT ALL ON public.loyalty_members TO service_role;
 -- Anon hat KEIN direct table access — geht nur über RPCs (Task 3 + 4)
 
+-- RPC: Loyalty-Status für anonyme oder registrierte Gäste
+-- Sucht subscriber_id zuerst direkt, fallback via email
+CREATE OR REPLACE FUNCTION public.get_loyalty_status(
+  p_restaurant_id uuid,
+  p_subscriber_id uuid DEFAULT NULL,
+  p_email text DEFAULT NULL
+) RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  WITH resolved AS (
+    SELECT COALESCE(
+      p_subscriber_id,
+      (SELECT id FROM marketing_subscribers
+         WHERE restaurant_id = p_restaurant_id
+           AND lower(email) = lower(p_email)
+         LIMIT 1)
+    ) AS subscriber_id
+  )
+  SELECT jsonb_build_object(
+    'program', to_jsonb(lp.*),
+    'member', to_jsonb(lm.*),
+    'subscriber_id', (SELECT subscriber_id FROM resolved)
+  )
+  FROM loyalty_programs lp
+  LEFT JOIN loyalty_members lm
+    ON lm.restaurant_id = lp.restaurant_id
+   AND lm.subscriber_id = (SELECT subscriber_id FROM resolved)
+  WHERE lp.restaurant_id = p_restaurant_id AND lp.enabled = true;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_loyalty_status(uuid, uuid, text) TO anon, authenticated;
+
 COMMIT;
