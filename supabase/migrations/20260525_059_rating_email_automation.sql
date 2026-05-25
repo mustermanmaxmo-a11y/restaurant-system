@@ -39,11 +39,11 @@ CREATE INDEX IF NOT EXISTS idx_orders_served_at_pending_rating
   ON public.orders (served_at)
   WHERE served_at IS NOT NULL AND rating_email_sent_at IS NULL;
 
--- 5) Backfill: existing served orders get served_at = updated_at as best approximation
+-- 5) Backfill: existing served orders get served_at = created_at as best approximation
 -- (so historical orders don't trigger Email when feature is enabled)
 UPDATE public.orders
-  SET served_at = updated_at,
-      rating_email_sent_at = COALESCE(updated_at, now())
+  SET served_at = created_at,
+      rating_email_sent_at = created_at
   WHERE status = 'served' AND served_at IS NULL;
 
 -- GRANTs (laut feedback_supabase_grants)
