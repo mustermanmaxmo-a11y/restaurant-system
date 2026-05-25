@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { trackEvent } from '@/lib/marketing/trackEvent'
 import type { ColorSet } from '@/lib/color-utils'
 
 interface OrderRatingProps {
@@ -178,6 +179,13 @@ export function OrderRating({ orderId, restaurantId, googleReviewUrl, C: CProp }
                   href={googleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    trackEvent({
+                      restaurantId,
+                      eventType: 'google_review_clicked',
+                      props: { source: 'in_app_rating', order_id: orderId },
+                    })
+                  }}
                   style={{
                     display: 'block',
                     background: C.accent,

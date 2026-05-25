@@ -17,13 +17,17 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null; crm_rule_inactive: boolean; crm_rule_almost_goal: boolean; crm_rule_welcome: boolean; online_payments_enabled: boolean; stripe_connect_account_id: string | null } | null>(null)
+  const [restaurant, setRestaurant] = useState<{ id: string; plan: string; weekly_report_email: boolean; delivery_buffer_minutes: number; google_review_url: string | null; rating_email_enabled: boolean; rating_email_delay_hours: number; email_marketing_enabled: boolean; prep_show_in_kds: boolean; prep_push_enabled: boolean; benchmark_opt_in: boolean; restaurant_category: string | null; seating_capacity: number | null; crm_rule_inactive: boolean; crm_rule_almost_goal: boolean; crm_rule_welcome: boolean; online_payments_enabled: boolean; stripe_connect_account_id: string | null } | null>(null)
   const [emailToggleLoading, setEmailToggleLoading] = useState(false)
   const [deliveryBuffer, setDeliveryBuffer] = useState<string>('25')
   const [deliveryBufferSaving, setDeliveryBufferSaving] = useState(false)
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
   const [googleReviewSaving, setGoogleReviewSaving] = useState(false)
   const [googleReviewSaved, setGoogleReviewSaved] = useState(false)
+  const [ratingEmailEnabled, setRatingEmailEnabled] = useState(false)
+  const [ratingEmailDelayHours, setRatingEmailDelayHours] = useState(4)
+  const [ratingEmailSaving, setRatingEmailSaving] = useState(false)
+  const [ratingEmailSaved, setRatingEmailSaved] = useState(false)
 
   const [alerts, setAlerts] = useState<{
     id?: string
@@ -67,7 +71,7 @@ export default function SettingsPage() {
       setUserId(session.user.id)
       const { data: resto } = await supabase
         .from('restaurants')
-        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome, online_payments_enabled, stripe_connect_account_id')
+        .select('id, plan, weekly_report_email, delivery_buffer_minutes, google_review_url, rating_email_enabled, rating_email_delay_hours, email_marketing_enabled, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, restaurant_category, seating_capacity, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome, online_payments_enabled, stripe_connect_account_id')
         .eq('owner_id', session.user.id)
         .limit(1)
         .single()
@@ -75,6 +79,8 @@ export default function SettingsPage() {
         setRestaurant(resto)
         setDeliveryBuffer(String(resto.delivery_buffer_minutes ?? 25))
         setGoogleReviewUrl(resto.google_review_url ?? '')
+        setRatingEmailEnabled(resto.rating_email_enabled ?? false)
+        setRatingEmailDelayHours(resto.rating_email_delay_hours ?? 4)
         const { data: as_ } = await supabase.from('alert_settings').select('*').eq('restaurant_id', resto.id).single()
         if (as_) setAlerts({ id: as_.id, alerts_enabled: as_.alerts_enabled, push_kitchen: as_.push_kitchen, push_admin: as_.push_admin, kds_visual: as_.kds_visual, show_sold_out_label: as_.show_sold_out_label, auto_hide_item: as_.auto_hide_item, default_threshold: as_.default_threshold })
       }
@@ -212,6 +218,29 @@ export default function SettingsPage() {
     setGoogleReviewSaving(false)
   }
 
+  async function handleRatingEmailSave() {
+    if (!restaurant) return
+    const delay = Math.max(1, Math.min(72, ratingEmailDelayHours || 4))
+    setRatingEmailSaving(true)
+    setRatingEmailSaved(false)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        rating_email_enabled: ratingEmailEnabled,
+        rating_email_delay_hours: delay,
+      })
+      .eq('id', restaurant.id)
+    if (error) {
+      alert('Speichern fehlgeschlagen.')
+    } else {
+      setRatingEmailSaved(true)
+      setRatingEmailDelayHours(delay)
+      setRestaurant(prev => prev ? { ...prev, rating_email_enabled: ratingEmailEnabled, rating_email_delay_hours: delay } : prev)
+      setTimeout(() => setRatingEmailSaved(false), 2500)
+    }
+    setRatingEmailSaving(false)
+  }
+
   async function handleDeliveryBufferSave() {
     if (!restaurant) return
     const val = parseInt(deliveryBuffer, 10)
@@ -315,6 +344,71 @@ export default function SettingsPage() {
           >
             {googleReviewSaving ? 'Speichert…' : googleReviewSaved ? '✓ Gespeichert' : 'Speichern'}
           </button>
+        </div>
+      )}
+
+      {/* Auto-Rating-Email */}
+      {restaurant && (
+        <div style={{
+          background: 'var(--surface)', borderRadius: '16px',
+          border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
+        }}>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
+            ✉️ Automatische Bewertungs-Email
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            X Stunden nach &quot;serviert&quot; bekommen Gäste mit Email-Opt-In automatisch eine Bewertungs-Email mit Sterne-Klick.
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <span style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600 }}>Automatisch Bewertungs-Email senden</span>
+            <button
+              onClick={() => setRatingEmailEnabled(v => !v)}
+              style={{ width: '48px', height: '26px', borderRadius: '13px', border: 'none', background: ratingEmailEnabled ? 'var(--accent)' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
+            >
+              <span style={{ position: 'absolute', top: '3px', left: ratingEmailEnabled ? '25px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+            </button>
+          </div>
+
+          <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+            Delay (Stunden nach &quot;serviert&quot;)
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={72}
+            value={ratingEmailDelayHours}
+            onChange={e => setRatingEmailDelayHours(Math.max(1, Math.min(72, parseInt(e.target.value) || 4)))}
+            style={{
+              width: '120px', boxSizing: 'border-box',
+              background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)',
+              borderRadius: '10px', padding: '10px 14px',
+              color: 'var(--text)', fontSize: '0.875rem', marginBottom: '6px',
+              fontFamily: 'inherit', outline: 'none',
+            }}
+          />
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '14px' }}>
+            Default 4h. Pizzerien: 2h. Fine-Dining: 24h. Maximum 72h.
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleRatingEmailSave}
+              disabled={ratingEmailSaving}
+              style={{
+                background: ratingEmailSaved ? '#22c55e' : 'var(--accent)',
+                border: 'none', borderRadius: '10px', padding: '10px 20px',
+                color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                cursor: ratingEmailSaving ? 'wait' : 'pointer',
+                transition: 'background 0.2s',
+              }}
+            >
+              {ratingEmailSaving ? 'Speichert…' : ratingEmailSaved ? '✓ Gespeichert' : 'Speichern'}
+            </button>
+            <a href="/admin/marketing/reviews" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>
+              → Reviews-Dashboard öffnen
+            </a>
+          </div>
         </div>
       )}
 

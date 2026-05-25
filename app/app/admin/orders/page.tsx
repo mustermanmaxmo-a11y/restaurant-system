@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { setOrderStatus } from '@/lib/orders/setOrderStatus'
 import { Order, OrderStatus, ServiceCall, Table } from '@/types/database'
 import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X, User, FileText } from 'lucide-react'
 import { useLanguage } from '@/components/providers/language-provider'
@@ -277,7 +278,7 @@ export default function OrdersPage() {
   }, [restaurantId, loadOrders, loadCalls])
 
   const advanceStatus = useCallback(async (id: string, next: OrderStatus) => {
-    await supabase.from('orders').update({ status: next }).eq('id', id)
+    await setOrderStatus(id, next)
   }, [])
 
   const cancelOrder = useCallback(async (id: string) => {

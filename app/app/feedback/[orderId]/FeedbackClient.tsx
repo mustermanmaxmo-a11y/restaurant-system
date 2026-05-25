@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { trackEvent } from '@/lib/marketing/trackEvent'
 
 interface Props {
   orderId: string
+  restaurantId: string
   stars: number
   token: string
   restaurantName: string
@@ -12,7 +14,7 @@ interface Props {
   primaryColor: string
 }
 
-export function FeedbackClient({ orderId, stars, token, restaurantName, logoUrl, googleReviewUrl, primaryColor }: Props) {
+export function FeedbackClient({ orderId, restaurantId, stars, token, restaurantName, logoUrl, googleReviewUrl, primaryColor }: Props) {
   const [feedback, setFeedback] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -85,6 +87,13 @@ export function FeedbackClient({ orderId, stars, token, restaurantName, logoUrl,
                 href={googleReviewUrl ?? '#'}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  trackEvent({
+                    restaurantId,
+                    eventType: 'google_review_clicked',
+                    props: { source: 'email_landing', order_id: orderId },
+                  })
+                }}
                 style={{
                   display: 'block', textAlign: 'center', textDecoration: 'none',
                   background: primaryColor, color: '#ffffff',

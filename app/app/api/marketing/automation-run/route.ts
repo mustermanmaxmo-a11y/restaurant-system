@@ -364,6 +364,13 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
       }
 
       // Build per-star rating links (token bound per stars value)
+      // NOTE: This inline rating block is intentionally kept here.
+      // The standalone rating-email helper (lib/marketing/ratingEmail.ts) is used by
+      // /api/jobs/send-rating-email (Track A2) and produces a complete email.
+      // This route's `ratingBlockHtml` is one block inside a larger composite email
+      // (logo + greeting + rating + items + discount + footer), which requires the
+      // existing inline assembly. Refactoring both call-sites to share template
+      // pieces is out of scope for A2 and tracked as A2-followup.
       let ratingBlockHtml: string | undefined
       if (matchedOrder) {
         const starLinks = [1, 2, 3, 4, 5].map(n => {

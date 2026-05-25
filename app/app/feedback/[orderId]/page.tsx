@@ -47,6 +47,7 @@ export default async function FeedbackPage({ params, searchParams }: PageProps) 
   return (
     <FeedbackClient
       orderId={orderId}
+      restaurantId={order.restaurant_id}
       stars={stars}
       token={token}
       restaurantName={restaurant.name}
