@@ -90,6 +90,11 @@ async function handler(request: NextRequest) {
   const fromEmail = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
   const fromName = restaurant.name
 
+  // Use immediate send (not queue) — rating emails are time-sensitive and
+  // QStash already handled the delay. Queueing here would add up to 24h
+  // additional lag on Vercel Hobby (cron runs daily). If Resend transiently
+  // fails, we don't update rating_email_sent_at, so a future re-trigger
+  // (e.g. manual replay) would retry the send.
   try {
     await sendEmail({
       restaurantId: order.restaurant_id,
@@ -101,6 +106,7 @@ async function handler(request: NextRequest) {
       html,
       text,
       headers,
+      immediate: true,
     })
   } catch (e) {
     return NextResponse.json(
