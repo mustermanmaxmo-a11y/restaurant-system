@@ -36,7 +36,7 @@ export async function scheduleRatingEmail(orderId: string): Promise<ScheduleResu
     url: `${appUrl}/api/jobs/send-rating-email`,
     body: { orderId },
     delaySeconds,
-    dedupeId: `rating-email:${orderId}`,
+    dedupeId: `rating-email-${orderId}`,
   })
 
   if (!result.success) {
