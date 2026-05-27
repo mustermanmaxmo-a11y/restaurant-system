@@ -12,6 +12,7 @@ import {
   ChefHat, CheckCircle2, Clock, Bell, Receipt, Sparkles,
 } from 'lucide-react'
 import { OrderRating } from '@/components/order/OrderRating'
+import ChatWidget from '@/components/ChatWidget'
 import { LoyaltyButton, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
 import { redeemLoyaltyReward } from '@/lib/loyalty/api'
@@ -839,6 +840,28 @@ export default function OrderV2() {
             </div>
           )}
         </div>
+      )}
+
+      {/* KI Menu-Assistant */}
+      {view === 'menu' && restaurant && (
+        <ChatWidget
+          restaurantSlug={restaurant.slug}
+          restaurantName={restaurant.name}
+          items={items}
+          cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
+          accentColor={restaurant.primary_color ?? undefined}
+          tableId={tableId ?? undefined}
+          restaurantId={restaurant.id}
+          onAddToCart={(itemId, _name, qty) => {
+            const found = items.find(i => i.id === itemId)
+            if (!found) return
+            setCart(prev => {
+              const existing = prev.find(c => c.item.id === itemId)
+              if (existing) return prev.map(c => c.item.id === itemId ? { ...c, qty: c.qty + qty } : c)
+              return [...prev, { item: found, qty }]
+            })
+          }}
+        />
       )}
     </div>
   )

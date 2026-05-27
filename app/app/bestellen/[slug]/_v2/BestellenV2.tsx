@@ -15,6 +15,7 @@ import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen
 import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
 import { redeemLoyaltyReward, type LoyaltyMember, type LoyaltyProgram } from '@/lib/loyalty/api'
 import { OrderRating } from '@/components/order/OrderRating'
+import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 
 type Translations = Record<string, { name: string; description: string }>
@@ -650,6 +651,27 @@ export default function BestellenV2() {
             </div>
           )}
         </div>
+      )}
+
+      {/* KI Menu-Assistant */}
+      {view === 'menu' && restaurant && (
+        <ChatWidget
+          restaurantSlug={restaurant.slug}
+          restaurantName={restaurant.name}
+          items={items}
+          cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
+          accentColor={restaurant.primary_color ?? undefined}
+          restaurantId={restaurant.id}
+          onAddToCart={(itemId, _name, qty) => {
+            const found = items.find(i => i.id === itemId)
+            if (!found) return
+            setCart(prev => {
+              const existing = prev.find(c => c.item.id === itemId)
+              if (existing) return prev.map(c => c.item.id === itemId ? { ...c, qty: c.qty + qty } : c)
+              return [...prev, { item: found, qty }]
+            })
+          }}
+        />
       )}
     </div>
   )
