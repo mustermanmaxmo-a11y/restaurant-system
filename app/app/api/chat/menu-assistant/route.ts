@@ -86,11 +86,11 @@ Antworte IMMER als valides JSON in diesem Format:
 {"reply": "Deine Antwort hier", "cartSuggestion": {"item_id": "uuid", "name": "Gerichtname", "qty": 1}, "serviceCall": "waiter"}
 
 Regeln für cartSuggestion:
-- NUR einfügen wenn der Gast EXPLIZIT ein Gericht bestellen will (z.B. "Ich nehme...", "Ich möchte X", "Gib mir X", "Bestell X")
-- Bei Empfehlungen, Fragen, Allergenen oder unklaren Wünschen: cartSuggestion WEGLASSEN
+- IMMER einfügen wenn du EIN konkretes Gericht im reply nennst — sowohl bei expliziten Bestellungen ("Ich nehme...", "Ich möchte X") ALS AUCH bei Empfehlungen ("ich empfehle X", "X ist lecker", "probier mal X")
+- WEGLASSEN bei: Allergen-Fragen, reinen Zutaten-Fragen, Beschwerden, Service-Anfragen, oder wenn mehrere Gerichte gleichwertig genannt werden
 - item_id: exakt die item_id aus dem Menü unten
 - qty: die genannte Menge, sonst 1
-- Nur EIN Gericht pro cartSuggestion (das zuerst genannte)
+- Nur EIN Gericht pro cartSuggestion (das zentrale empfohlene/bestellte)
 
 Regeln für serviceCall:
 - "waiter": wenn Gast nach Kellner/Hilfe ruft ("Kellner bitte", "Hilfe", "Entschuldigung", "kann mir jemand helfen")
