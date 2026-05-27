@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const [{ data: restaurant }, { data: categories }, { data: items }, { data: specialsData }] = await Promise.all([
     supabase.from('restaurants').select('id, name, plan, anthropic_api_key').eq('slug', restaurantSlug).single(),
     supabase.from('menu_categories').select('id, name').eq('active', true),
-    supabase.from('menu_items').select('id, name, description, price, allergens, tags, category_id').eq('available', true),
+    supabase.from('menu_items').select('id, name, description, price, allergens, tags, category_id, image_url').eq('available', true),
     supabase.from('daily_specials').select('menu_item_id, label, special_price, note').eq('active', true),
   ])
 
@@ -133,7 +133,17 @@ ${menuText}${cartText}`
         const cs = parsed.cartSuggestion
         const sc = parsed.serviceCall === 'waiter' || parsed.serviceCall === 'bill' ? parsed.serviceCall : null
         const result: Record<string, unknown> = { reply }
-        if (cs?.item_id && cs?.name) result.cartSuggestion = { itemId: cs.item_id, name: cs.name, qty: cs.qty || 1 }
+        if (cs?.item_id && cs?.name) {
+          const matched = (items || []).find(i => i.id === cs.item_id)
+          result.cartSuggestion = {
+            itemId: cs.item_id,
+            name: cs.name,
+            qty: cs.qty || 1,
+            imageUrl: matched?.image_url ?? null,
+            price: matched ? Number(matched.price) : null,
+            description: matched?.description ?? null,
+          }
+        }
         if (sc) result.serviceCall = sc
         return NextResponse.json(result)
       }

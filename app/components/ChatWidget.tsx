@@ -15,6 +15,9 @@ interface CartSuggestion {
   itemId: string
   name: string
   qty: number
+  imageUrl?: string | null
+  price?: number | null
+  description?: string | null
 }
 
 interface Message {
@@ -415,29 +418,36 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
                 <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 10, paddingLeft: 2 }}>
                   {formatTime(Date.now())}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 8,
+                  marginTop: 4,
+                }}>
                   {STARTERS.map(s => (
                     <button
                       key={s}
                       onClick={() => send(s)}
                       style={{
-                        background: 'transparent',
+                        background: C.botBubble,
                         border: `1px solid ${C.chipBorder}`,
-                        borderRadius: 20,
-                        padding: '5px 12px',
-                        color: C.chipText,
-                        fontSize: 12,
+                        borderRadius: 14,
+                        padding: '10px 12px',
+                        color: C.botText,
+                        fontSize: 13,
                         cursor: 'pointer',
                         fontWeight: 500,
-                        transition: 'border-color 0.15s, color 0.15s',
+                        textAlign: 'left',
+                        lineHeight: 1.3,
+                        transition: 'border-color 0.15s, transform 0.15s, background 0.15s',
                       }}
                       onMouseEnter={e => {
                         e.currentTarget.style.borderColor = accent
-                        e.currentTarget.style.color = accent
+                        e.currentTarget.style.transform = 'translateY(-1px)'
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.borderColor = C.chipBorder
-                        e.currentTarget.style.color = C.chipText
+                        e.currentTarget.style.transform = 'translateY(0)'
                       }}
                     >
                       {s}
@@ -472,36 +482,110 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
                   {msg.text}
                 </div>
 
-                {/* Cart suggestion button */}
-                {msg.role === 'assistant' && msg.cartSuggestion && onAddToCart && (
-                  <button
-                    onClick={() => {
-                      if (addedIndices.has(i)) return
-                      onAddToCart(msg.cartSuggestion!.itemId, msg.cartSuggestion!.name, msg.cartSuggestion!.qty)
-                      setAddedIndices(prev => new Set(prev).add(i))
-                    }}
-                    style={{
-                      marginTop: 5,
-                      padding: '5px 14px',
-                      borderRadius: 20,
-                      border: addedIndices.has(i) ? '1px solid #22c55e' : `1px solid ${accent}`,
-                      background: 'transparent',
-                      color: addedIndices.has(i) ? '#22c55e' : accent,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: addedIndices.has(i) ? 'default' : 'pointer',
-                      transition: 'all 0.2s',
+                {/* Cart suggestion: Rich-Card with image + price + add button */}
+                {msg.role === 'assistant' && msg.cartSuggestion && onAddToCart && (() => {
+                  const cs = msg.cartSuggestion
+                  const added = addedIndices.has(i)
+                  const priceStr = cs.price != null ? `${cs.price.toFixed(2).replace('.', ',')} €` : null
+                  return (
+                    <div style={{
+                      marginTop: 6,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    {addedIndices.has(i)
-                      ? <><Check size={12} /> Hinzugefügt</>
-                      : <><ShoppingCart size={12} /> {msg.cartSuggestion.name}{msg.cartSuggestion.qty > 1 ? ` (${msg.cartSuggestion.qty}x)` : ''} hinzufügen</>
-                    }
-                  </button>
-                )}
+                      gap: 10,
+                      padding: 8,
+                      paddingRight: 10,
+                      borderRadius: 16,
+                      border: `1px solid ${C.border}`,
+                      background: C.botBubble,
+                      maxWidth: '88%',
+                      boxShadow: chatTheme === 'light' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                    }}>
+                      {/* Image or fallback bubble */}
+                      {cs.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={cs.imageUrl}
+                          alt={cs.name}
+                          loading="lazy"
+                          style={{
+                            width: 56,
+                            height: 56,
+                            objectFit: 'cover',
+                            borderRadius: 12,
+                            flexShrink: 0,
+                            background: C.surface,
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 12,
+                          background: `${accent}22`,
+                          color: accent,
+                          fontWeight: 700,
+                          fontSize: 22,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {cs.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+
+                      {/* Name + price */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          color: C.botText,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          lineHeight: 1.3,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {cs.name}{cs.qty > 1 ? ` × ${cs.qty}` : ''}
+                        </div>
+                        {priceStr && (
+                          <div style={{ color: C.textMuted, fontSize: 12, marginTop: 2, fontWeight: 500 }}>
+                            {priceStr}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Add button */}
+                      <button
+                        onClick={() => {
+                          if (added) return
+                          onAddToCart(cs.itemId, cs.name, cs.qty)
+                          setAddedIndices(prev => new Set(prev).add(i))
+                        }}
+                        aria-label={added ? 'Hinzugefügt' : 'In den Warenkorb'}
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          border: 'none',
+                          background: added ? '#22c55e' : accent,
+                          color: added ? '#ffffff' : accentText,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: added ? 'default' : 'pointer',
+                          flexShrink: 0,
+                          transition: 'transform 0.15s, background 0.2s',
+                          boxShadow: added ? 'none' : `0 2px 8px ${accent}55`,
+                        }}
+                        onMouseEnter={e => { if (!added) e.currentTarget.style.transform = 'scale(1.08)' }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                      >
+                        {added ? <Check size={16} /> : <ShoppingCart size={16} />}
+                      </button>
+                    </div>
+                  )
+                })()}
 
                 <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2, paddingLeft: msg.role === 'user' ? 0 : 2, paddingRight: msg.role === 'user' ? 2 : 0 }}>
                   {formatTime(msg.ts)}
