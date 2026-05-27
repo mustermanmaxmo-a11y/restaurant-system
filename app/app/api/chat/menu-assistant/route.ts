@@ -83,7 +83,7 @@ Upselling (nur wenn Warenkorb nicht leer ist):
 - Maximal 1 Vorschlag, kurz und unaufdringlich (z.B. "Dazu passt übrigens gut unser X")
 
 Antworte IMMER als valides JSON in diesem Format:
-{"reply": "Deine Antwort hier", "cartSuggestion": {"item_id": "uuid", "name": "Gerichtname", "qty": 1}, "serviceCall": "waiter"}
+{"reply": "Deine Antwort hier", "cartSuggestion": {"item_id": "uuid", "name": "Gerichtname", "qty": 1, "autoAdd": false}, "serviceCall": "waiter"}
 
 Regeln für cartSuggestion:
 - IMMER einfügen wenn du EIN konkretes Gericht im reply nennst — sowohl bei expliziten Bestellungen ("Ich nehme...", "Ich möchte X") ALS AUCH bei Empfehlungen ("ich empfehle X", "X ist lecker", "probier mal X")
@@ -91,6 +91,11 @@ Regeln für cartSuggestion:
 - item_id: exakt die item_id aus dem Menü unten
 - qty: die genannte Menge, sonst 1
 - Nur EIN Gericht pro cartSuggestion (das zentrale empfohlene/bestellte)
+
+Regeln für autoAdd (Boolean innerhalb cartSuggestion):
+- autoAdd: true → NUR bei eindeutiger Bestell-Absicht: "Ich nehme...", "Pack X in den Warenkorb", "Bestell X", "Noch eine X", "Gib mir X dazu", "Ja, fügen wir hinzu"
+- autoAdd: false → bei Empfehlungen, Vorschlägen, "ich überlege noch", oder wenn der Gast nur fragt
+- Wenn autoAdd: true → in der reply NICHT behaupten "Ich packe X in den Warenkorb" — das System fügt automatisch hinzu. Stattdessen kurz bestätigen ("Erledigt!", "Gerne!") und ggf. einen Upsell anschließen.
 
 Regeln für serviceCall:
 - "waiter": wenn Gast nach Kellner/Hilfe ruft ("Kellner bitte", "Hilfe", "Entschuldigung", "kann mir jemand helfen")
@@ -139,6 +144,7 @@ ${menuText}${cartText}`
             itemId: cs.item_id,
             name: cs.name,
             qty: cs.qty || 1,
+            autoAdd: cs.autoAdd === true,
             imageUrl: matched?.image_url ?? null,
             price: matched ? Number(matched.price) : null,
             description: matched?.description ?? null,

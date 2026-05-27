@@ -15,6 +15,7 @@ interface CartSuggestion {
   itemId: string
   name: string
   qty: number
+  autoAdd?: boolean
   imageUrl?: string | null
   price?: number | null
   description?: string | null
@@ -34,6 +35,7 @@ interface ChatWidgetProps {
   cart: CartItem[]
   accentColor?: string
   onAddToCart?: (itemId: string, name: string, qty: number) => void
+  onSuggestionClick?: (itemId: string) => void
   tableId?: string
   restaurantId?: string
 }
@@ -51,7 +53,7 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ChatWidget({ restaurantSlug, restaurantName, items, cart, accentColor, onAddToCart, tableId, restaurantId }: ChatWidgetProps) {
+export default function ChatWidget({ restaurantSlug, restaurantName, items, cart, accentColor, onAddToCart, onSuggestionClick, tableId, restaurantId }: ChatWidgetProps) {
   const accent = accentColor || '#6c63ff'
   const accentText = isLightColor(accent) ? '#111111' : '#ffffff'
 
@@ -235,10 +237,21 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
         body: JSON.stringify({ restaurantSlug, message: trimmed, history, cart: cartContext }),
       })
       const data = await res.json()
+      const cs = data.cartSuggestion as CartSuggestion | undefined
+
+      // Auto-add when the LLM signals a clear order intent.
+      // We also pre-mark the upcoming assistant message index as "added" so
+      // the card renders with the green checkmark instead of the +-button.
+      const assistantIndex = messages.length + 1 // user msg already pushed, this assistant msg appended next
+      if (cs?.autoAdd && onAddToCart) {
+        onAddToCart(cs.itemId, cs.name, cs.qty)
+        setAddedIndices(prev => new Set(prev).add(assistantIndex))
+      }
+
       setMessages(prev => [...prev, {
         role: 'assistant',
         text: data.reply,
-        cartSuggestion: data.cartSuggestion,
+        cartSuggestion: cs,
         ts: Date.now(),
       }])
 
@@ -487,20 +500,37 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
                   const cs = msg.cartSuggestion
                   const added = addedIndices.has(i)
                   const priceStr = cs.price != null ? `${cs.price.toFixed(2).replace('.', ',')} €` : null
+                  const cardClickable = !!onSuggestionClick
                   return (
-                    <div style={{
-                      marginTop: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: 8,
-                      paddingRight: 10,
-                      borderRadius: 16,
-                      border: `1px solid ${C.border}`,
-                      background: C.botBubble,
-                      maxWidth: '88%',
-                      boxShadow: chatTheme === 'light' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                    }}>
+                    <div
+                      onClick={cardClickable ? () => onSuggestionClick!(cs.itemId) : undefined}
+                      role={cardClickable ? 'button' : undefined}
+                      tabIndex={cardClickable ? 0 : undefined}
+                      onKeyDown={cardClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSuggestionClick!(cs.itemId) } } : undefined}
+                      style={{
+                        marginTop: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: 8,
+                        paddingRight: 10,
+                        borderRadius: 16,
+                        border: `1px solid ${C.border}`,
+                        background: C.botBubble,
+                        maxWidth: '88%',
+                        boxShadow: chatTheme === 'light' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                        cursor: cardClickable ? 'pointer' : 'default',
+                        transition: 'transform 0.15s, border-color 0.15s',
+                      }}
+                      onMouseEnter={cardClickable ? (e) => {
+                        e.currentTarget.style.borderColor = accent
+                        e.currentTarget.style.transform = 'translateY(-1px)'
+                      } : undefined}
+                      onMouseLeave={cardClickable ? (e) => {
+                        e.currentTarget.style.borderColor = C.border
+                        e.currentTarget.style.transform = 'translateY(0)'
+                      } : undefined}
+                    >
                       {/* Image or fallback bubble */}
                       {cs.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -557,7 +587,8 @@ export default function ChatWidget({ restaurantSlug, restaurantName, items, cart
 
                       {/* Add button */}
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           if (added) return
                           onAddToCart(cs.itemId, cs.name, cs.qty)
                           setAddedIndices(prev => new Set(prev).add(i))

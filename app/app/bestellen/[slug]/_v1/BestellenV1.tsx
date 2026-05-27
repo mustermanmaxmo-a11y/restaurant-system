@@ -1667,6 +1667,10 @@ export default function BestellenV1() {
               return [...prev, { item: found, qty }]
             })
           }}
+          onSuggestionClick={(itemId) => {
+            const found = items.find(i => i.id === itemId)
+            if (found) setSelectedItem(found)
+          }}
         />
       )}
 
