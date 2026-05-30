@@ -4,9 +4,9 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
-  const { subscriberId, reason } = await request.json()
+  const { subscriberId, orderId, reason } = await request.json()
 
-  if (!subscriberId || !reason) {
+  if (!subscriberId || !orderId || !reason) {
     return NextResponse.json({ error: 'missing_params' }, { status: 400 })
   }
 
@@ -16,6 +16,17 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createSupabaseAdmin()
+
+  // Verify the order belongs to this subscriber (prevents IDOR)
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id')
+    .eq('id', orderId)
+    .eq('customer_id', subscriberId)
+    .maybeSingle()
+
+  if (!order) return NextResponse.json({ stopped: false })
+
   const { error } = await supabase
     .from('drip_enrollments')
     .update({ completed_at: new Date().toISOString(), stop_reason: reason })

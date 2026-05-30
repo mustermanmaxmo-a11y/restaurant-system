@@ -63,3 +63,23 @@ ALTER TABLE public.drip_enrollments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY drip_sequences_owner_read ON public.drip_sequences
   FOR SELECT TO authenticated
   USING (restaurant_id IN (SELECT id FROM public.restaurants WHERE owner_id = auth.uid()));
+
+CREATE POLICY drip_steps_owner_read ON public.drip_steps
+  FOR SELECT TO authenticated
+  USING (
+    sequence_id IN (
+      SELECT ds.id FROM public.drip_sequences ds
+      JOIN public.restaurants r ON r.id = ds.restaurant_id
+      WHERE r.owner_id = auth.uid()
+    )
+  );
+
+CREATE POLICY drip_enrollments_owner_read ON public.drip_enrollments
+  FOR SELECT TO authenticated
+  USING (
+    sequence_id IN (
+      SELECT ds.id FROM public.drip_sequences ds
+      JOIN public.restaurants r ON r.id = ds.restaurant_id
+      WHERE r.owner_id = auth.uid()
+    )
+  );

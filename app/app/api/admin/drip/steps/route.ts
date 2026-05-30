@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
   const restaurantId = await getRestaurantId(request)
   if (!restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, ...updates } = await request.json()
+  const { id, position, delay_days, subject, headline, body_text, discount_type, discount_value, expires_days } = await request.json()
   const supabase = createSupabaseAdmin()
 
   const { data: step } = await supabase
@@ -51,7 +51,12 @@ export async function PATCH(request: NextRequest) {
   const seq = step?.drip_sequences as { restaurant_id: string } | null
   if (!step || seq?.restaurant_id !== restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase.from('drip_steps').update(updates).eq('id', id).select().single()
+  const { data, error } = await supabase
+    .from('drip_steps')
+    .update({ position, delay_days, subject, headline, body_text, discount_type, discount_value, expires_days })
+    .eq('id', id)
+    .select()
+    .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }

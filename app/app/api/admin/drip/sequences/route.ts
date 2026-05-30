@@ -73,13 +73,13 @@ export async function PATCH(request: NextRequest) {
   const restaurantId = await getRestaurantId(request)
   if (!restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, ...updates } = await request.json()
+  const { id, name, trigger_days, enabled } = await request.json()
   if (!id) return NextResponse.json({ error: 'missing_id' }, { status: 400 })
 
   const supabase = createSupabaseAdmin()
   const { data, error } = await supabase
     .from('drip_sequences')
-    .update(updates)
+    .update({ name, trigger_days, enabled })
     .eq('id', id)
     .eq('restaurant_id', restaurantId)
     .select()
