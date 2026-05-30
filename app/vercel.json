@@ -1,16 +1,8 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/marketing-automations",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/marketing-retry",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/birthday-trigger",
-      "schedule": "0 7 * * *"
-    }
+    { "path": "/api/cron/marketing-automations", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/marketing-retry",       "schedule": "0 8 * * *" },
+    { "path": "/api/cron/birthday-trigger",      "schedule": "0 7 * * *" },
+    { "path": "/api/cron/drip-trigger",          "schedule": "30 7 * * *" }
   ]
 }
