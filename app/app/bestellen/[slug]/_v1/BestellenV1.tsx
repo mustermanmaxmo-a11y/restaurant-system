@@ -570,6 +570,15 @@ export default function BestellenV1() {
       })
     }
 
+    // Stop any active drip enrollment when guest orders
+    if (data.customer_id) {
+      fetch('/api/drip/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriberId: data.customer_id, orderId: data.id, reason: 'ordered' }),
+      }).catch(() => {})
+    }
+
     // Online payment via Stripe — redirect to Checkout Session
     if (restaurant.online_payments_enabled && restaurant.stripe_connect_account_id) {
       try {

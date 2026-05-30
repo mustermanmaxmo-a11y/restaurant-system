@@ -296,6 +296,15 @@ export default function BestellenV2() {
       })
     }
 
+    // Stop any active drip enrollment when guest orders
+    if (data.customer_id) {
+      fetch('/api/drip/stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriberId: data.customer_id, orderId: insertedOrderId, reason: 'ordered' }),
+      }).catch(() => {})
+    }
+
     // Punkte werden jetzt server-seitig bei status=served gutgeschrieben (Trigger).
     // Hier nur noch: Email-Persistenz + Reward-Einlösung (falls aktiviert).
     if (trimmedEmail && loyaltyProgram?.enabled) {
