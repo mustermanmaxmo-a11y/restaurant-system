@@ -12,6 +12,19 @@ export async function POST(request: NextRequest) {
 
   const supabase = createSupabaseAdmin()
 
+  // Verify the order actually belongs to this restaurant and contains this code
+  // (prevents unauthenticated callers from marking arbitrary codes as used)
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, discount_code')
+    .eq('id', orderId)
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+
+  if (!order || order.discount_code?.toUpperCase() !== code.toUpperCase().trim()) {
+    return NextResponse.json({ marked: false })
+  }
+
   const { data, error } = await supabase
     .from('discount_codes')
     .update({ used_at: new Date().toISOString(), used_order_id: orderId })
@@ -25,9 +38,6 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-  if (!data) {
-    return NextResponse.json({ marked: false })
-  }
 
-  return NextResponse.json({ marked: true })
+  return NextResponse.json({ marked: !!data })
 }
