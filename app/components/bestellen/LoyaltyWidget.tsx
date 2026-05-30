@@ -201,6 +201,7 @@ function LoyaltyModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [magicSent, setMagicSent] = useState(false)
+  const [birthdayReg, setBirthdayReg] = useState('')
 
   async function handleSubmit() {
     if (!email.trim() || (!password.trim() && mode !== 'magic')) return
@@ -227,6 +228,13 @@ function LoyaltyModal({
           subscribed: true,
           source: 'loyalty',
         }, { onConflict: 'restaurant_id,email' })
+        if (birthdayReg && data.user) {
+          await supabase
+            .from('marketing_subscribers')
+            .update({ birthday: birthdayReg })
+            .eq('restaurant_id', restaurantId)
+            .eq('email', email)
+        }
         onSuccess(data.user, mem ? { ...mem, dietary_preferences: mem.dietary_preferences ?? [], favorite_item_ids: mem.favorite_item_ids ?? [] } : null)
       }
     } else {
@@ -310,9 +318,20 @@ function LoyaltyModal({
                   </button>
                 </div>
                 {mode === 'register' && (
-                  <p style={{ fontSize: '0.72rem', color: '#8B8B93', marginTop: '8px', lineHeight: 1.5 }}>
-                    Mit der Registrierung erhältst du auch Angebote &amp; News per Email (jederzeit abbestellbar).
-                  </p>
+                  <>
+                    <p style={{ fontSize: '0.72rem', color: '#8B8B93', marginTop: '8px', lineHeight: 1.5 }}>
+                      Mit der Registrierung erhältst du auch Angebote &amp; News per Email (jederzeit abbestellbar).
+                    </p>
+                    <input
+                      type="date"
+                      value={birthdayReg}
+                      onChange={e => setBirthdayReg(e.target.value)}
+                      style={{ ...inputStyle, marginTop: '10px', colorScheme: 'dark' }}
+                    />
+                    <p style={{ fontSize: '0.72rem', color: '#8B8B93', marginTop: '6px', lineHeight: 1.4 }}>
+                      Geburtstag (optional) — für deinen Geburtstags-Rabatt 🎂
+                    </p>
+                  </>
                 )}
               </>
             )}
@@ -388,9 +407,41 @@ function LoyaltyCardDropdown({
   const [tab, setTab] = useState<'card' | 'profile'>('card')
   const [dietary, setDietary] = useState<string[]>(member?.dietary_preferences ?? [])
   const [savingPref, setSavingPref] = useState(false)
+  const [birthday, setBirthday] = useState('')
+  const [savingBirthday, setSavingBirthday] = useState(false)
+  const [birthdayMsg, setBirthdayMsg] = useState('')
   const current = program.mechanic === 'stamps' ? (member?.stamp_count ?? 0) : (member?.points ?? 0)
   const pct = Math.min(current / program.goal, 1)
   const mId = member?.id ?? memberId
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase
+        .from('marketing_subscribers')
+        .select('birthday')
+        .eq('restaurant_id', program.restaurant_id)
+        .eq('email', user.email ?? '')
+        .maybeSingle()
+      if (data?.birthday) setBirthday(data.birthday.slice(0, 10))
+    })
+  }, [program.restaurant_id])
+
+  async function saveBirthday() {
+    if (!birthday) return
+    setSavingBirthday(true)
+    setBirthdayMsg('')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSavingBirthday(false); return }
+    const { error } = await supabase
+      .from('marketing_subscribers')
+      .update({ birthday })
+      .eq('restaurant_id', program.restaurant_id)
+      .eq('email', user.email ?? '')
+    setSavingBirthday(false)
+    setBirthdayMsg(error ? 'Fehler beim Speichern.' : 'Gespeichert! 🎂')
+    setTimeout(() => setBirthdayMsg(''), 3000)
+  }
 
   async function toggleDietary(key: string) {
     const newVal = dietary.includes(key) ? dietary.filter(d => d !== key) : [...dietary, key]
@@ -495,6 +546,31 @@ function LoyaltyCardDropdown({
                   <span style={{ color: '#F5F5F7', fontSize: '0.82rem' }}>{opt.label}</span>
                 </label>
               ))}
+            </div>
+            {/* Geburtstag */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginBottom: '10px' }}>
+              <p style={{ color: '#8B8B93', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+                Geburtstag {savingBirthday ? '(speichert…)' : ''}
+              </p>
+              <p style={{ color: '#8B8B93', fontSize: '0.7rem', marginBottom: '8px', lineHeight: 1.4 }}>
+                Optional — für deinen Geburtstags-Rabatt 🎂
+              </p>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input
+                  type="date"
+                  value={birthday}
+                  onChange={e => setBirthday(e.target.value)}
+                  style={{ flex: 1, background: '#1a1a2a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px 10px', color: '#F5F5F7', fontSize: '0.8rem', colorScheme: 'dark' }}
+                />
+                <button
+                  onClick={saveBirthday}
+                  disabled={savingBirthday || !birthday}
+                  style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', background: accentColor, color: '#fff', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', opacity: savingBirthday ? 0.6 : 1 }}
+                >
+                  💾
+                </button>
+              </div>
+              {birthdayMsg && <p style={{ color: '#16a34a', fontSize: '0.75rem', marginTop: '4px' }}>{birthdayMsg}</p>}
             </div>
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <button onClick={downloadData} style={{ ...linkBtnStyle, textAlign: 'left', fontSize: '0.75rem' }}>⬇ Meine Daten herunterladen</button>
