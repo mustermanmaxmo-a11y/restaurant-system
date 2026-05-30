@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/marketing-retry",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/birthday-trigger",
+      "schedule": "0 7 * * *"
     }
   ]
 }
