@@ -31,7 +31,7 @@ function computeStarToken(orderId: string, stars: number, secret: string): strin
 
 export function buildRatingEmailHtml(input: RatingEmailInput): RatingEmailOutput {
   const { order, restaurant, unsubscribeSecret, appUrl, unsubscribeUrl } = input
-  const customerName = order.customer_name?.trim() || 'Hallo'
+  const customerName = order.customer_name?.trim() || ''
   const primary = restaurant.primary_color || '#EA580C'
 
   // 5 HMAC-tokenized star links → /api/feedback?o=...&s=N&t=...
@@ -58,7 +58,7 @@ export function buildRatingEmailHtml(input: RatingEmailInput): RatingEmailOutput
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;">
       <tr><td style="padding:32px 48px 16px;text-align:center;">${logoHtml}</td></tr>
       <tr><td style="padding:8px 48px 16px;">
-        <p style="margin:0;font-size:16px;color:#0a0a0a;line-height:1.5;">Hallo ${escapeHtml(customerName)},</p>
+        <p style="margin:0;font-size:16px;color:#0a0a0a;line-height:1.5;">${customerName ? `Hallo ${escapeHtml(customerName)},` : 'Hallo,'}</p>
         <p style="margin:12px 0 0;font-size:16px;color:#0a0a0a;line-height:1.5;">danke für deinen Besuch bei <strong>${escapeHtml(restaurant.name)}</strong>! Mit einem Klick kannst du uns bewerten.</p>
       </td></tr>
       <tr><td style="padding:8px 48px 16px;">
@@ -79,7 +79,7 @@ export function buildRatingEmailHtml(input: RatingEmailInput): RatingEmailOutput
 </table>
 </body></html>`
 
-  const text = `Hallo ${customerName},
+  const text = `${customerName ? `Hallo ${customerName},` : 'Hallo,'}
 
 danke für deinen Besuch bei ${restaurant.name}!
 
