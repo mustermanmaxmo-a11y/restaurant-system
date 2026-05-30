@@ -120,6 +120,16 @@ export default function BestellenV1() {
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [marketingEmail, setMarketingEmail] = useState('')
 
+  // Discount code
+  const [discountCode, setDiscountCode] = useState('')
+  const [discountInfo, setDiscountInfo] = useState<{
+    type: 'percent' | 'fixed'
+    value: number
+    expiresAt: string
+  } | null>(null)
+  const [discountError, setDiscountError] = useState('')
+  const [discountLoading, setDiscountLoading] = useState(false)
+
   // Group ordering
   const [orderMode, setOrderMode] = useState<OrderMode>('confirmed-solo')
   const [groupCode, setGroupCode] = useState('')
@@ -155,6 +165,35 @@ export default function BestellenV1() {
     showToast,
   } = useLoyalty(loyaltyRestaurantId)
   const [applyReward, setApplyReward] = useState(false)
+
+  async function validateCode(code: string) {
+    if (!restaurant || !code.trim()) return
+    setDiscountLoading(true)
+    setDiscountError('')
+    try {
+      const res = await fetch('/api/checkout/validate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.toUpperCase().trim(), restaurantId: restaurant.id }),
+      })
+      const data = await res.json()
+      if (data.valid) {
+        setDiscountInfo({ type: data.discountType, value: data.discountValue, expiresAt: data.expiresAt })
+      } else {
+        const msgs: Record<string, string> = {
+          not_found: 'Code nicht gefunden.',
+          already_used: 'Code wurde bereits eingelöst.',
+          expired: 'Code ist abgelaufen.',
+          wrong_restaurant: 'Code gilt nicht für dieses Restaurant.',
+        }
+        setDiscountError(msgs[data.error] ?? 'Ungültiger Code.')
+        setDiscountInfo(null)
+      }
+    } catch {
+      setDiscountError('Validierung fehlgeschlagen.')
+    }
+    setDiscountLoading(false)
+  }
 
   useEffect(() => {
     async function load() {
@@ -193,6 +232,17 @@ export default function BestellenV1() {
   useEffect(() => {
     // no-op: payment redirects removed
   }, [searchParams])
+
+  // Auto-apply discount code from URL param ?code=XXXX
+  useEffect(() => {
+    const codeFromUrl = searchParams?.get('code')
+    if (codeFromUrl) {
+      const upper = codeFromUrl.toUpperCase()
+      setDiscountCode(upper)
+      validateCode(upper)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, restaurant])
 
   // Auto-join group from URL param ?group=XXXX
   useEffect(() => {
@@ -468,6 +518,18 @@ export default function BestellenV1() {
     setSubmitting(true)
     setError('')
 
+    const subtotalCents = Math.round(total * 100)
+    let finalCents = subtotalCents
+    let discountAmountCents = 0
+    if (discountInfo) {
+      if (discountInfo.type === 'percent') {
+        discountAmountCents = Math.round(subtotalCents * discountInfo.value / 100)
+      } else {
+        discountAmountCents = Math.round(discountInfo.value * 100)
+      }
+      finalCents = Math.max(0, subtotalCents - discountAmountCents)
+    }
+
     const { data, error: err } = await supabase
       .from('orders')
       .insert({
@@ -477,12 +539,14 @@ export default function BestellenV1() {
         status: 'new',
         items: cart.map(c => ({ item_id: c.item.id, name: c.item.name, price: c.item.price, qty: c.qty })),
         note: note || null,
-        total,
+        total: finalCents / 100,
         customer_name: customerName,
         customer_phone: customerPhone,
         delivery_address: orderType === 'delivery' ? { street, city, zip } : null,
         customer_email: trimmedEmail || null,
         marketing_opt_in: marketingOptIn,
+        discount_code: discountInfo && discountCode ? discountCode.toUpperCase().trim() : null,
+        discount_amount_cents: discountAmountCents > 0 ? discountAmountCents : null,
       })
       .select()
       .single()
@@ -497,6 +561,14 @@ export default function BestellenV1() {
     setOrder(newOrder)
     setView('status')
     setSubmitting(false)
+
+    if (discountCode && discountInfo && data?.id) {
+      await fetch('/api/checkout/use-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode.toUpperCase().trim(), orderId: data.id, restaurantId: restaurant.id }),
+      })
+    }
 
     // Online payment via Stripe — redirect to Checkout Session
     if (restaurant.online_payments_enabled && restaurant.stripe_connect_account_id) {
@@ -1032,6 +1104,38 @@ export default function BestellenV1() {
               )}
             </div>
           )}
+
+          {/* Gutschein-Code */}
+          <div style={{ marginTop: '12px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Gutschein-Code (optional)
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                value={discountCode}
+                onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountInfo(null); setDiscountError('') }}
+                placeholder="z.B. BDAY-A1B2C3"
+                style={{ flex: 1, padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'monospace', letterSpacing: '0.05em', outline: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => validateCode(discountCode)}
+                disabled={!discountCode.trim() || discountLoading}
+                style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', opacity: discountLoading ? 0.6 : 1 }}
+              >
+                {discountLoading ? '…' : 'Einlösen'}
+              </button>
+            </div>
+            {discountInfo && (
+              <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: '#16a34a15', border: '1px solid #16a34a40', color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>
+                🎉 {discountInfo.type === 'percent' ? `${discountInfo.value} % Rabatt` : `${discountInfo.value} € Rabatt`} aktiviert!
+              </div>
+            )}
+            {discountError && (
+              <p style={{ marginTop: '6px', fontSize: '0.8rem', color: '#ef4444', margin: '6px 0 0' }}>{discountError}</p>
+            )}
+          </div>
 
           {error && <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '12px', textAlign: 'center' }}>{error}</p>}
 
