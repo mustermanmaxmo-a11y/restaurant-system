@@ -46,10 +46,21 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_send_date ON public.campaigns(send_date
 CREATE INDEX IF NOT EXISTS idx_discount_codes_code ON public.discount_codes(code);
 CREATE INDEX IF NOT EXISTS idx_discount_codes_subscriber ON public.discount_codes(subscriber_id, campaign_id);
 
--- 5) GRANTs
+-- 5) GRANTs — nur service_role hat vollen Zugriff
+-- Client-seitige Validierung läuft über API-Routes (service_role), nicht direkt
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.campaigns TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.discount_codes TO service_role;
-GRANT SELECT ON public.campaigns TO authenticated;
-GRANT SELECT ON public.discount_codes TO authenticated;
-GRANT SELECT ON public.campaigns TO anon;
-GRANT SELECT ON public.discount_codes TO anon;
+
+-- RLS aktivieren
+ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.discount_codes ENABLE ROW LEVEL SECURITY;
+
+-- campaigns: Owner kann eigene lesen (für Dashboard)
+CREATE POLICY campaigns_owner_read ON public.campaigns
+  FOR SELECT TO authenticated
+  USING (restaurant_id IN (
+    SELECT id FROM public.restaurants WHERE owner_id = auth.uid()
+  ));
+
+-- discount_codes: kein direkter Client-Zugriff — nur via service_role API-Routes
+-- (validate-code + use-code endpoints nutzen createSupabaseAdmin())
