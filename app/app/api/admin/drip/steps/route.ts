@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
     .eq('id', id)
     .maybeSingle()
 
-  const seq = step?.drip_sequences as { restaurant_id: string } | null
+  const seq = step?.drip_sequences as unknown as { restaurant_id: string } | null
   if (!step || seq?.restaurant_id !== restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await supabase
@@ -74,7 +74,7 @@ export async function DELETE(request: NextRequest) {
     .eq('id', id)
     .maybeSingle()
 
-  const seq = step?.drip_sequences as { restaurant_id: string } | null
+  const seq = step?.drip_sequences as unknown as { restaurant_id: string } | null
   if (!step || seq?.restaurant_id !== restaurantId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { error } = await supabase.from('drip_steps').delete().eq('id', id)
