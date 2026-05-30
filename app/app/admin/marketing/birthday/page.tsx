@@ -53,6 +53,10 @@ export default function BirthdayDashboard() {
   const [form, setForm] = useState<FormState>(DEFAULT_FORM)
   const [saving, setSaving] = useState(false)
   const [token, setToken] = useState<string | null>(null)
+  const [showAiForm, setShowAiForm] = useState(false)
+  const [aiDescription, setAiDescription] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -120,6 +124,39 @@ export default function BirthdayDashboard() {
     await loadCampaigns()
   }
 
+  async function generateWithAi() {
+    if (!token || !aiDescription.trim()) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const res = await fetch('/api/ai/create-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ description: aiDescription }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setAiError(data.error ?? 'Fehler'); setAiLoading(false); return }
+      const c = data.campaign
+      setForm({
+        trigger_type: c.trigger_type ?? 'birthday',
+        send_date: c.send_date ?? '',
+        subject: c.subject ?? '',
+        headline: c.headline ?? '',
+        body_text: c.body_text ?? '',
+        discount_type: c.discount_type ?? '',
+        discount_value: c.discount_value != null ? String(c.discount_value) : '',
+        expires_days: c.expires_days != null ? String(c.expires_days) : '7',
+        enabled: true,
+      })
+      setShowAiForm(false)
+      setAiDescription('')
+      setShowForm(true)
+    } catch {
+      setAiError('Generierung fehlgeschlagen.')
+    }
+    setAiLoading(false)
+  }
+
   const triggerLabel: Record<TriggerType, string> = {
     birthday: '🎂 Geburtstag',
     first_order_anniversary: '🗓 Bestell-Jahrestag',
@@ -139,12 +176,20 @@ export default function BirthdayDashboard() {
             Automatische Emails mit individuellen Gutschein-Codes
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
-        >
-          + Neue Kampagne
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setShowAiForm(true)}
+            style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            ✨ Mit KI erstellen
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            + Neue Kampagne
+          </button>
+        </div>
       </div>
 
       {campaigns.length === 0 && !loading ? (
@@ -186,6 +231,39 @@ export default function BirthdayDashboard() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* AI Campaign Generator Modal */}
+      {showAiForm && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) { setShowAiForm(false); setAiDescription(''); setAiError('') } }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        >
+          <div style={{ background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: '28px 24px 40px', width: '100%', maxWidth: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>✨ Kampagne mit KI erstellen</h2>
+              <button onClick={() => { setShowAiForm(false); setAiDescription(''); setAiError('') }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
+              Beschreibe deine Kampagne — die KI erstellt automatisch alle Inhalte.
+            </p>
+            <textarea
+              value={aiDescription}
+              onChange={e => setAiDescription(e.target.value)}
+              placeholder="z.B. Erstelle eine Geburtstags-Kampagne mit 10% Rabatt für unsere Gäste"
+              rows={4}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--surface-2, #1a1a2a)', color: 'var(--text)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical' as const, outline: 'none' }}
+            />
+            {aiError && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '8px' }}>{aiError}</p>}
+            <button
+              onClick={generateWithAi}
+              disabled={aiLoading || !aiDescription.trim()}
+              style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', opacity: aiLoading ? 0.7 : 1 }}
+            >
+              {aiLoading ? '✨ KI generiert…' : '✨ Kampagne generieren'}
+            </button>
+          </div>
         </div>
       )}
 
