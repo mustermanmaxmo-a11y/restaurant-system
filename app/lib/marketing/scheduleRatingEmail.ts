@@ -30,7 +30,7 @@ export async function scheduleRatingEmail(orderId: string): Promise<ScheduleResu
   }
 
   const delayHours = restaurant.rating_email_delay_hours ?? 4
-  const delaySeconds = Math.max(60, Math.min(72 * 3600, delayHours * 3600))
+  const delaySeconds = Math.max(60, delayHours * 3600)
 
   const result = await publishDelayedJob({
     url: `${appUrl}/api/jobs/send-rating-email`,

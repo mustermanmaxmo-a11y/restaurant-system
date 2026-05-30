@@ -220,7 +220,7 @@ export default function SettingsPage() {
 
   async function handleRatingEmailSave() {
     if (!restaurant) return
-    const delay = Math.max(1, Math.min(72, ratingEmailDelayHours || 4))
+    const delay = ratingEmailDelayHours ?? 4
     setRatingEmailSaving(true)
     setRatingEmailSaved(false)
     const { error } = await supabase
@@ -375,10 +375,9 @@ export default function SettingsPage() {
           </label>
           <input
             type="number"
-            min={1}
-            max={72}
+            min={0}
             value={ratingEmailDelayHours}
-            onChange={e => setRatingEmailDelayHours(Math.max(1, Math.min(72, parseInt(e.target.value) || 4)))}
+            onChange={e => setRatingEmailDelayHours(parseInt(e.target.value) || 0)}
             style={{
               width: '120px', boxSizing: 'border-box',
               background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)',
