@@ -14,7 +14,7 @@ Automatische mehrstufige Email-Serie die startet wenn ein Gast zu lange nicht be
 
 ## Trigger & Stop-Bedingungen
 
-**Start:** Subscriber hat `marketing_opt_in = true` UND `last_order_at` liegt mehr als `trigger_days` zurück UND ist noch nicht in einer aktiven Enrollment.
+**Start:** Subscriber hat `opted_in_at IS NOT NULL` UND `unsubscribed_at IS NULL` UND `last_order_at` liegt mehr als `trigger_days` zurück UND hat kein aktives Enrollment (completed_at IS NULL) für diese Sequenz.
 
 **Stop (automatisch):**
 - Gast bestellt erneut → `stop_reason = 'ordered'`
@@ -62,7 +62,7 @@ next_due_at     date NOT NULL
 enrolled_at     timestamptz NOT NULL DEFAULT now()
 completed_at    timestamptz
 stop_reason     text CHECK (stop_reason IN ('ordered','code_redeemed','unsubscribed','manual','completed'))
-UNIQUE (sequence_id, subscriber_id)     -- kein doppeltes Enrollment
+UNIQUE (sequence_id, subscriber_id)     -- ON CONFLICT: reset completed enrollments für Re-Enrollment
 ```
 
 ---
@@ -76,13 +76,14 @@ UNIQUE (sequence_id, subscriber_id)     -- kein doppeltes Enrollment
 ```
 Für jede enabled drip_sequence:
   Lade alle marketing_subscribers des Restaurants:
-    - marketing_opt_in = true
+    - opted_in_at IS NOT NULL
     - unsubscribed_at IS NULL
     - last_order_at IS NOT NULL
     - last_order_at <= NOW() - trigger_days * INTERVAL '1 day'
-    - KEIN aktives Enrollment (completed_at IS NULL) für diese Sequenz
   → INSERT INTO drip_enrollments (sequence_id, subscriber_id, current_step=0, next_due_at=TODAY)
-  → ON CONFLICT DO NOTHING
+  → ON CONFLICT (sequence_id, subscriber_id) DO UPDATE
+    SET current_step=0, next_due_at=TODAY, completed_at=NULL, enrolled_at=NOW()
+    WHERE drip_enrollments.completed_at IS NOT NULL  -- nur re-enrollen wenn vorher abgeschlossen
 ```
 
 ### Phase 2 — Fällige Steps versenden
@@ -96,8 +97,8 @@ Für jedes Enrollment:
   1. Lade drip_steps WHERE sequence_id = ? ORDER BY position
   2. Wenn current_step >= Anzahl Steps → completed_at setzen, stop_reason='completed', skip
   3. Lade Step[current_step]
-  4. Prüfe Dedup: wurde dieser Step bereits gesendet? (via discount_codes.campaign_id = step.id)
-  5. Falls Discount: generateDiscountCode('EVT') → INSERT discount_codes
+  4. Dedup: current_step IS der State — nach Versand wird er inkrementiert, kein separater Check nötig
+  5. Falls Discount: generateDiscountCode('EVT') → INSERT discount_codes mit drip_step_id = step.id
   6. buildCampaignEmail() → sendEmail(immediate: true)
   7. UPDATE enrollment: current_step++, next_due_at = TODAY + next_step.delay_days
   8. Falls kein nächster Step: completed_at setzen, stop_reason='completed'
@@ -191,7 +192,7 @@ Wie `/api/ai/create-campaign` aus A3 — nimmt eine natürlichsprachliche Beschr
 ## Dateiübersicht
 
 ### Neu
-- `supabase/migrations/20260530_062_drip_sequences.sql`
+- `supabase/migrations/20260530_062_drip_sequences.sql` — inkl. `ALTER TABLE discount_codes ADD COLUMN drip_step_id uuid REFERENCES drip_steps(id)`
 - `app/app/api/cron/drip-trigger/route.ts`
 - `app/app/api/drip/stop/route.ts`
 - `app/app/api/admin/drip/sequences/route.ts`
