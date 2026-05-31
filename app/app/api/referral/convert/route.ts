@@ -95,13 +95,15 @@ export async function POST(req: NextRequest) {
   let rewardDiscountCodeId: string | null = null
 
   if (rewardType === 'points' || rewardType === 'both') {
-    await supabase.rpc('credit_referral_points', {
-      p_subscriber_id: referrer.id,
-      p_restaurant_id: restaurantId,
-      p_points: restaurant.referral_reward_points ?? 50,
-    }).catch(() => {
+    try {
+      await supabase.rpc('credit_referral_points', {
+        p_subscriber_id: referrer.id,
+        p_restaurant_id: restaurantId,
+        p_points: restaurant.referral_reward_points ?? 50,
+      })
+    } catch {
       // Non-fatal: loyalty may not be enabled for this restaurant
-    })
+    }
   }
 
   if (rewardType === 'discount' || rewardType === 'both') {
