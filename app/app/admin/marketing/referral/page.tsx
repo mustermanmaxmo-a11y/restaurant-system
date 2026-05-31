@@ -102,7 +102,7 @@ export default function ReferralAdminPage() {
       const byReferrer: Record<string, { email: string; count: number }> = {}
       for (const row of (topRes.data ?? [])) {
         const id = row.referrer_subscriber_id
-        const email = (row.marketing_subscribers as { email: string } | null)?.email ?? '–'
+        const email = (row.marketing_subscribers as { email: string }[] | null)?.[0]?.email ?? '–'
         if (!byReferrer[id]) byReferrer[id] = { email, count: 0 }
         byReferrer[id].count++
       }
