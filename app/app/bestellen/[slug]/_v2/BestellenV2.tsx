@@ -15,6 +15,8 @@ import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen
 import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
 import { redeemLoyaltyReward, type LoyaltyMember, type LoyaltyProgram } from '@/lib/loyalty/api'
 import { OrderRating } from '@/components/order/OrderRating'
+import { ReferralShare } from '@/components/order/ReferralShare'
+import { saveReferralRef, getReferralRef, clearReferralRef } from '@/lib/marketing/referral'
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
 
@@ -108,6 +110,8 @@ export default function BestellenV2() {
     unsuitable: { id: string; reason: string }[]
   } | null>(null)
 
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null)
+
   async function validateCode(code: string) {
     if (!restaurant || !code.trim()) return
     setDiscountLoading(true)
@@ -177,6 +181,10 @@ export default function BestellenV2() {
       const upper = codeFromUrl.toUpperCase()
       setDiscountCode(upper)
       validateCode(upper)
+    }
+    const refFromUrl = searchParams?.get('ref')
+    if (refFromUrl && slug) {
+      saveReferralRef(slug, refFromUrl)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, restaurant])
@@ -348,6 +356,30 @@ export default function BestellenV2() {
         await supabase.rpc('bump_subscriber_stats', { p_restaurant_id: restaurant.id, p_email: emailToSave, p_spent: total })
       }
     }
+
+    // Referral: process incoming referral + load own share code
+    if (restaurant.referral_enabled) {
+      const refCode = getReferralRef(slug)
+      if (refCode && insertedOrderId && trimmedEmail) {
+        clearReferralRef(slug)
+        fetch('/api/referral/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: insertedOrderId, referrerCode: refCode, restaurantId: restaurant.id, customerEmail: trimmedEmail }),
+        }).catch(() => {})
+      }
+      // Load the guest's own referral code to show the share block
+      const guestEmail = trimmedEmail || null
+      if (guestEmail) {
+        const { data: sub } = await supabase
+          .from('marketing_subscribers')
+          .select('referral_code')
+          .eq('restaurant_id', restaurant.id)
+          .eq('email', guestEmail.toLowerCase())
+          .maybeSingle()
+        if (sub?.referral_code) setMyReferralCode(sub.referral_code)
+      }
+    }
   }
 
   if (showV1) return <BestellenV1 />
@@ -405,7 +437,14 @@ export default function BestellenV2() {
     <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, fontFamily: 'var(--font-geist), system-ui, sans-serif', paddingBottom: cartCount > 0 && view === 'menu' ? '100px' : '0' }}>
       {/* STATUS VIEW */}
       {view === 'status' && order && (
-        <StatusView order={order} googleReviewUrl={restaurant?.google_review_url ?? null} onReset={() => { setView('menu'); setOrder(null) }} />
+        <StatusView
+          order={order}
+          googleReviewUrl={restaurant?.google_review_url ?? null}
+          onReset={() => { setView('menu'); setOrder(null) }}
+          referralCode={myReferralCode}
+          restaurantSlug={slug}
+          restaurant={restaurant}
+        />
       )}
 
       {/* CHECKOUT VIEW */}
@@ -999,7 +1038,14 @@ function Input({ placeholder, value, onChange, type = 'text' }: { placeholder: s
   )
 }
 
-function StatusView({ order, googleReviewUrl, onReset }: { order: Order; googleReviewUrl: string | null; onReset: () => void }) {
+function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantSlug, restaurant }: {
+  order: Order
+  googleReviewUrl: string | null
+  onReset: () => void
+  referralCode: string | null
+  restaurantSlug: string
+  restaurant: Restaurant | null
+}) {
   const isServed = order.status === 'served'
   const steps: { key: Order['status']; label: string; icon: typeof ChefHat }[] = [
     { key: 'new', label: 'Empfangen', icon: Clock },
@@ -1096,6 +1142,21 @@ function StatusView({ order, googleReviewUrl, onReset }: { order: Order; googleR
           orderId={order.id}
           restaurantId={order.restaurant_id}
           googleReviewUrl={googleReviewUrl}
+          C={null}
+        />
+      )}
+
+      {restaurant?.referral_enabled && referralCode && (
+        <ReferralShare
+          restaurantSlug={restaurantSlug}
+          referralCode={referralCode}
+          rewardLabel={
+            restaurant.referral_reward_type === 'points'
+              ? `${restaurant.referral_reward_points} Punkte`
+              : restaurant.referral_reward_type === 'discount'
+              ? `${restaurant.referral_reward_discount_percent}% Rabatt`
+              : `${restaurant.referral_reward_points} Punkte + ${restaurant.referral_reward_discount_percent}% Rabatt`
+          }
           C={null}
         />
       )}

@@ -5,6 +5,7 @@ const navItems = [
   { href: '/admin/marketing/campaigns',   icon: '📧', label: 'Kampagnen',    badge: null },
   { href: '/admin/marketing/birthday',     icon: '🎂', label: 'Geburtstag',   badge: null },
   { href: '/admin/marketing/drip',         icon: '💧', label: 'Win-Back Drip', badge: null },
+  { href: '/admin/marketing/referral',    icon: '🎁', label: 'Referral',     badge: null },
   { href: '/admin/marketing/automations', icon: '⚡', label: 'Automationen', badge: null },
   { href: '/admin/marketing/templates',   icon: '📨', label: 'Templates',    badge: null },
   { href: '/admin/marketing/social',      icon: '📱', label: 'Social Media', badge: null },

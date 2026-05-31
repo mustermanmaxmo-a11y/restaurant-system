@@ -14,6 +14,8 @@ import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
 import { OrderRating } from '@/components/order/OrderRating'
+import { ReferralShare } from '@/components/order/ReferralShare'
+import { saveReferralRef, getReferralRef, clearReferralRef } from '@/lib/marketing/referral'
 import { useLanguage } from '@/components/providers/language-provider'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
@@ -83,6 +85,7 @@ export default function BestellenV1() {
   const [error, setError] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null)
   const [pageTab, setPageTab] = useState<PageTab>(
     searchParams.get('tab') === 'reserve' ? 'reserve' : 'order'
   )
@@ -240,6 +243,10 @@ export default function BestellenV1() {
       const upper = codeFromUrl.toUpperCase()
       setDiscountCode(upper)
       validateCode(upper)
+    }
+    const refFromUrl = searchParams?.get('ref')
+    if (refFromUrl && slug) {
+      saveReferralRef(slug, refFromUrl)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, restaurant])
@@ -642,6 +649,29 @@ export default function BestellenV1() {
         await supabase.rpc('bump_subscriber_stats', { p_restaurant_id: restaurant.id, p_email: emailToSave, p_spent: total })
       }
     }
+
+    // Referral: process incoming referral + load own share code
+    if (restaurant.referral_enabled) {
+      const refCode = getReferralRef(slug)
+      if (refCode && data?.id && trimmedEmail) {
+        clearReferralRef(slug)
+        fetch('/api/referral/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.id, referrerCode: refCode, restaurantId: restaurant.id, customerEmail: trimmedEmail }),
+        }).catch(() => {})
+      }
+      const guestEmail = trimmedEmail || null
+      if (guestEmail) {
+        const { data: sub } = await supabase
+          .from('marketing_subscribers')
+          .select('referral_code')
+          .eq('restaurant_id', restaurant.id)
+          .eq('email', guestEmail.toLowerCase())
+          .maybeSingle()
+        if (sub?.referral_code) setMyReferralCode(sub.referral_code)
+      }
+    }
   }
 
   async function submitReservation() {
@@ -989,6 +1019,21 @@ export default function BestellenV1() {
               orderId={order.id}
               restaurantId={order.restaurant_id}
               googleReviewUrl={restaurant?.google_review_url ?? null}
+              C={C}
+            />
+          )}
+
+          {restaurant?.referral_enabled && myReferralCode && (
+            <ReferralShare
+              restaurantSlug={slug}
+              referralCode={myReferralCode}
+              rewardLabel={
+                restaurant.referral_reward_type === 'points'
+                  ? `${restaurant.referral_reward_points} Punkte`
+                  : restaurant.referral_reward_type === 'discount'
+                  ? `${restaurant.referral_reward_discount_percent}% Rabatt`
+                  : `${restaurant.referral_reward_points} Punkte + ${restaurant.referral_reward_discount_percent}% Rabatt`
+              }
               C={C}
             />
           )}

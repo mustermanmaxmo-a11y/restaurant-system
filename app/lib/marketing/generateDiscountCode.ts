@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-type Prefix = 'BDAY' | 'ANNI' | 'EVT'
+type Prefix = 'BDAY' | 'ANNI' | 'EVT' | 'REF'
 
 export function generateDiscountCode(prefix: Prefix): string {
   const random = crypto.randomBytes(5).toString('hex').toUpperCase()
