@@ -73,8 +73,9 @@ BEGIN
      AND NEW.customer_email IS NOT NULL
      AND length(trim(NEW.customer_email)) > 0
   THEN
-    -- Pre-generate a referral code candidate (only used if subscriber has none yet)
-    v_referral_code := 'REF-' || upper(encode(gen_random_bytes(5), 'hex'));
+    -- gen_random_uuid() statt gen_random_bytes: pgcrypto liegt in extensions schema,
+    -- nicht in public — wäre mit SET search_path = public nicht erreichbar.
+    v_referral_code := 'REF-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10));
 
     INSERT INTO marketing_subscribers (
       restaurant_id, email, name, source,
