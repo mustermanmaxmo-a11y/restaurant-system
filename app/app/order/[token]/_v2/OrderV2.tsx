@@ -12,6 +12,7 @@ import {
   ChefHat, CheckCircle2, Clock, Bell, Receipt, Sparkles,
 } from 'lucide-react'
 import { OrderRating } from '@/components/order/OrderRating'
+import { ReferralShare } from '@/components/order/ReferralShare'
 import ChatWidget from '@/components/ChatWidget'
 import { LoyaltyButton, useLoyalty } from '@/components/bestellen/LoyaltyWidget'
 import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
@@ -61,6 +62,7 @@ export default function OrderV2() {
   const [note, setNote] = useState('')
   const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [marketingEmail, setMarketingEmail] = useState('')
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null)
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const loyaltyRestaurantId = restaurant?.id ?? ''
@@ -259,6 +261,20 @@ export default function OrderV2() {
         if (marketingOptIn) upsertData.subscribed = true
         await supabase.from('marketing_subscribers').upsert(upsertData, { onConflict: 'restaurant_id,email' })
         await supabase.rpc('bump_subscriber_stats', { p_restaurant_id: restaurant.id, p_email: emailToSave, p_spent: total })
+      }
+    }
+
+    // Referral: load own share code for table guests who opted in
+    if (restaurant.referral_enabled) {
+      const guestEmail = trimmedEmail || null
+      if (guestEmail) {
+        const { data: sub } = await supabase
+          .from('marketing_subscribers')
+          .select('referral_code')
+          .eq('restaurant_id', restaurant.id)
+          .eq('email', guestEmail.toLowerCase())
+          .maybeSingle()
+        if (sub?.referral_code) setMyReferralCode(sub.referral_code)
       }
     }
   }
@@ -472,6 +488,21 @@ export default function OrderV2() {
               orderId={order.id}
               restaurantId={order.restaurant_id}
               googleReviewUrl={restaurant?.google_review_url ?? null}
+              C={C}
+            />
+          )}
+
+          {restaurant?.referral_enabled && myReferralCode && restaurant.slug && (
+            <ReferralShare
+              restaurantSlug={restaurant.slug}
+              referralCode={myReferralCode}
+              rewardLabel={
+                restaurant.referral_reward_type === 'points'
+                  ? `${restaurant.referral_reward_points} Punkte`
+                  : restaurant.referral_reward_type === 'discount'
+                  ? `${restaurant.referral_reward_discount_percent}% Rabatt`
+                  : `${restaurant.referral_reward_points} Punkte + ${restaurant.referral_reward_discount_percent}% Rabatt`
+              }
               C={C}
             />
           )}

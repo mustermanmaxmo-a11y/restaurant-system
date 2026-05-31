@@ -57,6 +57,12 @@ export interface Restaurant {
   // Online payments (Stripe Connect)
   online_payments_enabled: boolean
   stripe_connect_account_id: string | null
+  // Referral program
+  referral_enabled: boolean
+  referral_reward_type: 'points' | 'discount' | 'both'
+  referral_reward_points: number
+  referral_reward_discount_percent: number
+  referral_referred_discount_percent: number
 }
 
 export interface PlatformSettings {
