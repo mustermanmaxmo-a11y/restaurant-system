@@ -109,13 +109,8 @@ BEGIN
   END IF;
 
   -- 2. Always log placed_order event (subscriber_id NULL if anonymous)
-  v_total_cents := COALESCE(NEW.total_cents, NULL);
-  v_item_count  := NULL;
-  BEGIN
-    SELECT COUNT(*) INTO v_item_count FROM order_items WHERE order_id = NEW.id;
-  EXCEPTION WHEN OTHERS THEN
-    v_item_count := NULL;
-  END;
+  v_total_cents := COALESCE(ROUND(NEW.total * 100)::integer, NULL);
+  v_item_count  := COALESCE(jsonb_array_length(NEW.items), NULL);
 
   INSERT INTO marketing_events (restaurant_id, subscriber_id, event_type, props, occurred_at)
   VALUES (
