@@ -123,6 +123,9 @@ export default function PricingPage() {
           </span>
         </Link>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <Link href="/roi-rechner" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', textDecoration: 'none' }}>
+            ROI-Rechner
+          </Link>
           <Link href="/login" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', textDecoration: 'none' }}>
             Einloggen
           </Link>

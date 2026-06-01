@@ -82,6 +82,9 @@ export default function HomePage() {
           Order<span style={{ color: accent }}>IQ</span>
         </span>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Link href="/roi-rechner" style={{ color: muted, fontSize: '0.875rem', textDecoration: 'none', padding: '8px 14px' }}>
+            ROI-Rechner
+          </Link>
           <Link href="/pricing" style={{ color: muted, fontSize: '0.875rem', textDecoration: 'none', padding: '8px 14px' }}>
             Preise
           </Link>
