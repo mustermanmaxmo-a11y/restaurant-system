@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { DESIGN_PACKAGES } from '@/lib/design-packages'
 import {
   LP_LAYOUTS,
   type LpLayoutSlug,
@@ -54,6 +53,11 @@ const navItemStyle = (active: boolean): React.CSSProperties => ({
   border: 'none', width: '100%', transition: 'all 0.15s',
 })
 
+const brandInheritHint: React.CSSProperties = {
+  padding: '12px 14px', background: 'var(--surface)', border: '1px solid var(--border)',
+  borderRadius: '10px', fontSize: '0.8rem', color: 'var(--text-muted)',
+}
+
 // ─── ImageDropzone ─────────────────────────────────────────────────────────────
 function ImageDropzone({
   label, previewUrl, uploading, onFile, hint,
@@ -99,20 +103,12 @@ function ImageDropzone({
 }
 
 // ─── LpPreview ────────────────────────────────────────────────────────────────
-function LpPreview({ content, pkg, layout }: {
+function LpPreview({ content, layout }: {
   content: LandingPageContent
-  pkg: typeof DESIGN_PACKAGES[number]
   layout: LpLayoutSlug
 }) {
-  const bg = pkg.preview.bgColor
-  const primary = pkg.preview.primaryColor
-  const text = pkg.preview.textColor
-  const isLight = ['#FFFFFF', '#FDF8F0'].includes(bg) || bg.toLowerCase().startsWith('#f')
-  const muted = isLight ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.55)'
-  const cardBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)'
-
   return (
-    <div style={{ background: bg, borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', fontFamily: 'system-ui, sans-serif', fontSize: '11px' }}>
+    <div style={{ background: 'var(--surface)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', fontFamily: 'system-ui, sans-serif', fontSize: '11px' }}>
 
       {/* Hero — varies by layout */}
       {layout === 'split-hero' ? (
@@ -121,31 +117,32 @@ function LpPreview({ content, pkg, layout }: {
             width: '45%', flexShrink: 0,
             background: content.hero_image_url
               ? `url(${content.hero_image_url}) center/cover`
-              : `${primary}33`,
+              : 'var(--accent)',
+            opacity: content.hero_image_url ? 1 : 0.15,
           }} />
           <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px', background: '#fff', padding: '2px', marginBottom: '6px' }} />}
-            <div style={{ fontWeight: 800, color: text, lineHeight: 1.2, marginBottom: '4px' }}>{content.headline || 'Headline'}</div>
-            <div style={{ color: muted, lineHeight: 1.3 }}>{content.subheadline || 'Subheadline'}</div>
+            {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px', background: 'var(--surface-2)', padding: '2px', marginBottom: '6px' }} />}
+            <div style={{ fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, marginBottom: '4px' }}>{content.headline || 'Headline'}</div>
+            <div style={{ color: 'var(--text-muted)', lineHeight: 1.3 }}>{content.subheadline || 'Subheadline'}</div>
           </div>
         </div>
       ) : layout === 'minimal' ? (
-        <div style={{ padding: '20px', textAlign: 'center', borderBottom: `1px solid ${primary}22` }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: '#fff', padding: '3px', marginBottom: '8px' }} />}
-          <div style={{ fontWeight: 800, fontSize: '13px', color: text }}>{content.headline || 'Headline'}</div>
-          <div style={{ color: muted, marginTop: '4px' }}>{content.subheadline}</div>
+        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
+          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '8px' }} />}
+          <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>{content.headline || 'Headline'}</div>
+          <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>{content.subheadline}</div>
         </div>
       ) : (
         <div style={{
           minHeight: '80px',
           background: content.hero_image_url
-            ? `linear-gradient(to bottom, ${layout === 'bold-fullscreen' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'}, ${bg} 90%), url(${content.hero_image_url}) center/cover`
-            : `linear-gradient(135deg, ${primary}33, ${bg})`,
+            ? `linear-gradient(to bottom, ${layout === 'bold-fullscreen' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'}, var(--surface) 90%), url(${content.hero_image_url}) center/cover`
+            : 'var(--surface-2)',
           padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
         }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: '#fff', padding: '3px', marginBottom: '6px' }} />}
-          <div style={{ fontWeight: 800, color: content.hero_image_url ? '#fff' : text, textShadow: content.hero_image_url ? '0 1px 3px rgba(0,0,0,0.7)' : 'none' }}>{content.headline || 'Headline'}</div>
-          {content.subheadline && <div style={{ color: content.hero_image_url ? 'rgba(255,255,255,0.8)' : muted, marginTop: '4px', textShadow: content.hero_image_url ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>{content.subheadline}</div>}
+          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '6px' }} />}
+          <div style={{ fontWeight: 800, color: content.hero_image_url ? '#fff' : 'var(--text)', textShadow: content.hero_image_url ? '0 1px 3px rgba(0,0,0,0.7)' : 'none' }}>{content.headline || 'Headline'}</div>
+          {content.subheadline && <div style={{ color: content.hero_image_url ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginTop: '4px', textShadow: content.hero_image_url ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>{content.subheadline}</div>}
         </div>
       )}
 
@@ -153,14 +150,14 @@ function LpPreview({ content, pkg, layout }: {
       {(content.feature_badges ?? []).length > 0 && (
         <div style={{ padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
           {(content.feature_badges ?? []).map(b => (
-            <span key={b} style={{ padding: '2px 8px', borderRadius: '10px', background: `${primary}22`, color: primary, fontWeight: 700, fontSize: '9px' }}>{b}</span>
+            <span key={b} style={{ padding: '2px 8px', borderRadius: '10px', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '9px', opacity: 0.85 }}>{b}</span>
           ))}
         </div>
       )}
 
       {/* About */}
       {content.about_text && (
-        <div style={{ padding: '8px 12px', background: cardBg, color: muted, lineHeight: 1.5 }}>{content.about_text}</div>
+        <div style={{ padding: '8px 12px', background: 'var(--surface-2)', color: 'var(--text-muted)', lineHeight: 1.5 }}>{content.about_text}</div>
       )}
 
       {/* Gallery */}
@@ -176,12 +173,12 @@ function LpPreview({ content, pkg, layout }: {
 
       {/* Opening Hours */}
       {content.opening_hours && Object.keys(content.opening_hours).length > 0 && (
-        <div style={{ padding: '8px 12px', background: cardBg }}>
-          <div style={{ fontWeight: 700, color: primary, marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Öffnungszeiten</div>
+        <div style={{ padding: '8px 12px', background: 'var(--surface-2)' }}>
+          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Öffnungszeiten</div>
           {DAYS.filter(d => content.opening_hours?.[d.key]).map(d => {
             const val = content.opening_hours![d.key]!
             return (
-              <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', color: muted, marginBottom: '2px' }}>
+              <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
                 <span>{d.label.slice(0, 2)}.</span>
                 <span>{val.open ? `${val.from} – ${val.to}` : 'Geschlossen'}</span>
               </div>
@@ -193,24 +190,24 @@ function LpPreview({ content, pkg, layout }: {
       {/* Contact */}
       {(content.address || content.phone || content.email) && (
         <div style={{ padding: '8px 12px' }}>
-          <div style={{ fontWeight: 700, color: primary, marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kontakt</div>
-          {content.address && <div style={{ color: muted, marginBottom: '2px' }}>📍 {content.address}</div>}
-          {content.phone && <div style={{ color: muted, marginBottom: '2px' }}>📞 {content.phone}</div>}
-          {content.email && <div style={{ color: muted, marginBottom: '2px' }}>✉️ {content.email}</div>}
-          {content.instagram && <div style={{ color: primary, marginBottom: '2px' }}>@ {content.instagram}</div>}
+          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kontakt</div>
+          {content.address && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📍 {content.address}</div>}
+          {content.phone && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📞 {content.phone}</div>}
+          {content.email && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>✉️ {content.email}</div>}
+          {content.instagram && <div style={{ color: 'var(--accent)', marginBottom: '2px' }}>@ {content.instagram}</div>}
         </div>
       )}
 
       {/* Review */}
       {content.review_url && (
         <div style={{ padding: '6px 12px' }}>
-          <span style={{ background: cardBg, color: primary, padding: '4px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '9px' }}>⭐ Bewertung lesen</span>
+          <span style={{ background: 'var(--surface-2)', color: 'var(--accent)', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '9px' }}>⭐ Bewertung lesen</span>
         </div>
       )}
 
       {/* CTA */}
       <div style={{ padding: '12px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '7px', background: primary, color: '#fff', fontWeight: 700 }}>
+        <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '7px', background: 'var(--accent)', color: '#fff', fontWeight: 700 }}>
           {content.cta_text || 'Jetzt bestellen'}
         </div>
       </div>
@@ -227,7 +224,6 @@ export default function LandingPageTab({ restaurant }: Props) {
   const [activeTab, setActiveTab] = useState<LpTab>('templates')
   const [landingPage, setLandingPage] = useState<LandingPageRow | null>(null)
   const [content, setContent] = useState<LandingPageContent>({})
-  const [lpDesignPackage, setLpDesignPackage] = useState('modern-classic')
   const [lpLayout, setLpLayout] = useState<LpLayoutSlug>('classic-hero')
   const [isPublished, setIsPublished] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -236,8 +232,6 @@ export default function LandingPageTab({ restaurant }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
-
-  const activePkg = DESIGN_PACKAGES.find(p => p.id === lpDesignPackage) ?? DESIGN_PACKAGES[0]
 
   // ── Load ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -257,8 +251,6 @@ export default function LandingPageTab({ restaurant }: Props) {
       setIsPublished(lp.is_published ?? false)
 
       const c = lp.content ?? {}
-      const defaultPkg = (restaurant as any).design_config?.design_package ?? 'modern-classic'
-      setLpDesignPackage(c.lp_design_package ?? defaultPkg)
       setLpLayout(c.lp_layout ?? 'classic-hero')
       setContent(c)
     }
@@ -272,14 +264,13 @@ export default function LandingPageTab({ restaurant }: Props) {
     const token = session?.access_token
     if (!token) { setSaving(false); return }
 
-    const fullContent: LandingPageContent = { ...content, lp_design_package: lpDesignPackage, lp_layout: lpLayout }
+    const fullContent: LandingPageContent = { ...content, lp_layout: lpLayout }
 
     const res = await fetch('/api/admin/landing-page', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         restaurant_id: restaurant.id,
-        template_slug: lpDesignPackage,
         content: fullContent,
         is_published: overrides?.is_published ?? isPublished,
       }),
@@ -419,41 +410,12 @@ export default function LandingPageTab({ restaurant }: Props) {
         {/* ── TEMPLATES TAB ── */}
         {activeTab === 'templates' && (
           <div>
-            <div style={sectionTitle}>Design-Paket wählen</div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Dasselbe Paket wie die Bestellseite — Farben & Fonts bleiben konsistent.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginBottom: '28px' }}>
-              {DESIGN_PACKAGES.map(pkg => {
-                const isActive = lpDesignPackage === pkg.id
-                return (
-                  <button
-                    key={pkg.id}
-                    onClick={() => setLpDesignPackage(pkg.id)}
-                    style={{
-                      padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                      background: isActive ? `${pkg.preview.primaryColor}18` : 'var(--surface)',
-                      outline: isActive ? `2px solid ${pkg.preview.primaryColor}` : '2px solid var(--border)',
-                      textAlign: 'left', transition: 'all 0.15s',
-                    }}
-                  >
-                    <div style={{
-                      height: '36px', borderRadius: '6px', marginBottom: '8px',
-                      background: `linear-gradient(135deg, ${pkg.preview.bgColor} 40%, ${pkg.preview.primaryColor})`,
-                      border: `1px solid ${pkg.preview.primaryColor}44`,
-                    }} />
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>
-                      {pkg.emoji} {pkg.name}
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                      {pkg.description}
-                    </div>
-                  </button>
-                )
-              })}
+            <div style={sectionTitle}>Design</div>
+            <div style={brandInheritHint}>
+              Farben &amp; Schriftart werden automatisch aus deinem <strong>Brand</strong> (Tab „Bestellseite") übernommen — so bleiben Landing- und Bestellseite immer einheitlich. Hier legst du nur Landing-spezifische Inhalte fest (Hero, Headline, Galerie, Layout).
             </div>
 
-            <div style={sectionTitle}>Landing Page Layout</div>
+            <div style={{ ...sectionTitle, marginTop: '24px' }}>Landing Page Layout</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {LP_LAYOUTS.map(layout => {
                 const isActive = lpLayout === layout.slug
@@ -463,13 +425,13 @@ export default function LandingPageTab({ restaurant }: Props) {
                     onClick={() => setLpLayout(layout.slug)}
                     style={{
                       padding: '12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      background: isActive ? `${activePkg.preview.primaryColor}18` : 'var(--surface)',
-                      outline: isActive ? `2px solid ${activePkg.preview.primaryColor}` : '2px solid var(--border)',
+                      background: isActive ? 'var(--accent)' : 'var(--surface)',
+                      outline: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
                       textAlign: 'left', transition: 'all 0.15s',
                     }}
                   >
-                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>{layout.label}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{layout.desc}</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isActive ? '#fff' : 'var(--text)', marginBottom: '3px' }}>{layout.label}</div>
+                    <div style={{ fontSize: '0.7rem', color: isActive ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)' }}>{layout.desc}</div>
                   </button>
                 )
               })}
@@ -651,7 +613,7 @@ export default function LandingPageTab({ restaurant }: Props) {
                       style={{
                         padding: '6px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer',
                         fontSize: '0.78rem', fontWeight: 600, transition: 'all 0.15s',
-                        background: active ? activePkg.preview.primaryColor : 'var(--surface)',
+                        background: active ? 'var(--accent)' : 'var(--surface)',
                         color: active ? '#fff' : 'var(--text-muted)',
                         outline: active ? 'none' : '1.5px solid var(--border)',
                       }}
@@ -677,30 +639,10 @@ export default function LandingPageTab({ restaurant }: Props) {
         {/* ── FARBEN TAB ── */}
         {activeTab === 'farben' && (
           <div>
-            <div style={sectionTitle}>Farben</div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Die Landing Page übernimmt die Farben des gewählten Design-Pakets. Wechsle das Paket im "Designs"-Tab.
-            </p>
-            <div style={{ background: 'var(--surface)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { label: 'Primärfarbe', color: activePkg.preview.primaryColor },
-                { label: 'Hintergrund', color: activePkg.preview.bgColor },
-                { label: 'Header', color: activePkg.preview.headerColor },
-                { label: 'Button', color: activePkg.preview.buttonColor },
-                { label: 'Text', color: activePkg.preview.textColor },
-              ].map(({ label, color }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text)' }}>{label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: color, border: '1px solid var(--border)' }} />
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{color}</span>
-                  </div>
-                </div>
-              ))}
+            <div style={sectionTitle}>Farben & Schriftart</div>
+            <div style={brandInheritHint}>
+              Farben &amp; Schriftart werden automatisch aus deinem <strong>Brand</strong> (Tab „Bestellseite") übernommen — so bleiben Landing- und Bestellseite immer einheitlich. Hier legst du nur Landing-spezifische Inhalte fest (Hero, Headline, Galerie, Layout).
             </div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '12px' }}>
-              Farben ändern → "Designs"-Tab → anderes Paket wählen.
-            </p>
           </div>
         )}
 
@@ -720,43 +662,43 @@ export default function LandingPageTab({ restaurant }: Props) {
                     onClick={() => setLpLayout(layout.slug)}
                     style={{
                       padding: '14px 16px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                      background: isActive ? `${activePkg.preview.primaryColor}18` : 'var(--surface)',
-                      outline: isActive ? `2px solid ${activePkg.preview.primaryColor}` : '2px solid var(--border)',
+                      background: isActive ? 'var(--accent)' : 'var(--surface)',
+                      outline: isActive ? '2px solid var(--accent)' : '2px solid var(--border)',
                       textAlign: 'left', display: 'flex', alignItems: 'center', gap: '12px', transition: 'all 0.15s',
                     }}
                   >
                     <div style={{
                       width: '48px', height: '36px', borderRadius: '4px', flexShrink: 0,
-                      background: activePkg.preview.bgColor,
-                      border: `1px solid ${isActive ? activePkg.preview.primaryColor : 'var(--border)'}`,
+                      background: 'var(--surface-2)',
+                      border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                     }}>
                       <svg width="32" height="24" viewBox="0 0 32 24">
                         {layout.slug === 'classic-hero' && <>
-                          <rect x="0" y="0" width="32" height="12" fill={activePkg.preview.primaryColor} opacity="0.4" rx="2"/>
-                          <rect x="2" y="14" width="28" height="3" fill={activePkg.preview.textColor} opacity="0.4" rx="1"/>
-                          <rect x="2" y="19" width="20" height="2" fill={activePkg.preview.textColor} opacity="0.2" rx="1"/>
+                          <rect x="0" y="0" width="32" height="12" fill="var(--accent)" opacity="0.4" rx="2"/>
+                          <rect x="2" y="14" width="28" height="3" fill="var(--text)" opacity="0.4" rx="1"/>
+                          <rect x="2" y="19" width="20" height="2" fill="var(--text)" opacity="0.2" rx="1"/>
                         </>}
                         {layout.slug === 'split-hero' && <>
-                          <rect x="0" y="0" width="15" height="24" fill={activePkg.preview.primaryColor} opacity="0.4" rx="2"/>
-                          <rect x="17" y="6" width="13" height="3" fill={activePkg.preview.textColor} opacity="0.4" rx="1"/>
-                          <rect x="17" y="11" width="10" height="2" fill={activePkg.preview.textColor} opacity="0.2" rx="1"/>
+                          <rect x="0" y="0" width="15" height="24" fill="var(--accent)" opacity="0.4" rx="2"/>
+                          <rect x="17" y="6" width="13" height="3" fill="var(--text)" opacity="0.4" rx="1"/>
+                          <rect x="17" y="11" width="10" height="2" fill="var(--text)" opacity="0.2" rx="1"/>
                         </>}
                         {layout.slug === 'minimal' && <>
-                          <rect x="4" y="4" width="24" height="4" fill={activePkg.preview.textColor} opacity="0.6" rx="1"/>
-                          <rect x="8" y="10" width="16" height="2" fill={activePkg.preview.textColor} opacity="0.3" rx="1"/>
-                          <rect x="10" y="16" width="12" height="5" fill={activePkg.preview.primaryColor} opacity="0.5" rx="2"/>
+                          <rect x="4" y="4" width="24" height="4" fill="var(--text)" opacity="0.6" rx="1"/>
+                          <rect x="8" y="10" width="16" height="2" fill="var(--text)" opacity="0.3" rx="1"/>
+                          <rect x="10" y="16" width="12" height="5" fill="var(--accent)" opacity="0.5" rx="2"/>
                         </>}
                         {layout.slug === 'bold-fullscreen' && <>
-                          <rect x="0" y="0" width="32" height="24" fill={activePkg.preview.primaryColor} opacity="0.25" rx="2"/>
-                          <rect x="4" y="8" width="24" height="5" fill={activePkg.preview.textColor} opacity="0.7" rx="1"/>
-                          <rect x="8" y="15" width="16" height="4" fill={activePkg.preview.primaryColor} opacity="0.6" rx="2"/>
+                          <rect x="0" y="0" width="32" height="24" fill="var(--accent)" opacity="0.25" rx="2"/>
+                          <rect x="4" y="8" width="24" height="5" fill="var(--text)" opacity="0.7" rx="1"/>
+                          <rect x="8" y="15" width="16" height="4" fill="var(--accent)" opacity="0.6" rx="2"/>
                         </>}
                       </svg>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>{layout.label}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{layout.desc}</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isActive ? '#fff' : 'var(--text)', marginBottom: '3px' }}>{layout.label}</div>
+                      <div style={{ fontSize: '0.7rem', color: isActive ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)' }}>{layout.desc}</div>
                     </div>
                   </button>
                 )
@@ -809,7 +751,7 @@ export default function LandingPageTab({ restaurant }: Props) {
         {isPublished && (
           <div style={{ fontSize: '0.68rem', color: '#10b981', marginBottom: '8px', fontWeight: 600 }}>● Live</div>
         )}
-        <LpPreview content={content} pkg={activePkg} layout={lpLayout} />
+        <LpPreview content={content} layout={lpLayout} />
       </div>
 
     </div>
