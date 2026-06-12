@@ -19,24 +19,15 @@ import { ReferralShare } from '@/components/order/ReferralShare'
 import { saveReferralRef, getReferralRef, clearReferralRef } from '@/lib/marketing/referral'
 import ChatWidget from '@/components/ChatWidget'
 import { useLanguage } from '@/components/providers/language-provider'
+import { resolveBrand } from '@/lib/resolve-brand'
+import type { ColorSet } from '@/lib/color-utils'
 
 type Translations = Record<string, { name: string; description: string }>
 type CartItem = { item: MenuItem; qty: number }
 type OrderType = 'pickup' | 'delivery'
 type View = 'menu' | 'checkout' | 'status'
 
-const V2 = {
-  bg: '#0A0A0F',
-  surface: '#111118',
-  surfaceHi: '#16161F',
-  border: '#1F1F28',
-  accent: '#EA580C',
-  accentHi: '#F97316',
-  text: '#F5F5F7',
-  textDim: '#8B8B93',
-  gradient: 'linear-gradient(135deg, #EA580C 0%, #F97316 100%)',
-  radius: 16,
-}
+const CARD_RADIUS = 16
 
 async function calculateAndStoreEta(
   orderId: string,
@@ -235,6 +226,11 @@ export default function BestellenV2() {
 
   const [alertSettings, setAlertSettings] = useState<{ show_sold_out_label: boolean; auto_hide_item: boolean } | null>(null)
 
+  const brand = resolveBrand(restaurant ?? {}, 'online')
+  const C = brand.colors
+  const fontPair = brand.font
+  const accentGradient = `linear-gradient(135deg, ${C.accent} 0%, ${C.buttonBg !== C.accent ? C.buttonBg : C.accent}ee 100%)`
+
   function scrollToCategory(id: string) {
     setActiveCategory(id)
     categoryRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -386,16 +382,16 @@ export default function BestellenV2() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-geist), system-ui, sans-serif' }}>
-        <div style={{ color: V2.textDim, fontSize: '14px' }}>Lade Menü…</div>
+      <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: `${fontPair.body}, system-ui, sans-serif` }}>
+        <div style={{ color: C.muted, fontSize: '14px' }}>Lade Menü…</div>
       </div>
     )
   }
 
   if (error && !restaurant) {
     return (
-      <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-geist), system-ui, sans-serif' }}>
-        <div style={{ color: V2.textDim }}>{error}</div>
+      <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: `${fontPair.body}, system-ui, sans-serif` }}>
+        <div style={{ color: C.muted }}>{error}</div>
       </div>
     )
   }
@@ -404,7 +400,7 @@ export default function BestellenV2() {
   if (closedInfo && view !== 'status') {
     const dayNames = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
     return (
-      <div style={{ minHeight: '100vh', background: V2.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'var(--font-geist), system-ui, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: accentGradient, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: `${fontPair.body}, system-ui, sans-serif` }}>
         <div style={{ textAlign: 'center', maxWidth: '360px', width: '100%' }}>
           <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
             <Clock size={48} color="rgba(255,255,255,0.6)" />
@@ -434,7 +430,7 @@ export default function BestellenV2() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: V2.bg, color: V2.text, fontFamily: 'var(--font-geist), system-ui, sans-serif', paddingBottom: cartCount > 0 && view === 'menu' ? '100px' : '0' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: `${fontPair.body}, system-ui, sans-serif`, paddingBottom: cartCount > 0 && view === 'menu' ? '100px' : '0' }}>
       {/* STATUS VIEW */}
       {view === 'status' && order && (
         <StatusView
@@ -444,6 +440,9 @@ export default function BestellenV2() {
           referralCode={myReferralCode}
           restaurantSlug={slug}
           restaurant={restaurant}
+          C={C}
+          fontPair={fontPair}
+          accentGradient={accentGradient}
         />
       )}
 
@@ -472,7 +471,10 @@ export default function BestellenV2() {
           loyaltyMember={loyaltyMember}
           applyReward={applyReward}
           setApplyReward={setApplyReward}
-          accentColor={restaurant?.primary_color ?? V2.accent}
+          accentColor={C.accent}
+          C={C}
+          fontPair={fontPair}
+          accentGradient={accentGradient}
           discountCode={discountCode}
           setDiscountCode={setDiscountCode}
           discountInfo={discountInfo}
@@ -488,11 +490,11 @@ export default function BestellenV2() {
           {/* Hero */}
           <div style={{ padding: '20px 20px 0' }}>
             <div style={{
-              background: V2.gradient,
+              background: accentGradient,
               borderRadius: '20px',
               padding: '28px 24px',
               marginTop: '8px',
-              boxShadow: '0 20px 60px rgba(234,88,12,0.25)',
+              boxShadow: `0 20px 60px ${C.accentGlow}`,
               position: 'relative',
               overflow: 'hidden',
             }}>
@@ -501,25 +503,25 @@ export default function BestellenV2() {
                   <Sparkles size={11} /> Bestellen
                 </div>
                 {restaurant && (
-                  <LoyaltyButton restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? V2.accent} />
+                  <LoyaltyButton restaurantId={restaurant.id} accentColor={C.accent} />
                 )}
               </div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>{restaurant?.name}</h1>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', fontFamily: `${fontPair.heading}, system-ui, sans-serif` }}>{restaurant?.name}</h1>
               <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', marginTop: '6px', marginBottom: 0 }}>Abholung oder Lieferung · Live-Status</p>
             </div>
           </div>
 
           {/* Loyalty Banner */}
           {restaurant && (
-            <LoyaltyBanner restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? V2.accent} />
+            <LoyaltyBanner restaurantId={restaurant.id} accentColor={C.accent} />
           )}
 
           {/* Sticky category tabs */}
           <div style={{
             position: 'sticky', top: 0, zIndex: 20,
-            background: V2.bg + 'F0',
+            background: C.bg + 'F0',
             backdropFilter: 'blur(10px)',
-            borderBottom: `1px solid ${V2.border}`,
+            borderBottom: `1px solid ${C.border}`,
             marginTop: '16px',
             padding: '12px 20px',
             overflowX: 'auto',
@@ -536,9 +538,9 @@ export default function BestellenV2() {
                     padding: '8px 14px',
                     marginRight: '8px',
                     borderRadius: '999px',
-                    background: active ? V2.accent : V2.surface,
-                    border: `1px solid ${active ? V2.accent : V2.border}`,
-                    color: active ? '#fff' : V2.text,
+                    background: active ? C.accent : C.surface,
+                    border: `1px solid ${active ? C.accent : C.border}`,
+                    color: active ? '#fff' : C.text,
                     fontSize: '13px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -564,7 +566,7 @@ export default function BestellenV2() {
                   allergens: (i.allergens as string[] | null) ?? null,
                   tags: (i.tags as string[] | null) ?? null,
                 }))}
-                accentColor={V2.accent}
+                accentColor={C.accent}
                 onFilterChange={setFilterResult}
               />
             </div>
@@ -617,9 +619,9 @@ export default function BestellenV2() {
                         <div
                           onClick={() => setSelectedItem(item)}
                           style={{
-                            background: V2.surface,
-                            border: `1px solid ${qty > 0 ? V2.accent : V2.border}`,
-                            borderRadius: `${V2.radius}px`,
+                            background: C.surface,
+                            border: `1px solid ${qty > 0 ? C.accent : C.border}`,
+                            borderRadius: `${CARD_RADIUS}px`,
                             padding: '14px',
                             cursor: 'pointer',
                             transition: 'all 150ms',
@@ -628,29 +630,29 @@ export default function BestellenV2() {
                           }}
                         >
                           {item.image_url && (
-                            <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: V2.surfaceHi }}>
+                            <div style={{ width: '80px', height: '80px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: C.surface2 }}>
                               <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                           )}
                           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                             <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{itemName(item)}</div>
                             {item.description && (
-                              <div style={{ color: V2.textDim, fontSize: '12px', lineHeight: 1.4, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              <div style={{ color: C.muted, fontSize: '12px', lineHeight: 1.4, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                 {itemDesc(item)}
                               </div>
                             )}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-                              <div style={{ fontSize: '14px', fontWeight: 700, color: V2.accent }}>{item.price.toFixed(2)} €</div>
+                              <div style={{ fontSize: '14px', fontWeight: 700, color: C.accent }}>{item.price.toFixed(2)} €</div>
                               {qty > 0 ? (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={e => e.stopPropagation()}>
-                                  <button onClick={() => removeFromCart(item.id)} style={iconBtnStyle}><Minus size={14} /></button>
+                                  <button onClick={() => removeFromCart(item.id)} style={iconBtnStyle(C)}><Minus size={14} /></button>
                                   <span style={{ fontSize: '13px', fontWeight: 700, minWidth: '16px', textAlign: 'center' }}>{qty}</span>
-                                  <button onClick={() => addToCart(item)} style={iconBtnStyle}><Plus size={14} /></button>
+                                  <button onClick={() => addToCart(item)} style={iconBtnStyle(C)}><Plus size={14} /></button>
                                 </div>
                               ) : (
                                 <button
                                   onClick={e => { e.stopPropagation(); addToCart(item) }}
-                                  style={{ width: '32px', height: '32px', borderRadius: '10px', background: V2.accent, border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  style={{ width: '32px', height: '32px', borderRadius: '10px', background: C.accent, border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
                                   <Plus size={16} />
                                 </button>
@@ -676,8 +678,8 @@ export default function BestellenV2() {
                 padding: '14px',
                 borderRadius: '12px',
                 background: 'transparent',
-                border: `1px solid ${V2.border}`,
-                color: V2.textDim,
+                border: `1px solid ${C.border}`,
+                color: C.muted,
                 fontSize: '12px',
                 fontWeight: 500,
                 cursor: 'pointer',
@@ -705,7 +707,7 @@ export default function BestellenV2() {
                 margin: '0 auto',
                 padding: '16px 20px',
                 borderRadius: '14px',
-                background: V2.gradient,
+                background: accentGradient,
                 border: 'none',
                 color: '#fff',
                 fontSize: '15px',
@@ -715,7 +717,7 @@ export default function BestellenV2() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: '0 12px 40px rgba(234,88,12,0.5)',
+                boxShadow: `0 12px 40px ${C.accentGlow}`,
                 zIndex: 50,
               }}
             >
@@ -738,40 +740,40 @@ export default function BestellenV2() {
             >
               <div
                 onClick={e => e.stopPropagation()}
-                style={{ background: V2.surface, border: `1px solid ${V2.border}`, borderRadius: '20px', padding: '20px', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto' }}
+                style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '20px', padding: '20px', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
-                  <button onClick={() => setSelectedItem(null)} style={iconBtnStyle}><X size={16} /></button>
+                  <button onClick={() => setSelectedItem(null)} style={iconBtnStyle(C)}><X size={16} /></button>
                 </div>
                 {selectedItem.image_url && (
-                  <div style={{ width: '100%', height: '200px', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px', background: V2.surfaceHi }}>
+                  <div style={{ width: '100%', height: '200px', borderRadius: '14px', overflow: 'hidden', marginBottom: '16px', background: C.surface2 }}>
                     <img src={selectedItem.image_url} alt={selectedItem.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 )}
-                <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.01em' }}>{selectedItem.name}</h2>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', letterSpacing: '-0.01em', fontFamily: `${fontPair.heading}, system-ui, sans-serif` }}>{selectedItem.name}</h2>
                 {selectedItem.description && (
-                  <p style={{ color: V2.textDim, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>{selectedItem.description}</p>
+                  <p style={{ color: C.muted, fontSize: '14px', lineHeight: 1.5, marginBottom: '16px' }}>{selectedItem.description}</p>
                 )}
                 {selectedItem.allergens && selectedItem.allergens.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
                     {selectedItem.allergens.map(a => (
-                      <span key={a} style={{ padding: '3px 8px', borderRadius: '999px', background: V2.surfaceHi, border: `1px solid ${V2.border}`, fontSize: '11px', color: V2.textDim }}>{a}</span>
+                      <span key={a} style={{ padding: '3px 8px', borderRadius: '999px', background: C.surface2, border: `1px solid ${C.border}`, fontSize: '11px', color: C.muted }}>{a}</span>
                     ))}
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '22px', fontWeight: 800, color: V2.accent }}>{selectedItem.price.toFixed(2)} €</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: C.accent }}>{selectedItem.price.toFixed(2)} €</div>
                   {getQty(selectedItem.id) > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <button onClick={() => removeFromCart(selectedItem.id)} style={iconBtnStyle}><Minus size={14} /></button>
+                      <button onClick={() => removeFromCart(selectedItem.id)} style={iconBtnStyle(C)}><Minus size={14} /></button>
                       <span style={{ fontSize: '16px', fontWeight: 700, minWidth: '20px', textAlign: 'center' }}>{getQty(selectedItem.id)}</span>
-                      <button onClick={() => addToCart(selectedItem)} style={iconBtnStyle}><Plus size={14} /></button>
+                      <button onClick={() => addToCart(selectedItem)} style={iconBtnStyle(C)}><Plus size={14} /></button>
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => { addToCart(selectedItem); setSelectedItem(null) }}
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', background: V2.gradient, border: 'none', color: '#fff', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '14px', borderRadius: '12px', background: accentGradient, border: 'none', color: '#fff', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   Hinzufügen
                 </button>
@@ -788,7 +790,7 @@ export default function BestellenV2() {
           restaurantName={restaurant.name}
           items={items}
           cart={cart.map(c => ({ name: c.item.name, qty: c.qty }))}
-          accentColor={restaurant.primary_color ?? undefined}
+          accentColor={C.accent}
           restaurantId={restaurant.id}
           onAddToCart={(itemId, _name, qty) => {
             const found = items.find(i => i.id === itemId)
@@ -809,11 +811,13 @@ export default function BestellenV2() {
   )
 }
 
-const iconBtnStyle: React.CSSProperties = {
-  width: '28px', height: '28px', borderRadius: '8px',
-  background: V2.surfaceHi, border: `1px solid ${V2.border}`,
-  color: V2.text, cursor: 'pointer',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
+function iconBtnStyle(C: ColorSet): React.CSSProperties {
+  return {
+    width: '28px', height: '28px', borderRadius: '8px',
+    background: C.surface2, border: `1px solid ${C.border}`,
+    color: C.text, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }
 }
 
 function CheckoutView(props: {
@@ -835,6 +839,9 @@ function CheckoutView(props: {
   applyReward: boolean;
   setApplyReward: (v: boolean) => void;
   accentColor: string;
+  C: ColorSet;
+  fontPair: { heading: string; body: string; label: string };
+  accentGradient: string;
   discountCode: string;
   setDiscountCode: (v: string) => void;
   discountInfo: { type: 'percent' | 'fixed'; value: number; expiresAt: string } | null;
@@ -842,28 +849,28 @@ function CheckoutView(props: {
   discountLoading: boolean;
   onValidateCode: (code: string) => void;
 }) {
-  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit, restaurantEmailMarketing, restaurantName, marketingOptIn, setMarketingOptIn, marketingEmail, setMarketingEmail, loyaltyProgram, loyaltyMember, applyReward, setApplyReward, accentColor, discountCode, setDiscountCode, discountInfo, discountError, discountLoading, onValidateCode } = props
+  const { cart, total, orderType, setOrderType, customerName, setCustomerName, customerPhone, setCustomerPhone, street, setStreet, city, setCity, zip, setZip, note, setNote, error, submitting, onBack, onSubmit, restaurantEmailMarketing, restaurantName, marketingOptIn, setMarketingOptIn, marketingEmail, setMarketingEmail, loyaltyProgram, loyaltyMember, applyReward, setApplyReward, accentColor, C, fontPair, accentGradient, discountCode, setDiscountCode, discountInfo, discountError, discountLoading, onValidateCode } = props
 
   return (
-    <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto' }}>
-      <button onClick={onBack} style={{ ...iconBtnStyle, width: 'auto', padding: '8px 14px', fontSize: '13px', gap: '6px', marginBottom: '16px', fontFamily: 'inherit' }}>
+    <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto', fontFamily: `${fontPair.body}, system-ui, sans-serif` }}>
+      <button onClick={onBack} style={{ ...iconBtnStyle(C), width: 'auto', padding: '8px 14px', fontSize: '13px', gap: '6px', marginBottom: '16px', fontFamily: 'inherit' }}>
         <ArrowLeft size={14} /> Zurück zum Menü
       </button>
 
-      <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '20px' }}>Bestellung abschließen</h1>
+      <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '20px', fontFamily: `${fontPair.heading}, system-ui, sans-serif` }}>Bestellung abschließen</h1>
 
       {/* Cart summary */}
-      <div style={{ background: V2.surface, border: `1px solid ${V2.border}`, borderRadius: `${V2.radius}px`, padding: '16px', marginBottom: '16px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 700, color: V2.textDim, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Dein Warenkorb</div>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: `${CARD_RADIUS}px`, padding: '16px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Dein Warenkorb</div>
         {cart.map(c => (
           <div key={c.item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '14px' }}>
             <span>{c.qty}× {c.item.name}</span>
-            <span style={{ color: V2.textDim }}>{(c.item.price * c.qty).toFixed(2)} €</span>
+            <span style={{ color: C.muted }}>{(c.item.price * c.qty).toFixed(2)} €</span>
           </div>
         ))}
-        <div style={{ borderTop: `1px solid ${V2.border}`, marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '16px' }}>
+        <div style={{ borderTop: `1px solid ${C.border}`, marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '16px' }}>
           <span>Gesamt</span>
-          <span style={{ color: V2.accent }}>{total.toFixed(2)} €</span>
+          <span style={{ color: C.accent }}>{total.toFixed(2)} €</span>
         </div>
       </div>
 
@@ -879,9 +886,9 @@ function CheckoutView(props: {
               style={{
                 padding: '16px',
                 borderRadius: '12px',
-                background: active ? V2.accent : V2.surface,
-                border: `1px solid ${active ? V2.accent : V2.border}`,
-                color: active ? '#fff' : V2.text,
+                background: active ? C.accent : C.surface,
+                border: `1px solid ${active ? C.accent : C.border}`,
+                color: active ? '#fff' : C.text,
                 fontSize: '14px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -901,14 +908,14 @@ function CheckoutView(props: {
 
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <Input placeholder="Name *" value={customerName} onChange={setCustomerName} />
-        <Input placeholder="Telefon *" value={customerPhone} onChange={setCustomerPhone} type="tel" />
+        <Input placeholder="Name *" value={customerName} onChange={setCustomerName} C={C} />
+        <Input placeholder="Telefon *" value={customerPhone} onChange={setCustomerPhone} type="tel" C={C} />
         {orderType === 'delivery' && (
           <>
-            <Input placeholder="Straße + Nr. *" value={street} onChange={setStreet} />
+            <Input placeholder="Straße + Nr. *" value={street} onChange={setStreet} C={C} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
-              <Input placeholder="PLZ *" value={zip} onChange={setZip} />
-              <Input placeholder="Stadt *" value={city} onChange={setCity} />
+              <Input placeholder="PLZ *" value={zip} onChange={setZip} C={C} />
+              <Input placeholder="Stadt *" value={city} onChange={setCity} C={C} />
             </div>
           </>
         )}
@@ -917,7 +924,7 @@ function CheckoutView(props: {
           value={note}
           onChange={e => setNote(e.target.value)}
           rows={3}
-          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+          style={{ ...inputStyle(C), resize: 'vertical', fontFamily: 'inherit' }}
         />
       </div>
 
@@ -925,7 +932,7 @@ function CheckoutView(props: {
         <div style={{ marginTop: '16px' }}>
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
             <input type="checkbox" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)} style={{ marginTop: '2px', flexShrink: 0 }} />
-            <span style={{ color: V2.textDim, fontSize: '13px', lineHeight: 1.5 }}>
+            <span style={{ color: C.muted, fontSize: '13px', lineHeight: 1.5 }}>
               Angebote &amp; News von {restaurantName} per Email erhalten (jederzeit abbestellbar).
             </span>
           </label>
@@ -935,7 +942,7 @@ function CheckoutView(props: {
               value={marketingEmail}
               onChange={e => setMarketingEmail(e.target.value)}
               placeholder="Deine Email-Adresse"
-              style={{ ...inputStyle, marginTop: '8px' }}
+              style={{ ...inputStyle(C), marginTop: '8px' }}
             />
           )}
         </div>
@@ -997,7 +1004,7 @@ function CheckoutView(props: {
           marginTop: '16px',
           padding: '16px',
           borderRadius: '14px',
-          background: V2.gradient,
+          background: accentGradient,
           border: 'none',
           color: '#fff',
           fontSize: '15px',
@@ -1005,7 +1012,7 @@ function CheckoutView(props: {
           cursor: submitting ? 'wait' : 'pointer',
           opacity: submitting ? 0.7 : 1,
           fontFamily: 'inherit',
-          boxShadow: '0 12px 40px rgba(234,88,12,0.4)',
+          boxShadow: `0 12px 40px ${C.accentGlow}`,
         }}
       >
         {submitting ? 'Sende…' : `Bestellen · ${total.toFixed(2)} €`}
@@ -1014,37 +1021,42 @@ function CheckoutView(props: {
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '14px 14px',
-  borderRadius: '12px',
-  background: V2.surface,
-  border: `1px solid ${V2.border}`,
-  color: V2.text,
-  fontSize: '14px',
-  outline: 'none',
-  fontFamily: 'inherit',
+function inputStyle(C: ColorSet): React.CSSProperties {
+  return {
+    width: '100%',
+    padding: '14px 14px',
+    borderRadius: '12px',
+    background: C.surface,
+    border: `1px solid ${C.border}`,
+    color: C.text,
+    fontSize: '14px',
+    outline: 'none',
+    fontFamily: 'inherit',
+  }
 }
 
-function Input({ placeholder, value, onChange, type = 'text' }: { placeholder: string; value: string; onChange: (v: string) => void; type?: string }) {
+function Input({ placeholder, value, onChange, type = 'text', C }: { placeholder: string; value: string; onChange: (v: string) => void; type?: string; C: ColorSet }) {
   return (
     <input
       type={type}
       placeholder={placeholder}
       value={value}
       onChange={e => onChange(e.target.value)}
-      style={inputStyle}
+      style={inputStyle(C)}
     />
   )
 }
 
-function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantSlug, restaurant }: {
+function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantSlug, restaurant, C, fontPair, accentGradient }: {
   order: Order
   googleReviewUrl: string | null
   onReset: () => void
   referralCode: string | null
   restaurantSlug: string
   restaurant: Restaurant | null
+  C: ColorSet
+  fontPair: { heading: string; body: string; label: string }
+  accentGradient: string
 }) {
   const isServed = order.status === 'served'
   const steps: { key: Order['status']; label: string; icon: typeof ChefHat }[] = [
@@ -1055,20 +1067,20 @@ function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantS
   const activeIdx = steps.findIndex(s => s.key === order.status)
 
   return (
-    <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto' }}>
+    <div style={{ padding: '20px', maxWidth: '560px', margin: '0 auto', fontFamily: `${fontPair.body}, system-ui, sans-serif` }}>
       <div style={{
-        background: V2.gradient,
+        background: accentGradient,
         borderRadius: '20px',
         padding: '32px 24px',
         marginTop: '20px',
         marginBottom: '24px',
         textAlign: 'center',
-        boxShadow: '0 20px 60px rgba(234,88,12,0.25)',
+        boxShadow: `0 20px 60px ${C.accentGlow}`,
       }}>
         <div style={{ display: 'inline-flex', padding: '10px', background: 'rgba(255,255,255,0.15)', borderRadius: '14px', marginBottom: '12px' }}>
           <Sparkles size={22} />
         </div>
-        <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Bestellung eingegangen!</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', fontFamily: `${fontPair.heading}, system-ui, sans-serif` }}>Bestellung eingegangen!</h1>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', marginTop: '6px', marginBottom: 0 }}>
           #{order.id.slice(0, 8).toUpperCase()} · {order.total.toFixed(2)} €
         </p>
@@ -1096,8 +1108,8 @@ function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantS
               style={{
                 display: 'flex', alignItems: 'center', gap: '14px',
                 padding: '16px',
-                background: current ? V2.surfaceHi : V2.surface,
-                border: `1px solid ${current ? V2.accent : V2.border}`,
+                background: current ? C.surface2 : C.surface,
+                border: `1px solid ${current ? C.accent : C.border}`,
                 borderRadius: '14px',
                 opacity: done ? 1 : 0.45,
                 transition: 'all 200ms',
@@ -1105,15 +1117,15 @@ function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantS
             >
               <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
-                background: done ? V2.gradient : V2.surfaceHi,
+                background: done ? accentGradient : C.surface2,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: done ? '#fff' : V2.textDim,
+                color: done ? '#fff' : C.muted,
               }}>
                 <Icon size={18} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{s.label}</div>
-                {current && <div style={{ fontSize: '12px', color: V2.textDim, marginTop: '2px' }}>Live-Update</div>}
+                {current && <div style={{ fontSize: '12px', color: C.muted, marginTop: '2px' }}>Live-Update</div>}
               </div>
             </div>
           )
@@ -1121,16 +1133,16 @@ function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantS
       </div>
 
       {/* Items recap */}
-      <div style={{ background: V2.surface, border: `1px solid ${V2.border}`, borderRadius: `${V2.radius}px`, padding: '16px', marginBottom: '16px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 700, color: V2.textDim, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Bestellte Artikel</div>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: `${CARD_RADIUS}px`, padding: '16px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Bestellte Artikel</div>
         {order.items.map((it, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px' }}>
             <span>{it.qty}× {it.name}</span>
-            <span style={{ color: V2.textDim }}>{(it.price * it.qty).toFixed(2)} €</span>
+            <span style={{ color: C.muted }}>{(it.price * it.qty).toFixed(2)} €</span>
           </div>
         ))}
         {order.delivery_address && (
-          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${V2.border}`, display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: V2.textDim }}>
+          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: C.muted }}>
             <MapPin size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
             <span>{order.delivery_address.street}, {order.delivery_address.zip} {order.delivery_address.city}</span>
           </div>
@@ -1168,8 +1180,8 @@ function StatusView({ order, googleReviewUrl, onReset, referralCode, restaurantS
           padding: '14px',
           borderRadius: '12px',
           background: 'transparent',
-          border: `1px solid ${V2.border}`,
-          color: V2.textDim,
+          border: `1px solid ${C.border}`,
+          color: C.muted,
           fontSize: '13px',
           fontWeight: 600,
           cursor: 'pointer',
