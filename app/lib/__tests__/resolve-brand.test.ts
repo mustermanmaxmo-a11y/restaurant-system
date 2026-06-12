@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { resolveBrand, LOCKED_BRAND_KEYS } from '@/lib/resolve-brand'
 
-const baseRestaurant = {
+const baseRestaurant: Partial<import('@/types/database').Restaurant> = {
   name: 'Test Bistro',
   logo_url: 'https://example.com/logo.png',
   design_config: {
@@ -62,5 +62,12 @@ describe('resolveBrand', () => {
     expect(order.layoutVariant).toBe('grid')
     const landing = resolveBrand(baseRestaurant, 'landing', { layout_variant: 'grid' })
     expect(landing.layoutVariant).toBe('cards')
+    expect((landing.overrides as Record<string, unknown>).layout_variant).toBeUndefined()
+  })
+
+  it('fällt auf design_package zurück, wenn design_config leer ist', () => {
+    const b = resolveBrand({ design_package: 'elegant-gold' }, 'order')
+    expect(b.fontPairKey).toBe('playfair-lato')
+    expect(b.colors.accent).toBe('#C9A84C')
   })
 })

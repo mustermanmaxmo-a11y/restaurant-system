@@ -32,13 +32,21 @@ export interface ResolvedBrand {
   font: FontPair
   fontPairKey: string
   layoutVariant: string
-  borderRadius: string
-  hoverEffect: string
-  animationStyle: string
-  cardStyle: string
+  borderRadius: 'sharp' | 'rounded' | 'pill'
+  hoverEffect: 'scale' | 'glow' | 'underline' | 'color-shift' | 'none'
+  animationStyle: 'fade' | 'slide' | 'none'
+  cardStyle: 'elevated' | 'flat' | 'outlined' | 'ghost'
   name?: string
   logoUrl?: string
   overrides: BrandOverrides
+}
+
+function pickEnum<T extends string>(
+  v: string | undefined,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  return (allowed as readonly string[]).includes(v ?? '') ? (v as T) : fallback
 }
 
 /**
@@ -62,7 +70,7 @@ export function resolveBrand(
     readCfgString(cfg, 'font_pair') ??
     restaurant.font_pair ??
     getDesignPackage(restaurant.design_package ?? undefined).fontPair
-  const font = FONT_PAIRS[fontPairKey] ?? FONT_PAIRS['syne-dmsans']
+  const font: FontPair = (FONT_PAIRS[fontPairKey] as FontPair | undefined) ?? FONT_PAIRS['syne-dmsans']
 
   const overrideLayout =
     surface === 'landing'
@@ -75,17 +83,19 @@ export function resolveBrand(
     restaurant.layout_variant ??
     'cards'
 
+  if (surface === 'landing') delete safeOverrides.layout_variant
+
   return {
     surface,
     colors,
     font,
     fontPairKey,
     layoutVariant,
-    borderRadius: readCfgString(cfg, 'border_radius') ?? 'rounded',
-    hoverEffect: readCfgString(cfg, 'hover_effect') ?? 'scale',
-    animationStyle: readCfgString(cfg, 'animation_style') ?? 'fade',
-    cardStyle: readCfgString(cfg, 'card_style') ?? 'elevated',
-    name: restaurant.name ?? undefined,
+    borderRadius: pickEnum(readCfgString(cfg, 'border_radius'), ['sharp', 'rounded', 'pill'] as const, 'rounded'),
+    hoverEffect: pickEnum(readCfgString(cfg, 'hover_effect'), ['scale', 'glow', 'underline', 'color-shift', 'none'] as const, 'scale'),
+    animationStyle: pickEnum(readCfgString(cfg, 'animation_style'), ['fade', 'slide', 'none'] as const, 'fade'),
+    cardStyle: pickEnum(readCfgString(cfg, 'card_style'), ['elevated', 'flat', 'outlined', 'ghost'] as const, 'elevated'),
+    name: restaurant.name,
     logoUrl: restaurant.logo_url ?? undefined,
     overrides: safeOverrides,
   }
