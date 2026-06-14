@@ -84,6 +84,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // Build new design_config: template config + template_id metadata so UI can show "Aktuell aktiv"
   const newConfig = { ...(template.config as Record<string, unknown>), template_id: template.id, template_slug: template.slug }
 
+  // Default menu layout — only set when template config does not already specify one.
+  if (!(newConfig as Record<string, unknown>).layout_variant) {
+    ;(newConfig as Record<string, unknown>).layout_variant = 'cards'
+  }
+
   // Also mirror legacy columns for backward compat (so existing rendering paths continue to work)
   const cfg = template.config as Record<string, string | undefined>
   const updatePayload: Record<string, unknown> = {
@@ -106,6 +111,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .eq('id', restaurantId)
 
   if (updErr) return NextResponse.json({ error: 'access denied' }, { status: 500 })
+
+  // Default-Landing-Layout setzen, falls noch keiner existiert (Overrides bleiben erhalten).
+  const { data: lp } = await admin
+    .from('landing_pages')
+    .select('id, content')
+    .eq('restaurant_id', restaurantId)
+    .maybeSingle()
+  if (lp) {
+    const content = (lp.content ?? {}) as Record<string, unknown>
+    if (!content.lp_layout) {
+      content.lp_layout = 'classic-hero'
+      await admin.from('landing_pages').update({ content }).eq('id', lp.id)
+    }
+  }
 
   return NextResponse.json({ success: true, template_id: template.id, template_slug: template.slug })
 }
