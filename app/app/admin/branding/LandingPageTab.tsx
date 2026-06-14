@@ -14,6 +14,12 @@ import type { Restaurant } from '@/types/database'
 // ─── Constants ────────────────────────────────────────────────────────────────
 type LpTab = 'templates' | 'inhalt' | 'farben' | 'layout' | 'ki-chat'
 
+// Der Landing-Layout-Wähler ist vorerst ausgeblendet: die öffentliche Landing-Seite
+// (app/[slug]/info) rendert aktuell nur ein festes Hero-Layout. Sobald die 4 Layouts
+// (classic-hero/split-hero/minimal/bold-fullscreen) dort echt gebaut sind (#2/#3),
+// hier wieder auf true setzen. lpLayout bleibt unterdessen auf 'classic-hero'.
+const SHOW_LP_LAYOUT_PICKER = false
+
 const FEATURE_BADGE_OPTIONS = [
   'Vegetarisch', 'Vegan', 'Glutenfrei', 'Halal',
   'Lieferung', 'Reservierung', 'Takeaway', 'Catering',
@@ -394,7 +400,7 @@ export default function LandingPageTab({ restaurant }: Props) {
           { id: 'templates' as LpTab, icon: '⬛', label: 'Designs' },
           { id: 'inhalt'    as LpTab, icon: '✏️', label: 'Inhalt' },
           { id: 'farben'    as LpTab, icon: '🎨', label: 'Farben' },
-          { id: 'layout'    as LpTab, icon: '▦',  label: 'Layout' },
+          ...(SHOW_LP_LAYOUT_PICKER ? [{ id: 'layout' as LpTab, icon: '▦', label: 'Layout' }] : []),
           { id: 'ki-chat'   as LpTab, icon: '✦',  label: 'KI' },
         ]).map(item => (
           <button key={item.id} style={navItemStyle(activeTab === item.id)} onClick={() => setActiveTab(item.id)}>
@@ -415,6 +421,7 @@ export default function LandingPageTab({ restaurant }: Props) {
               Farben &amp; Schriftart werden automatisch aus deinem <strong>Brand</strong> (Tab „Bestellseite") übernommen — so bleiben Landing- und Bestellseite immer einheitlich. Hier legst du nur Landing-spezifische Inhalte fest (Hero, Headline, Galerie, Layout).
             </div>
 
+            {SHOW_LP_LAYOUT_PICKER && (<>
             <div style={{ ...sectionTitle, marginTop: '24px' }}>Landing Page Layout</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               {LP_LAYOUTS.map(layout => {
@@ -436,6 +443,7 @@ export default function LandingPageTab({ restaurant }: Props) {
                 )
               })}
             </div>
+            </>)}
           </div>
         )}
 
@@ -646,8 +654,8 @@ export default function LandingPageTab({ restaurant }: Props) {
           </div>
         )}
 
-        {/* ── LAYOUT TAB ── */}
-        {activeTab === 'layout' && (
+        {/* ── LAYOUT TAB ── (vorerst ausgeblendet via SHOW_LP_LAYOUT_PICKER) */}
+        {SHOW_LP_LAYOUT_PICKER && activeTab === 'layout' && (
           <div>
             <div style={sectionTitle}>Landing Page Layout</div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
