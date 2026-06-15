@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { resolveBrand } from '@/lib/resolve-brand'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface LandingPageContent {
@@ -27,35 +28,18 @@ interface RestaurantRow {
   slug: string
   description: string | null
   logo_url: string | null
+  design_config: Record<string, unknown> | null
+  primary_color: string | null
+  bg_color: string | null
+  surface_color: string | null
+  header_color: string | null
+  button_color: string | null
+  card_color: string | null
+  text_color: string | null
+  font_pair: string | null
+  layout_variant: string | null
+  design_package: string | null
 }
-
-// ─── Template themes ─────────────────────────────────────────────────────────
-const THEMES: Record<string, {
-  bg: string; text: string; accent: string; muted: string; card: string; border: string
-}> = {
-  'minimal-dark': {
-    bg: '#0a0a0a', text: '#f0f0f0', accent: '#e85d26',
-    muted: 'rgba(240,240,240,0.55)', card: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',
-  },
-  'warm-rustic': {
-    bg: '#FDF8F0', text: '#2C1810', accent: '#C75B39',
-    muted: 'rgba(44,24,16,0.55)', card: 'rgba(44,24,16,0.05)', border: 'rgba(44,24,16,0.12)',
-  },
-  'bold-modern': {
-    bg: '#0a0a0a', text: '#ffffff', accent: '#FF3D00',
-    muted: 'rgba(255,255,255,0.55)', card: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.1)',
-  },
-  'elegant-white': {
-    bg: '#FFFFFF', text: '#1a1a1a', accent: '#2C2C2C',
-    muted: 'rgba(26,26,26,0.5)', card: 'rgba(26,26,26,0.04)', border: 'rgba(26,26,26,0.1)',
-  },
-  'street-energy': {
-    bg: '#0d0d0d', text: '#ffffff', accent: '#B44AFF',
-    muted: 'rgba(255,255,255,0.55)', card: 'rgba(180,74,255,0.08)', border: 'rgba(180,74,255,0.2)',
-  },
-}
-
-const DEFAULT_THEME = THEMES['minimal-dark']
 
 // ─── Metadata ────────────────────────────────────────────────────────────────
 export async function generateMetadata({
@@ -92,7 +76,7 @@ export default async function PublicLandingPage({
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, name, slug, description, logo_url')
+    .select('id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -109,7 +93,21 @@ export default async function PublicLandingPage({
   const landingPage = lp as LandingPageRow
   const resto = restaurant as RestaurantRow
   const content: LandingPageContent = landingPage.content ?? {}
-  const theme = THEMES[landingPage.template_slug] ?? DEFAULT_THEME
+
+  const brand = resolveBrand(resto, 'landing', {
+    hero_image_url: content.hero_image_url,
+    headline: content.headline,
+    subheadline: content.subheadline,
+    lp_layout: (landingPage.content as Record<string, unknown>)?.lp_layout as string | undefined,
+  })
+  const theme = {
+    bg: brand.colors.bg,
+    text: brand.colors.text,
+    accent: brand.colors.accent,
+    muted: brand.colors.muted,
+    card: brand.colors.cardBg,
+    border: brand.colors.border,
+  }
 
   const ctaHref = content.cta_url || `/bestellen/${resto.slug}`
   const logoUrl = content.logo_url || resto.logo_url
@@ -120,7 +118,7 @@ export default async function PublicLandingPage({
       minHeight: '100vh',
       background: theme.bg,
       color: theme.text,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+      fontFamily: `${brand.font.body}, system-ui, sans-serif`,
     }}>
       <style>{`
         #lp-root *, #lp-root *::before, #lp-root *::after { box-sizing: border-box; }
@@ -175,6 +173,7 @@ export default async function PublicLandingPage({
               letterSpacing: '-0.02em',
               marginBottom: '16px',
               textShadow: content.hero_image_url ? '0 2px 8px rgba(0,0,0,0.6)' : 'none',
+              fontFamily: `${brand.font.heading}, system-ui, sans-serif`,
             }}>
               {headline}
             </h1>

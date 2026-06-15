@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { buildColorsFromRestaurant, readCfgString } from '@/lib/color-utils'
-import { getDesignPackage } from '@/lib/design-packages'
-import { FONT_PAIRS } from '@/lib/font-pairs'
+import { resolveBrand } from '@/lib/resolve-brand'
 import type { MenuItem, MenuCategory, Order, Restaurant } from '@/types/database'
 import {
   ShoppingCart, Plus, Minus, X, ArrowLeft,
@@ -279,14 +277,11 @@ export default function OrderV2() {
     }
   }
 
-  // Resolve colors from restaurant branding
-  const C = restaurant ? buildColorsFromRestaurant(restaurant) : buildColorsFromRestaurant({})
+  // Resolve colors and font from restaurant branding
+  const brand = resolveBrand(restaurant ?? {}, 'order')
+  const C = brand.colors
+  const fontPair = brand.font
   const accentGradient = `linear-gradient(135deg, ${C.accent} 0%, ${C.buttonBg !== C.accent ? C.buttonBg : C.accent}ee 100%)`
-
-  // Font pair
-  const cfg = restaurant?.design_config ?? {}
-  const fontPairKey = readCfgString(cfg, 'font_pair') ?? restaurant?.font_pair ?? getDesignPackage(restaurant?.design_package).fontPair
-  const fontPair = (FONT_PAIRS[fontPairKey ?? ''] ?? FONT_PAIRS['syne-dmsans'])
 
   const iconBtnStyle: React.CSSProperties = {
     width: '32px', height: '32px', borderRadius: '10px',
