@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { supabaseGuest as supabase } from '@/lib/supabase'
-import { darken, buildColors, buildColorsFromRestaurant } from '@/lib/color-utils'
+import { darken, isLightColor, buildColors, buildColorsFromRestaurant } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
 import { MenuItemCard } from '@/components/menu/MenuItemCard'
@@ -1249,30 +1249,29 @@ export default function BestellenV1() {
   const showFloorPlan = !!(restaurant?.floor_plan_url && placedTables.length > 0 && resDate && resTime && resGuests)
 
   // Menu view (light mode for home ordering)
+  // Brand-Variablen werden INLINE am Wurzel-Div gesetzt (höchste CSS-Spezifität).
+  // Vorher per <style>{:root,.dark{…}}: das verlor in Dark-Mode gegen den globalen
+  // Default `.theme-v1.dark { --accent:#00C853 }` (höhere Spezifität) → Menü wurde grün.
+  // Inline-Custom-Properties vererben an alle Kinder (inkl. MenuItemCard via var(--accent))
+  // und kommen aus C (= design_config), damit die Bestellseite zur Landing/Brand passt.
+  const brandFp = restaurant
+    ? (FONT_PAIRS[restaurant.font_pair ?? getDesignPackage(restaurant.design_package).fontPair] ?? FONT_PAIRS['syne-dmsans'])
+    : FONT_PAIRS['syne-dmsans']
+  const brandVars = (restaurant ? {
+    '--accent': C.accent,
+    '--accent-hover': darken(C.accent, 15),
+    '--accent-subtle': `${C.accent}18`,
+    '--accent-text': isLightColor(C.accent) ? '#111111' : '#ffffff',
+    '--border-accent': `${C.accent}33`,
+    '--header-bg': C.headerBg,
+    '--btn-bg': C.buttonBg,
+    '--font-heading': brandFp.heading,
+    '--font-body': brandFp.body,
+  } : {}) as React.CSSProperties
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: pageTab === 'order' ? '100px' : '0', width: '100%', overflowX: 'hidden' }}>
-      {/* Per-restaurant brand colors + fonts */}
-      {restaurant && (() => {
-        const pkg = getDesignPackage(restaurant.design_package)
-        const accent = restaurant.primary_color ?? pkg.preview.primaryColor
-        const header = restaurant.header_color ?? pkg.preview.headerColor
-        const btn = restaurant.button_color ?? pkg.preview.buttonColor
-        const fp = FONT_PAIRS[restaurant.font_pair ?? pkg.fontPair] ?? FONT_PAIRS['syne-dmsans']
-        return (
-          <style>{`
-            :root, .dark {
-              --accent: ${accent};
-              --accent-hover: ${darken(accent, 15)};
-              --accent-subtle: ${accent}18;
-              --border-accent: ${accent}33;
-              --header-bg: ${header};
-              --btn-bg: ${btn};
-              --font-heading: ${fp.heading};
-              --font-body: ${fp.body};
-            }
-          `}</style>
-        )
-      })()}
+    <div style={{ minHeight: '100vh', paddingBottom: pageTab === 'order' ? '100px' : '0', width: '100%', overflowX: 'hidden', ...brandVars, background: 'var(--bg)' }}>
+      {/* Brand-Variablen jetzt inline oben am Wurzel-Div (siehe Kommentar) */}
       {/* Header */}
       <div style={{ background: 'var(--header-bg)', padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '12px' }}>
