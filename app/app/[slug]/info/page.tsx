@@ -3,6 +3,12 @@ import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveBrand } from '@/lib/resolve-brand'
 
+// Immer live rendern: die Seite liest den Brand aus design_config, der sich bei
+// jedem Template-Wechsel ändert. Ohne dies cached Next.js eine veraltete Version
+// (Symptom: Landing-Farbe „eingefroren", ändert sich nicht beim Template-Wechsel).
+// Gleiches Muster wie die Geschwister-Seite app/bestellen/[slug]/page.tsx.
+export const dynamic = 'force-dynamic'
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface LandingPageContent {
   logo_url?: string
