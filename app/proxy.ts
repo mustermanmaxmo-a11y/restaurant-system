@@ -12,14 +12,14 @@ export async function proxy(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      const loginUrl = new URL('/platform-login', request.url)
+      const loginUrl = new URL('/team-login', request.url)
       loginUrl.searchParams.set('next', pathname)
       return NextResponse.redirect(loginUrl)
     }
 
-    const { data: isOwner } = await supabase.rpc('is_platform_owner')
-    if (isOwner !== true) {
-      return NextResponse.redirect(new URL('/platform-login', request.url))
+    const { data: role } = await supabase.rpc('get_platform_role')
+    if (!role) {
+      return NextResponse.redirect(new URL('/team-login', request.url))
     }
 
     return response
