@@ -26,10 +26,13 @@ export default function PlatformLoginPage() {
       return
     }
 
-    // Prüfen ob der Account Platform-Zugang hat
-    const { data: isOwner } = await supabase.rpc('is_platform_owner')
+    // Prüfen ob der Account Platform-Zugang hat (Owner oder Team-Mitglied)
+    const [{ data: isOwner }, { data: role }] = await Promise.all([
+      supabase.rpc('is_platform_owner'),
+      supabase.rpc('get_platform_role'),
+    ])
 
-    if (isOwner !== true) {
+    if (!isOwner && !role) {
       await supabase.auth.signOut()
       setError('Kein Zugang — dein Account ist nicht für den Platform-Bereich freigeschalten.')
       setLoading(false)
