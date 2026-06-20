@@ -53,14 +53,52 @@ export default async function PlatformRestaurants() {
     query = query.in('id', allowedRestaurantIds.length > 0 ? allowedRestaurantIds : ['00000000-0000-0000-0000-000000000000'])
   }
 
-  const [{ data: restaurants }, { data: usersRes }] = await Promise.all([
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const [{ data: restaurants }, { data: usersRes }, { data: recentOrderData }] = await Promise.all([
     query,
     admin.auth.admin.listUsers({ perPage: 1000 }),
+    admin.from('orders')
+      .select('restaurant_id, created_at')
+      .gte('created_at', thirtyDaysAgo)
+      .neq('status', 'cancelled'),
   ])
 
   const emailByUserId: Record<string, string> = {}
   for (const u of usersRes?.users ?? []) {
     if (u.id) emailByUserId[u.id] = u.email ?? '—'
+  }
+
+  // Health score calculation
+  const orderCount30: Record<string, number> = {}
+  const lastOrderAt: Record<string, number> = {}
+  for (const o of recentOrderData ?? []) {
+    orderCount30[o.restaurant_id] = (orderCount30[o.restaurant_id] ?? 0) + 1
+    const t = new Date(o.created_at).getTime()
+    if (!lastOrderAt[o.restaurant_id] || t > lastOrderAt[o.restaurant_id]) {
+      lastOrderAt[o.restaurant_id] = t
+    }
+  }
+
+  function healthScore(id: string): number {
+    const cnt = orderCount30[id] ?? 0
+    const last = lastOrderAt[id]
+    let score = 0
+    if (last) {
+      const daysAgo = (Date.now() - last) / (24 * 60 * 60 * 1000)
+      if (daysAgo <= 1) score += 50
+      else if (daysAgo <= 3) score += 40
+      else if (daysAgo <= 7) score += 30
+      else if (daysAgo <= 14) score += 15
+      else score += 5
+    }
+    score += Math.min(50, Math.round(cnt * 2.5))
+    return Math.min(100, score)
+  }
+
+  function healthColor(score: number) {
+    if (score >= 70) return { bg: '#065f46', fg: '#6ee7b7' }
+    if (score >= 35) return { bg: '#78350f', fg: '#fcd34d' }
+    return { bg: '#450a0a', fg: '#fca5a5' }
   }
 
   const rows: Row[] = (restaurants ?? []).map(r => ({
@@ -90,6 +128,7 @@ export default async function PlatformRestaurants() {
                 <Th>Owner E-Mail</Th>
                 <Th>Plan</Th>
                 <Th>Status</Th>
+                <Th>Health</Th>
                 <Th>Trial-Ende</Th>
                 <Th>Angelegt</Th>
                 <Th>Stripe</Th>
@@ -128,6 +167,17 @@ export default async function PlatformRestaurants() {
                         color: r.active ? '#6ee7b7' : '#fca5a5',
                         fontSize: '0.7rem', fontWeight: 700,
                       }}>{r.active ? 'aktiv' : 'inaktiv'}</span>
+                    </Td>
+                    <Td>
+                      {(() => {
+                        const score = healthScore(r.id)
+                        const { bg, fg } = healthColor(score)
+                        return (
+                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '10px', background: bg, color: fg, fontSize: '0.7rem', fontWeight: 700 }}>
+                            {score}
+                          </span>
+                        )
+                      })()}
                     </Td>
                     <Td>{formatDate(r.trial_ends_at)}</Td>
                     <Td>{formatDate(r.created_at)}</Td>

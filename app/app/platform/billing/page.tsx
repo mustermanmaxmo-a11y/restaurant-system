@@ -1,17 +1,18 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
-import { CreditCard, Clock, XCircle, Euro } from 'lucide-react'
+import { CreditCard, Clock, XCircle, Euro, TrendingUp } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 const PLAN_MRR: Record<string, number> = {
   starter: 29,
-  pro: 59,
+  pro: 79,
+  enterprise: 199,
   trial: 0,
   expired: 0,
-  enterprise: 0,
 }
 
 const PLAN_LABELS: Record<string, string> = {
@@ -56,6 +57,27 @@ export default async function PlatformBilling() {
   const mrr = activePaid.reduce((sum, r) => sum + (PLAN_MRR[r.plan] ?? 0), 0)
   const arr = mrr * 12
 
+  // Upgrade candidates: trials with recent order activity
+  const thirtyDaysAgo = new Date(now - 30 * DAY).toISOString()
+  const { data: trialOrders } = await admin
+    .from('orders')
+    .select('restaurant_id')
+    .gte('created_at', thirtyDaysAgo)
+    .neq('status', 'cancelled')
+
+  const trialIds = new Set(trials.map(r => r.id))
+  const orderCountByRestId: Record<string, number> = {}
+  for (const o of trialOrders ?? []) {
+    if (trialIds.has(o.restaurant_id)) {
+      orderCountByRestId[o.restaurant_id] = (orderCountByRestId[o.restaurant_id] ?? 0) + 1
+    }
+  }
+  const upgradeCandidates = trials
+    .filter(r => (orderCountByRestId[r.id] ?? 0) >= 5)
+    .sort((a, b) => (orderCountByRestId[b.id] ?? 0) - (orderCountByRestId[a.id] ?? 0))
+
+  const mrrPotential = upgradeCandidates.length * PLAN_MRR['starter']
+
   return (
     <div style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto' }}>
       <div style={{ marginBottom: '24px' }}>
@@ -63,12 +85,36 @@ export default async function PlatformBilling() {
         <p style={{ color: '#888', fontSize: '0.85rem' }}>Abos, Trials und kürzlich abgelaufene Accounts — Daten aus Stripe-Webhook-Sync.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-        <KPI icon={Euro} label="MRR" value={`${mrr} €`} accent />
-        <KPI icon={Euro} label="ARR (projiziert)" value={`${arr} €`} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+        <KPI icon={Euro} label="MRR" value={`€${mrr}`} accent />
+        <KPI icon={Euro} label="ARR (projiziert)" value={`€${arr}`} />
         <KPI icon={CreditCard} label="Aktive Abos" value={String(activePaid.length)} />
         <KPI icon={Clock} label="Laufende Trials" value={String(trials.length)} />
+        <KPI icon={TrendingUp} label="MRR-Potenzial (Trials)" value={`€${mrrPotential}`} />
       </div>
+
+      {upgradeCandidates.length > 0 && (
+        <Section icon={TrendingUp} title="Upgrade-Kandidaten — Trials bereit zur Konvertierung" count={upgradeCandidates.length} color="#6366f1">
+          <Table headers={['Restaurant', 'Trial-Ende', 'Bestellungen (30d)', 'MRR-Potenzial', '']}>
+            {upgradeCandidates.map(r => (
+              <tr key={r.id} style={{ borderTop: '1px solid #2a2a3e' }}>
+                <Td>
+                  <div style={{ color: '#fff', fontWeight: 600 }}>{r.name}</div>
+                  <div style={{ color: '#666', fontSize: '0.7rem' }}>/{r.slug}</div>
+                </Td>
+                <Td>{formatDate(r.trial_ends_at)}</Td>
+                <Td><Badge bg="#1e1b4b" fg="#a5b4fc">{orderCountByRestId[r.id] ?? 0} Bestellungen</Badge></Td>
+                <Td>{PLAN_MRR['starter']} €/mo (Starter)</Td>
+                <Td>
+                  <Link href={`/platform/restaurants/${r.id}`} style={{ color: '#6366f1', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}>
+                    Plan setzen →
+                  </Link>
+                </Td>
+              </tr>
+            ))}
+          </Table>
+        </Section>
+      )}
 
       <Section icon={CreditCard} title="Aktive zahlende Abos" count={activePaid.length} color="#10b981">
         {activePaid.length === 0 ? (

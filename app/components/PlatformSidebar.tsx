@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen, ToggleLeft, Search } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen, ToggleLeft, Search, BarChart2 } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -19,6 +19,7 @@ const ACCENT = '#ef4444'
 function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCount: number, designRequestCount: number): NavItem[] {
   const all: NavItem[] = [
     { icon: LayoutDashboard, label: 'Überblick',       href: '/platform',                    roles: ['owner', 'co_founder', 'developer'] },
+    { icon: BarChart2,       label: 'Analytics',       href: '/platform/analytics',           roles: ['owner', 'co_founder', 'developer'] },
     { icon: Building2,       label: 'Restaurants',     href: '/platform/restaurants',         roles: ['owner', 'co_founder', 'developer', 'support'] },
     { icon: Search,          label: 'Suche',           href: '/platform/search',              roles: ['owner', 'co_founder', 'developer', 'support'] },
     { icon: CreditCard,      label: 'Billing',         href: '/platform/billing',             roles: ['owner', 'co_founder', 'billing'] },
