@@ -20,13 +20,18 @@ export default async function PlatformAnalytics() {
 
   const now = Date.now()
   const d60 = new Date(now - 60 * 24 * 60 * 60 * 1000).toISOString()
+  const d365 = new Date(now - 365 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [{ data: allOrders }, { data: restaurants }] = await Promise.all([
+  const [{ data: allOrders }, { data: restaurants }, { data: historicOrders }] = await Promise.all([
     admin.from('orders')
       .select('id, restaurant_id, total, created_at, status')
       .gte('created_at', d60),
     admin.from('restaurants')
       .select('id, name, slug, plan, active, created_at'),
+    admin.from('orders')
+      .select('total, created_at, status')
+      .gte('created_at', d365)
+      .neq('status', 'cancelled'),
   ])
 
   const orders = allOrders ?? []
@@ -112,6 +117,40 @@ export default async function PlatformAnalytics() {
   const weekdayOrders: number[] = new Array(7).fill(0)
   for (const o of paid30) weekdayOrders[new Date(o.created_at).getDay()]++
   const maxWeekday = Math.max(...weekdayOrders, 1)
+
+  // Monthly revenue trend (last 12 months)
+  const monthlyRev: Record<string, number> = {}
+  const monthlyOrders: Record<string, number> = {}
+  const months12: string[] = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(1)
+    d.setMonth(d.getMonth() - i)
+    const key = d.toISOString().slice(0, 7)
+    months12.push(key)
+    monthlyRev[key] = 0
+    monthlyOrders[key] = 0
+  }
+  for (const o of historicOrders ?? []) {
+    const key = new Date(o.created_at).toISOString().slice(0, 7)
+    if (monthlyRev[key] !== undefined) {
+      monthlyRev[key] += Number(o.total) || 0
+      monthlyOrders[key]++
+    }
+  }
+  const maxMonthlyRev = Math.max(...Object.values(monthlyRev), 1)
+
+  // Cohort health: restaurants grouped by creation month, current status
+  const cohortMap: Record<string, { total: number; active: number; expired: number; trial: number }> = {}
+  for (const r of restList) {
+    const key = new Date(r.created_at).toISOString().slice(0, 7)
+    if (!cohortMap[key]) cohortMap[key] = { total: 0, active: 0, expired: 0, trial: 0 }
+    cohortMap[key].total++
+    if (r.plan === 'expired') cohortMap[key].expired++
+    else if (r.plan === 'trial') cohortMap[key].trial++
+    else cohortMap[key].active++
+  }
+  const cohortMonths = Object.keys(cohortMap).sort().slice(-9)
 
   // Churn risk: active paid, zero orders last 14d
   const activeWith14d = new Set(orders14.filter(o => o.status !== 'cancelled').map(o => o.restaurant_id))
@@ -318,6 +357,113 @@ export default async function PlatformAnalytics() {
           </div>
         </div>
       )}
+
+      {/* Monthly revenue trend */}
+      <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '18px' }}>Monatlicher Umsatz-Trend (12 Monate)</h2>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '120px', paddingBottom: '24px' }}>
+          {months12.map((month, i) => {
+            const rev = monthlyRev[month] ?? 0
+            const cnt = monthlyOrders[month] ?? 0
+            const pct = Math.max(rev > 0 ? 4 : 0, (rev / maxMonthlyRev) * 100)
+            const isCurrentMonth = month === new Date().toISOString().slice(0, 7)
+            const label = new Date(month + '-15').toLocaleDateString('de-DE', { month: 'short', year: '2-digit' })
+            return (
+              <div
+                key={month}
+                title={`${label}: €${rev.toFixed(2)} · ${cnt} Bestellungen`}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: '3px', cursor: 'default' }}
+              >
+                {rev > 0 && <span style={{ color: '#555', fontSize: '0.55rem' }}>{rev >= 1000 ? `€${(rev/1000).toFixed(1)}k` : `€${Math.round(rev)}`}</span>}
+                <div style={{
+                  width: '100%', height: `${pct}%`, minHeight: rev > 0 ? '4px' : 0,
+                  background: isCurrentMonth ? '#ef4444' : i === months12.length - 2 ? '#f59e0b' : '#6366f1',
+                  borderRadius: '3px 3px 0 0',
+                }} />
+                <span style={{ fontSize: '0.55rem', color: isCurrentMonth ? '#ef4444' : '#444', position: 'absolute', marginTop: '100px', whiteSpace: 'nowrap' }}>{label}</span>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: '20px', marginTop: '8px', borderTop: '1px solid #2a2a3e', paddingTop: '12px' }}>
+          {(['last3', 'prev3'] as const).map((period, pi) => {
+            const slice = pi === 0 ? months12.slice(-3) : months12.slice(-6, -3)
+            const total = slice.reduce((s, m) => s + (monthlyRev[m] ?? 0), 0)
+            const label = pi === 0 ? 'Letzte 3 Monate' : 'Vorige 3 Monate'
+            return (
+              <div key={period}>
+                <div style={{ color: '#555', fontSize: '0.68rem' }}>{label}</div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>€{total.toFixed(2)}</div>
+              </div>
+            )
+          })}
+          {(() => {
+            const last3 = months12.slice(-3).reduce((s, m) => s + (monthlyRev[m] ?? 0), 0)
+            const prev3 = months12.slice(-6, -3).reduce((s, m) => s + (monthlyRev[m] ?? 0), 0)
+            const growth = prev3 > 0 ? ((last3 - prev3) / prev3 * 100) : null
+            return growth !== null ? (
+              <div>
+                <div style={{ color: '#555', fontSize: '0.68rem' }}>Wachstum</div>
+                <div style={{ color: growth >= 0 ? '#10b981' : '#ef4444', fontWeight: 700, fontSize: '0.9rem' }}>
+                  {growth >= 0 ? '+' : ''}{growth.toFixed(1)}%
+                </div>
+              </div>
+            ) : null
+          })()}
+        </div>
+      </div>
+
+      {/* Cohort health */}
+      <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', padding: '20px', marginBottom: '20px', overflowX: 'auto' }}>
+        <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>Kohorten-Analyse — Status nach Registrierungsmonat</h2>
+        <p style={{ color: '#666', fontSize: '0.75rem', marginBottom: '16px' }}>Wie viele Restaurants aus einem Anmeldemonat sind heute noch aktiv (bezahlter Plan)?</p>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '500px' }}>
+          <thead>
+            <tr style={{ background: '#1f1f30' }}>
+              <th style={{ padding: '10px 12px', color: '#888', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'left' }}>Kohorte</th>
+              <th style={{ padding: '10px 12px', color: '#888', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'center' }}>Gesamt</th>
+              <th style={{ padding: '10px 12px', color: '#10b981', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'center' }}>Aktiv (paid)</th>
+              <th style={{ padding: '10px 12px', color: '#3b82f6', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'center' }}>Trial</th>
+              <th style={{ padding: '10px 12px', color: '#ef4444', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'center' }}>Abgelaufen</th>
+              <th style={{ padding: '10px 12px', color: '#888', fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', textAlign: 'center' }}>Retention</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cohortMonths.length === 0 ? (
+              <tr><td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: '#555' }}>Keine Daten.</td></tr>
+            ) : cohortMonths.map(month => {
+              const c = cohortMap[month]
+              const label = new Date(month + '-15').toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+              const retentionPct = c.total > 0 ? Math.round((c.active / c.total) * 100) : 0
+              return (
+                <tr key={month} style={{ borderTop: '1px solid #2a2a3e' }}>
+                  <td style={{ padding: '10px 12px', color: '#ccc', fontWeight: 600 }}>{label}</td>
+                  <td style={{ padding: '10px 12px', color: '#fff', textAlign: 'center', fontWeight: 700 }}>{c.total}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ color: '#10b981', fontWeight: 700 }}>{c.active}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ color: '#93c5fd' }}>{c.trial}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ color: c.expired > 0 ? '#fca5a5' : '#555' }}>{c.expired}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                      <div style={{ width: '60px', height: '5px', background: '#1a1a2e', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${retentionPct}%`, background: retentionPct >= 50 ? '#10b981' : retentionPct >= 25 ? '#f59e0b' : '#ef4444' }} />
+                      </div>
+                      <span style={{ color: retentionPct >= 50 ? '#10b981' : retentionPct >= 25 ? '#f59e0b' : '#ef4444', fontWeight: 700, fontSize: '0.78rem', minWidth: '32px' }}>
+                        {retentionPct}%
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {/* Churn risk */}
       <div style={{ background: '#242438', border: `1px solid ${churnRisk.length > 0 ? 'rgba(239,68,68,0.3)' : '#2a2a3e'}`, borderRadius: '14px', padding: '20px' }}>

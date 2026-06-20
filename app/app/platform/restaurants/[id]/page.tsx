@@ -4,6 +4,7 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { PlanManager } from './PlanManager'
 import { QuickActions } from './QuickActions'
+import { Notes } from './Notes'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ const PLAN_COLORS: Record<string, { bg: string; fg: string }> = {
 }
 
 export default async function RestaurantDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { role } = await requirePlatformAccess()
+  const { role, user: platformUser } = await requirePlatformAccess()
   const { id } = await params
   const admin = createSupabaseAdmin()
 
@@ -26,6 +27,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
     { data: tables },
     { data: recentOrders },
     { data: usersRes },
+    { data: platformNotes },
   ] = await Promise.all([
     admin.from('restaurants').select(
       'id, name, slug, plan, active, trial_ends_at, created_at, owner_id, logo_url, contact_email, contact_phone, contact_address, description, restaurant_category, seating_capacity, online_payments_enabled, stripe_customer_id, stripe_subscription_id'
@@ -34,6 +36,12 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
     admin.from('tables').select('id', { count: 'exact', head: true }).eq('restaurant_id', id),
     admin.from('orders').select('id, total_amount, created_at, status').eq('restaurant_id', id).order('created_at', { ascending: false }).limit(5),
     admin.auth.admin.listUsers({ perPage: 1000 }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any).from('platform_notes')
+      .select('id, author_email, content, pinned, created_at')
+      .eq('restaurant_id', id)
+      .order('pinned', { ascending: false })
+      .order('created_at', { ascending: false }),
   ])
 
   if (!restaurant) notFound()
@@ -175,6 +183,19 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
             </div>
           ))}
         </Section>
+      </div>
+
+      {/* Notes */}
+      <div style={{ marginTop: '20px', background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ color: '#888', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>
+          Team-Notizen · {(platformNotes as unknown as Array<unknown>)?.length ?? 0}
+        </div>
+        <Notes
+          restaurantId={restaurant.id}
+          initialNotes={(platformNotes as unknown as Array<{ id: string; author_email: string; content: string; pinned: boolean; created_at: string }>) ?? []}
+          currentUserEmail={platformUser.email ?? ''}
+          canDeleteAll={role === 'owner' || role === 'co_founder'}
+        />
       </div>
     </div>
   )
