@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen, ToggleLeft } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -25,6 +25,7 @@ function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCoun
     { icon: Users,           label: 'Team',            href: '/platform/team',                roles: ['owner'], badge: teamPendingCount },
     { icon: Palette,         label: 'Design-Anfragen', href: '/platform/design-requests',     roles: ['owner', 'co_founder'], badge: designRequestCount },
     { icon: Layers,          label: 'Templates',       href: '/platform/templates',            roles: ['owner', 'co_founder'] },
+    { icon: ToggleLeft,      label: 'Feature Flags',   href: '/platform/feature-flags',        roles: ['owner', 'co_founder', 'developer'] },
     { icon: BookOpen,        label: 'KI-Wissen',       href: '/platform/knowledge',           roles: ['owner', 'co_founder'] },
     { icon: Settings,        label: 'Einstellungen',   href: '/platform/settings',            roles: ['owner', 'co_founder', 'developer', 'billing', 'support'] },
   ]
