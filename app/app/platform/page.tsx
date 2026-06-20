@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic'
 
 const PLAN_MRR: Record<string, number> = {
   starter: 29,
-  pro: 59,
+  pro: 79,
+  enterprise: 199,
   trial: 0,
   expired: 0,
-  enterprise: 0,
 }
 
 const PLAN_LABELS: Record<string, string> = {
@@ -36,12 +36,14 @@ export default async function PlatformDashboard() {
   const now = Date.now()
 
   const total = list.length
-  const activePaid = list.filter(r => r.active && (r.plan === 'starter' || r.plan === 'pro')).length
+  const activePaid = list.filter(r => r.active && (r.plan === 'starter' || r.plan === 'pro' || r.plan === 'enterprise')).length
   const activeTrials = list.filter(r => r.plan === 'trial' && r.trial_ends_at && new Date(r.trial_ends_at).getTime() > now).length
   const expired = list.filter(r => r.plan === 'expired').length
   const mrr = list
     .filter(r => r.active)
     .reduce((sum, r) => sum + (PLAN_MRR[r.plan] ?? 0), 0)
+  const arr = mrr * 12
+  const conversionRate = activeTrials > 0 ? Math.round((activePaid / (activePaid + activeTrials)) * 100) : (activePaid > 0 ? 100 : 0)
 
   const planBreakdown: Record<string, number> = {}
   list.forEach(r => {
@@ -90,11 +92,13 @@ export default async function PlatformDashboard() {
         <p style={{ color: '#888', fontSize: '0.85rem' }}>Platform-weite Kennzahlen über alle Restaurants.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
         <KPI icon={Building2} label="Restaurants gesamt" value={String(total)} accent />
-        <KPI icon={CreditCard} label="Aktive zahlende Abos" value={String(activePaid)} />
+        <KPI icon={CreditCard} label="Aktive Abos" value={String(activePaid)} />
         <KPI icon={Clock} label="Laufende Trials" value={String(activeTrials)} />
-        <KPI icon={Euro} label="MRR" value={`${mrr} €`} />
+        <KPI icon={Euro} label="MRR" value={`€${mrr}`} />
+        <KPI icon={Euro} label="ARR (est.)" value={`€${arr}`} />
+        <KPI icon={ShoppingBag} label="Trial→Paid" value={`${conversionRate}%`} />
       </div>
 
       {/* Alerts */}

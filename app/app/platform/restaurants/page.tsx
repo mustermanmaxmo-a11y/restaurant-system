@@ -4,6 +4,7 @@ import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
 import CreateRestaurantModal from '@/components/platform/CreateRestaurantModal'
 import { PaymentToggle } from '@/components/platform/PaymentToggle'
+import { RestaurantExport } from '@/components/platform/RestaurantExport'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,7 +75,10 @@ export default async function PlatformRestaurants() {
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>Restaurants</h1>
           <p style={{ color: '#888', fontSize: '0.85rem' }}>{rows.length} insgesamt · sortiert nach Anmeldedatum</p>
         </div>
-        <CreateRestaurantModal role={role} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <RestaurantExport rows={rows.map(r => ({ id: r.id, name: r.name, slug: r.slug, plan: r.plan, active: r.active, trial_ends_at: r.trial_ends_at, created_at: r.created_at, owner_email: r.owner_email, stripe_subscription_id: r.stripe_subscription_id }))} />
+          <CreateRestaurantModal role={role} />
+        </div>
       </div>
 
       <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden' }}>

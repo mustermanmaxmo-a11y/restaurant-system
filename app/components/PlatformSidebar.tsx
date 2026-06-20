@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen, ToggleLeft } from 'lucide-react'
+import { LayoutDashboard, Building2, CreditCard, FileText, Users, LogOut, Menu, X, Shield, Palette, Settings, Layers, BookOpen, ToggleLeft, Search } from 'lucide-react'
 import type { PlatformRole } from '@/lib/platform-auth'
 
 type NavItem = {
@@ -20,6 +20,7 @@ function buildNav(role: PlatformRole, legalPendingCount: number, teamPendingCoun
   const all: NavItem[] = [
     { icon: LayoutDashboard, label: 'Überblick',       href: '/platform',                    roles: ['owner', 'co_founder', 'developer'] },
     { icon: Building2,       label: 'Restaurants',     href: '/platform/restaurants',         roles: ['owner', 'co_founder', 'developer', 'support'] },
+    { icon: Search,          label: 'Suche',           href: '/platform/search',              roles: ['owner', 'co_founder', 'developer', 'support'] },
     { icon: CreditCard,      label: 'Billing',         href: '/platform/billing',             roles: ['owner', 'co_founder', 'billing'] },
     { icon: FileText,        label: 'Rechtstexte',     href: '/platform/legal',               roles: ['owner', 'co_founder'], badge: legalPendingCount },
     { icon: Users,           label: 'Team',            href: '/platform/team',                roles: ['owner'], badge: teamPendingCount },

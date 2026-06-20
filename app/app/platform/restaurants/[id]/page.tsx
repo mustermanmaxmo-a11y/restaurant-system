@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { PlanManager } from './PlanManager'
+import { QuickActions } from './QuickActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -99,6 +100,8 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
           </span>
         </div>
       </div>
+
+      <QuickActions slug={restaurant.slug} ownerEmail={ownerEmail} restaurantName={restaurant.name} />
 
       {isExpiringSoon && (
         <div style={{ background: '#78350f22', border: '1px solid #92400e66', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', color: '#fcd34d', fontSize: '0.82rem', fontWeight: 600 }}>
