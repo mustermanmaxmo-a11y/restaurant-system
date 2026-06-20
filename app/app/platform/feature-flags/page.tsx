@@ -25,10 +25,7 @@ export default async function FeatureFlagsPage() {
   const admin = createSupabaseAdmin()
   const { data: raw } = await admin
     .from('restaurants')
-    .select([
-      'id', 'name', 'slug',
-      ...FLAG_KEYS,
-    ].join(', '))
+    .select('id, name, slug, auto_translate_enabled, email_marketing_enabled, weekly_report_email, prep_show_in_kds, prep_push_enabled, benchmark_opt_in, crm_rule_inactive, crm_rule_almost_goal, crm_rule_welcome, referral_enabled')
     .order('name')
 
   const restaurants = (raw ?? []).map(r => ({
