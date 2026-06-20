@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
@@ -104,8 +105,10 @@ export default async function PlatformRestaurants() {
                 return (
                   <tr key={r.id} style={{ borderTop: '1px solid #2a2a3e' }}>
                     <Td>
-                      <div style={{ color: '#fff', fontWeight: 600 }}>{r.name}</div>
-                      <div style={{ color: '#666', fontSize: '0.7rem' }}>/{r.slug}</div>
+                      <Link href={`/platform/restaurants/${r.id}`} style={{ textDecoration: 'none' }}>
+                        <div style={{ color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{r.name}</div>
+                        <div style={{ color: '#666', fontSize: '0.7rem' }}>/{r.slug}</div>
+                      </Link>
                     </Td>
                     <Td mono>{r.owner_email}</Td>
                     <Td>
