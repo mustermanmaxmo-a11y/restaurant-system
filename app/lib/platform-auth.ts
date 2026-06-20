@@ -7,7 +7,7 @@ export type PlatformRole = 'owner' | 'co_founder' | 'developer' | 'billing' | 's
 export async function requirePlatformOwner() {
   const supabase = await createSupabaseServerSSR()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/platform-login?next=/platform')
+  if (!user) redirect('/team-login?next=/platform')
 
   const { data, error } = await supabase.rpc('is_platform_owner')
   if (error || data !== true) redirect('/')
@@ -18,14 +18,14 @@ export async function requirePlatformOwner() {
 export async function requirePlatformAccess(): Promise<{ user: User; role: PlatformRole }> {
   const supabase = await createSupabaseServerSSR()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/platform-login?next=/platform')
+  if (!user) redirect('/team-login?next=/platform')
 
   const [{ data: role }, { data: isOwner }] = await Promise.all([
     supabase.rpc('get_platform_role'),
     supabase.rpc('is_platform_owner'),
   ])
 
-  if (!role && !isOwner) redirect('/platform-login')
+  if (!role && !isOwner) redirect('/team-login')
 
   return { user, role: (role ?? 'owner') as PlatformRole }
 }

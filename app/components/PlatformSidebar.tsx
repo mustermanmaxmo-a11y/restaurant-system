@@ -180,7 +180,7 @@ export function PlatformSidebar({
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push(role === 'owner' ? '/platform-login' : '/team-login')
+    router.push('/team-login')
   }
 
   return (
