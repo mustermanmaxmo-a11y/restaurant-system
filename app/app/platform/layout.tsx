@@ -29,7 +29,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#1a1a2e', color: '#e5e7eb' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#08080f', color: '#e8e8f0' }}>
       <PlatformSidebar
         userEmail={user?.email ?? '—'}
         role={role}

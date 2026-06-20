@@ -34,7 +34,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
     ).eq('id', id).single(),
     admin.from('menu_items').select('id', { count: 'exact', head: true }).eq('restaurant_id', id),
     admin.from('tables').select('id', { count: 'exact', head: true }).eq('restaurant_id', id),
-    admin.from('orders').select('id, total_amount, created_at, status').eq('restaurant_id', id).order('created_at', { ascending: false }).limit(5),
+    admin.from('orders').select('id, total, created_at, status').eq('restaurant_id', id).order('created_at', { ascending: false }).limit(5),
     admin.auth.admin.listUsers({ perPage: 1000 }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any).from('platform_notes')
@@ -56,13 +56,13 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   const { data: statsOrders } = await admin
     .from('orders')
-    .select('total_amount')
+    .select('total')
     .eq('restaurant_id', id)
     .gte('created_at', thirtyDaysAgo)
     .neq('status', 'cancelled')
 
   const orderCount30d = statsOrders?.length ?? 0
-  const revenue30d = statsOrders?.reduce((s, o) => s + (Number(o.total_amount) || 0), 0) ?? 0
+  const revenue30d = statsOrders?.reduce((s, o) => s + (Number(o.total) || 0), 0) ?? 0
 
   const menuCount = (menuItems as unknown as { count: number } | null)?.count ?? 0
   const tableCount = (tables as unknown as { count: number } | null)?.count ?? 0
@@ -177,7 +177,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
                 <div style={{ color: '#555', fontSize: '0.7rem' }}>{new Date(o.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem' }}>€{Number(o.total_amount).toFixed(2)}</div>
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem' }}>€{Number(o.total).toFixed(2)}</div>
                 <StatusBadge status={o.status} />
               </div>
             </div>
