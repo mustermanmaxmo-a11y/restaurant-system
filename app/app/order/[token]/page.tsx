@@ -1,9 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
-import { resolveDesignVersion } from '@/lib/design-version'
-import { DesignVersionProvider } from '@/components/providers/design-version-provider'
 import OrderV1 from './_v1/OrderV1'
-import OrderV2 from './_v2/OrderV2'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,11 +28,5 @@ export default async function OrderPage({
     notFound()
   }
 
-  const version = await resolveDesignVersion('guest', restaurantId)
-
-  return (
-    <DesignVersionProvider version={version}>
-      {version === 'v2' ? <OrderV2 /> : <OrderV1 />}
-    </DesignVersionProvider>
-  )
+  return <OrderV1 />
 }
