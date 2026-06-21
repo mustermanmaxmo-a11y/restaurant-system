@@ -11,7 +11,7 @@ import {
   ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays,
   Clock, BarChart2, Package, Plug, CreditCard, PartyPopper,
   AlertTriangle, Mail, Building2, Truck, Tag, Palette, Settings,
-  ShoppingBag, Euro, Flame, ArrowRight, ChefHat, Monitor, History, UserRound, Siren,
+  ShoppingBag, Euro, Flame, ArrowRight, ChefHat, Monitor, History, UserRound, Siren, FileText,
 } from 'lucide-react'
 
 type Order = { id: string; total: number; status: string; created_at: string; customer_name?: string; order_type?: string }
@@ -376,6 +376,12 @@ function AdminContent() {
           </button>
           <button onClick={() => router.push('/admin/orders')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 16px', cursor: 'pointer', color: 'var(--text)', fontWeight: 600, fontSize: '0.82rem' }}>
             <ChefHat size={15} /> Bestellungen Live
+          </button>
+          <button onClick={() => router.push('/admin/tagesabschluss')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: '10px', padding: '10px 16px', cursor: 'pointer', color: '#6366f1', fontWeight: 700, fontSize: '0.82rem', transition: 'background 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.1)' }}
+          >
+            <FileText size={15} /> Tagesabschluss
           </button>
         </div>
 
