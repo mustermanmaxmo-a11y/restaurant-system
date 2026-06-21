@@ -284,3 +284,135 @@ body::after {
     display: none;
   }
 }
+
+/* ─── Platform admin design system ─── */
+
+/* Sidebar collapse transition */
+.ps-sidebar-transition {
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Platform card hover */
+.p-card {
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.p-card:hover {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Platform table rows */
+.p-row {
+  transition: background 0.1s ease;
+}
+.p-row:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Void glass badge */
+.p-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Status pill */
+.p-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* Platform input */
+.p-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.88);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.p-input::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+.p-input:focus {
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* Platform scrollbar for overflow areas */
+.p-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.p-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.p-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.p-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Page fade-in for platform pages */
+@keyframes pfadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.p-page {
+  animation: pfadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Section header divider style */
+.p-section-label {
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* Platform button */
+.p-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.12s, opacity 0.12s, transform 0.1s;
+}
+.p-btn:hover { opacity: 0.88; }
+.p-btn:active { transform: scale(0.97); }
+.p-btn-primary {
+  background: rgba(124, 58, 237, 0.22);
+  color: #c4b5fd;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+.p-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.p-btn-danger {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}

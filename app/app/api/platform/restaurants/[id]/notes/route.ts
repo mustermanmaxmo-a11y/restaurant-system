@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
+import { logAudit } from '@/lib/audit'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await logAudit({ actor_email: authorEmail, action: 'note_created', target_type: 'restaurant', target_id: id, details: { note_id: data.id } })
   return NextResponse.json(data)
 }
 
@@ -91,5 +93,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const { error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await logAudit({ actor_email: authorEmail, action: 'note_deleted', target_type: 'restaurant', target_id: id, details: { note_id: noteId } })
   return NextResponse.json({ ok: true })
 }

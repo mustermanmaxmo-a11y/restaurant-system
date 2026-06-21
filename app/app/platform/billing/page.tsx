@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
-import { CreditCard, Clock, XCircle, Euro, TrendingUp } from 'lucide-react'
+import { CreditCard, Clock, XCircle, Euro, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,13 +57,14 @@ export default async function PlatformBilling() {
   const mrr = activePaid.reduce((sum, r) => sum + (PLAN_MRR[r.plan] ?? 0), 0)
   const arr = mrr * 12
 
-  // Upgrade candidates: trials with recent order activity
   const thirtyDaysAgo = new Date(now - 30 * DAY).toISOString()
-  const { data: trialOrders } = await admin
-    .from('orders')
-    .select('restaurant_id')
-    .gte('created_at', thirtyDaysAgo)
-    .neq('status', 'cancelled')
+  const fourteenDaysAgo = new Date(now - 14 * DAY).toISOString()
+
+  // Fetch orders for two windows: 30d (upgrade candidates) + 14d (at-risk detection)
+  const [{ data: trialOrders }, { data: recentPaidOrders }] = await Promise.all([
+    admin.from('orders').select('restaurant_id').gte('created_at', thirtyDaysAgo).neq('status', 'cancelled'),
+    admin.from('orders').select('restaurant_id').gte('created_at', fourteenDaysAgo).neq('status', 'cancelled'),
+  ])
 
   const trialIds = new Set(trials.map(r => r.id))
   const orderCountByRestId: Record<string, number> = {}
@@ -78,19 +79,148 @@ export default async function PlatformBilling() {
 
   const mrrPotential = upgradeCandidates.length * PLAN_MRR['starter']
 
+  // RevOps: at-risk MRR = active paid with no orders in 14d
+  const activeOrderSet = new Set((recentPaidOrders ?? []).map(o => o.restaurant_id))
+  const atRisk = activePaid.filter(r => !activeOrderSet.has(r.id))
+  const atRiskMrr = atRisk.reduce((s, r) => s + (PLAN_MRR[r.plan] ?? 0), 0)
+
+  // RevOps: new MRR this calendar month (restaurants on paid plans created this month)
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const newThisMonth = activePaid.filter(r => r.created_at >= startOfMonth)
+  const newMrr = newThisMonth.reduce((s, r) => s + (PLAN_MRR[r.plan] ?? 0), 0)
+
+  // RevOps: plan distribution (# and MRR per plan)
+  const planDist = ['starter', 'pro', 'enterprise'].map(plan => ({
+    plan,
+    count: activePaid.filter(r => r.plan === plan).length,
+    mrr: activePaid.filter(r => r.plan === plan).reduce((s, r) => s + (PLAN_MRR[r.plan] ?? 0), 0),
+  }))
+
   return (
     <div style={{ padding: '32px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>Billing</h1>
-        <p style={{ color: '#888', fontSize: '0.85rem' }}>Abos, Trials und kürzlich abgelaufene Accounts — Daten aus Stripe-Webhook-Sync.</p>
+      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '6px' }}>Billing</h1>
+          <p style={{ color: '#888', fontSize: '0.85rem' }}>Abos, Trials und kürzlich abgelaufene Accounts — Daten aus Stripe-Webhook-Sync.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <a href="/api/platform/export?type=restaurants" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 13px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)', fontSize: '0.73rem', textDecoration: 'none', fontWeight: 600 }}>
+            ↓ Restaurants CSV
+          </a>
+          <a href="/api/platform/export?type=orders&days=30" style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '7px 13px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.4)', fontSize: '0.73rem', textDecoration: 'none', fontWeight: 600 }}>
+            ↓ Orders CSV (30d)
+          </a>
+        </div>
       </div>
 
+      {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
         <KPI icon={Euro} label="MRR" value={`€${mrr}`} accent />
         <KPI icon={Euro} label="ARR (projiziert)" value={`€${arr}`} />
         <KPI icon={CreditCard} label="Aktive Abos" value={String(activePaid.length)} />
         <KPI icon={Clock} label="Laufende Trials" value={String(trials.length)} />
         <KPI icon={TrendingUp} label="MRR-Potenzial (Trials)" value={`€${mrrPotential}`} />
+      </div>
+
+      {/* Revenue Operations Section */}
+      <div style={{ marginBottom: '28px', background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden' }}>
+        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #2a2a3e', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <BarChart3 size={15} color="#a78bfa" />
+          <h2 style={{ color: '#f0f0f8', fontWeight: 700, fontSize: '0.95rem' }}>Revenue Operations</h2>
+          <span style={{ color: '#44445a', fontSize: '0.75rem' }}>· Laufend berechnet</span>
+        </div>
+        <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+
+          {/* Plan distribution */}
+          <div>
+            <div style={{ color: '#44445a', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
+              MRR nach Plan
+            </div>
+            {planDist.map(({ plan, count, mrr: planMrr }) => {
+              const pct = mrr > 0 ? Math.round((planMrr / mrr) * 100) : 0
+              const colors: Record<string, { bar: string; fg: string }> = {
+                starter: { bar: '#065f46', fg: '#6ee7b7' },
+                pro: { bar: '#78350f', fg: '#fcd34d' },
+                enterprise: { bar: '#4c1d95', fg: '#c4b5fd' },
+              }
+              const { bar, fg } = colors[plan] ?? { bar: '#333', fg: '#888' }
+              return (
+                <div key={plan} style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ color: fg, fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>{plan}</span>
+                    <span style={{ color: '#a0a0c0', fontSize: '0.72rem' }}>
+                      {count}× · €{planMrr} ({pct}%)
+                    </span>
+                  </div>
+                  <div style={{ height: '5px', background: '#1e1e30', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: bar, borderRadius: '4px', transition: 'width 0.4s' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* New MRR this month */}
+          <div>
+            <div style={{ color: '#44445a', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
+              Neu diesen Monat
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981', lineHeight: 1, marginBottom: '4px' }}>
+              €{newMrr}
+            </div>
+            <div style={{ color: '#44445a', fontSize: '0.73rem', marginBottom: '14px' }}>
+              {newThisMonth.length} neue zahlende Restaurants
+            </div>
+            {newThisMonth.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {newThisMonth.slice(0, 4).map(r => (
+                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1e1e30' }}>
+                    <span style={{ color: '#c0c0d8', fontSize: '0.75rem', fontWeight: 600 }}>{r.name}</span>
+                    <span style={{ color: '#10b981', fontSize: '0.7rem', fontWeight: 700 }}>+€{PLAN_MRR[r.plan]}</span>
+                  </div>
+                ))}
+                {newThisMonth.length > 4 && (
+                  <div style={{ color: '#44445a', fontSize: '0.7rem', marginTop: '4px' }}>+{newThisMonth.length - 4} weitere</div>
+                )}
+              </div>
+            )}
+            {newThisMonth.length === 0 && (
+              <div style={{ color: '#2e2e48', fontSize: '0.78rem' }}>Noch kein neues MRR diesen Monat.</div>
+            )}
+          </div>
+
+          {/* At-risk MRR */}
+          <div>
+            <div style={{ color: '#44445a', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
+              Gefährdetes MRR
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: atRiskMrr > 0 ? '#ef4444' : '#10b981', lineHeight: 1, marginBottom: '4px' }}>
+              €{atRiskMrr}
+            </div>
+            <div style={{ color: '#44445a', fontSize: '0.73rem', marginBottom: '14px' }}>
+              {atRisk.length} aktive Abos ohne Bestellungen (14d)
+            </div>
+            {atRisk.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {atRisk.slice(0, 4).map(r => (
+                  <Link key={r.id} href={`/platform/restaurants/${r.id}`} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid #1e1e30' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <AlertTriangle size={11} color="#ef4444" />
+                      <span style={{ color: '#c0c0d8', fontSize: '0.75rem', fontWeight: 600 }}>{r.name}</span>
+                    </div>
+                    <span style={{ color: '#ef4444', fontSize: '0.7rem', fontWeight: 700 }}>€{PLAN_MRR[r.plan]}</span>
+                  </Link>
+                ))}
+                {atRisk.length > 4 && (
+                  <div style={{ color: '#44445a', fontSize: '0.7rem', marginTop: '4px' }}>+{atRisk.length - 4} weitere</div>
+                )}
+              </div>
+            )}
+            {atRisk.length === 0 && (
+              <div style={{ color: '#10b981', fontSize: '0.78rem' }}>Alle zahlenden Kunden aktiv.</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {upgradeCandidates.length > 0 && (

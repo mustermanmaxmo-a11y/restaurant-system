@@ -1,30 +1,20 @@
-import Link from 'next/link'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import type { Restaurant } from '@/types/database'
 import CreateRestaurantModal from '@/components/platform/CreateRestaurantModal'
-import { PaymentToggle } from '@/components/platform/PaymentToggle'
 import { RestaurantExport } from '@/components/platform/RestaurantExport'
+import { RestaurantTable, type TableRow } from '@/components/platform/RestaurantTable'
 
 export const dynamic = 'force-dynamic'
 
-const PLAN_COLORS: Record<string, { bg: string; fg: string }> = {
-  trial:      { bg: '#1e3a8a', fg: '#93c5fd' },
-  starter:    { bg: '#065f46', fg: '#6ee7b7' },
-  pro:        { bg: '#92400e', fg: '#fcd34d' },
-  enterprise: { bg: '#581c87', fg: '#e9d5ff' },
-  expired:    { bg: '#450a0a', fg: '#fca5a5' },
-}
-
-type Row = Pick<Restaurant,
+type DbRow = Pick<Restaurant,
   'id' | 'name' | 'slug' | 'plan' | 'active' | 'trial_ends_at' | 'created_at' | 'owner_id' | 'stripe_customer_id' | 'stripe_subscription_id'
-> & { owner_email: string; online_payments_enabled: boolean; stripe_connect_account_id: string | null }
+> & { online_payments_enabled: boolean; stripe_connect_account_id: string | null }
 
 export default async function PlatformRestaurants() {
   const { user, role } = await requirePlatformAccess()
   const admin = createSupabaseAdmin()
 
-  // Support-User sieht nur zugewiesene Restaurants
   let allowedRestaurantIds: string[] | null = null
   if (role === 'support') {
     const { data: member } = await admin
@@ -68,7 +58,6 @@ export default async function PlatformRestaurants() {
     if (u.id) emailByUserId[u.id] = u.email ?? '—'
   }
 
-  // Health score calculation
   const orderCount30: Record<string, number> = {}
   const lastOrderAt: Record<string, number> = {}
   for (const o of recentOrderData ?? []) {
@@ -95,16 +84,13 @@ export default async function PlatformRestaurants() {
     return Math.min(100, score)
   }
 
-  function healthColor(score: number) {
-    if (score >= 70) return { bg: '#065f46', fg: '#6ee7b7' }
-    if (score >= 35) return { bg: '#78350f', fg: '#fcd34d' }
-    return { bg: '#450a0a', fg: '#fca5a5' }
-  }
-
-  const rows: Row[] = (restaurants ?? []).map(r => ({
-    ...(r as unknown as Row),
+  const rows: TableRow[] = (restaurants ?? []).map(r => ({
+    ...(r as unknown as DbRow),
     owner_email: emailByUserId[r.owner_id] ?? '—',
+    healthScore: healthScore(r.id),
   }))
+
+  const canBulkAction = role === 'owner' || role === 'co_founder' || role === 'developer'
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -114,103 +100,16 @@ export default async function PlatformRestaurants() {
           <p style={{ color: '#888', fontSize: '0.85rem' }}>{rows.length} insgesamt · sortiert nach Anmeldedatum</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <RestaurantExport rows={rows.map(r => ({ id: r.id, name: r.name, slug: r.slug, plan: r.plan, active: r.active, trial_ends_at: r.trial_ends_at, created_at: r.created_at, owner_email: r.owner_email, stripe_subscription_id: r.stripe_subscription_id }))} />
+          <RestaurantExport rows={rows.map(r => ({
+            id: r.id, name: r.name, slug: r.slug, plan: r.plan, active: r.active,
+            trial_ends_at: r.trial_ends_at, created_at: r.created_at,
+            owner_email: r.owner_email, stripe_subscription_id: r.stripe_subscription_id,
+          }))} />
           <CreateRestaurantModal role={role} />
         </div>
       </div>
 
-      <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-            <thead>
-              <tr style={{ background: '#1f1f30', textAlign: 'left' }}>
-                <Th>Restaurant</Th>
-                <Th>Owner E-Mail</Th>
-                <Th>Plan</Th>
-                <Th>Status</Th>
-                <Th>Health</Th>
-                <Th>Trial-Ende</Th>
-                <Th>Angelegt</Th>
-                <Th>Stripe</Th>
-                <Th>Online-Zahlung</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
-                    Noch keine Restaurants angelegt.
-                  </td>
-                </tr>
-              )}
-              {rows.map(r => {
-                const planStyle = PLAN_COLORS[r.plan] ?? { bg: '#333', fg: '#ccc' }
-                return (
-                  <tr key={r.id} style={{ borderTop: '1px solid #2a2a3e' }}>
-                    <Td>
-                      <Link href={`/platform/restaurants/${r.id}`} style={{ textDecoration: 'none' }}>
-                        <div style={{ color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{r.name}</div>
-                        <div style={{ color: '#666', fontSize: '0.7rem' }}>/{r.slug}</div>
-                      </Link>
-                    </Td>
-                    <Td mono>{r.owner_email}</Td>
-                    <Td>
-                      <span style={{
-                        display: 'inline-block', padding: '3px 10px', borderRadius: '10px',
-                        background: planStyle.bg, color: planStyle.fg, fontSize: '0.7rem', fontWeight: 700,
-                      }}>{r.plan}</span>
-                    </Td>
-                    <Td>
-                      <span style={{
-                        display: 'inline-block', padding: '3px 10px', borderRadius: '10px',
-                        background: r.active ? '#065f46' : '#450a0a',
-                        color: r.active ? '#6ee7b7' : '#fca5a5',
-                        fontSize: '0.7rem', fontWeight: 700,
-                      }}>{r.active ? 'aktiv' : 'inaktiv'}</span>
-                    </Td>
-                    <Td>
-                      {(() => {
-                        const score = healthScore(r.id)
-                        const { bg, fg } = healthColor(score)
-                        return (
-                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '10px', background: bg, color: fg, fontSize: '0.7rem', fontWeight: 700 }}>
-                            {score}
-                          </span>
-                        )
-                      })()}
-                    </Td>
-                    <Td>{formatDate(r.trial_ends_at)}</Td>
-                    <Td>{formatDate(r.created_at)}</Td>
-                    <Td mono>
-                      {r.stripe_subscription_id ? r.stripe_subscription_id.slice(0, 14) + '…' : <span style={{ color: '#555' }}>—</span>}
-                    </Td>
-                    <Td>
-                      <PaymentToggle
-                        restaurantId={r.id}
-                        initialEnabled={r.online_payments_enabled ?? false}
-                        hasStripe={!!r.stripe_connect_account_id}
-                      />
-                    </Td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <RestaurantTable rows={rows} canBulkAction={canBulkAction} />
     </div>
   )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return <th style={{ padding: '12px 14px', color: '#888', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{children}</th>
-}
-
-function Td({ children, mono }: { children: React.ReactNode; mono?: boolean }) {
-  return <td style={{ padding: '12px 14px', color: '#ccc', fontFamily: mono ? 'ui-monospace, monospace' : undefined }}>{children}</td>
-}
-
-function formatDate(d: string | null) {
-  if (!d) return <span style={{ color: '#555' }}>—</span>
-  return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }

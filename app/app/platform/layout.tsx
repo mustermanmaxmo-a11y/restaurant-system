@@ -1,5 +1,6 @@
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { PlatformSidebar } from '@/components/PlatformSidebar'
+import { CommandPalette } from '@/components/platform/CommandPalette'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { PlatformPushSetup } from '@/components/PlatformPushSetup'
 import type { Metadata } from 'next'
@@ -29,7 +30,15 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#08080f', color: '#e8e8f0' }}>
+    <div style={{
+      display: 'flex', minHeight: '100vh',
+      background: '#03030c',
+      color: 'rgba(255,255,255,0.88)',
+      backgroundImage: [
+        'radial-gradient(ellipse 80% 40% at 10% -5%, rgba(124,58,237,0.08) 0%, transparent 60%)',
+        'radial-gradient(ellipse 60% 30% at 90% 105%, rgba(6,182,212,0.04) 0%, transparent 50%)',
+      ].join(', '),
+    }}>
       <PlatformSidebar
         userEmail={user?.email ?? '—'}
         role={role}
@@ -37,9 +46,16 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         teamPendingCount={teamPendingCount}
         designRequestCount={designRequestCount}
       />
-      <main style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }} className="platform-main">
+      <main
+        style={{ flex: 1, minHeight: '100vh', overflowY: 'auto' }}
+        className="platform-main"
+      >
         {children}
       </main>
+
+      {/* Global Command Palette — client, fetches lazily on open */}
+      <CommandPalette />
+
       <PlatformPushSetup userId={user?.id} />
     </div>
   )

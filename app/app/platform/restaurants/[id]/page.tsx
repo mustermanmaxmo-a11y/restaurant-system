@@ -8,12 +8,12 @@ import { Notes } from './Notes'
 
 export const dynamic = 'force-dynamic'
 
-const PLAN_COLORS: Record<string, { bg: string; fg: string }> = {
-  trial:      { bg: '#1e3a8a', fg: '#93c5fd' },
-  starter:    { bg: '#065f46', fg: '#6ee7b7' },
-  pro:        { bg: '#92400e', fg: '#fcd34d' },
-  enterprise: { bg: '#581c87', fg: '#e9d5ff' },
-  expired:    { bg: '#450a0a', fg: '#fca5a5' },
+const PLAN_COLORS: Record<string, { bg: string; fg: string; border: string }> = {
+  trial:      { bg: 'rgba(96,165,250,0.1)',   fg: '#93c5fd', border: 'rgba(96,165,250,0.25)' },
+  starter:    { bg: 'rgba(52,211,153,0.1)',   fg: '#6ee7b7', border: 'rgba(52,211,153,0.25)' },
+  pro:        { bg: 'rgba(251,191,36,0.1)',   fg: '#fcd34d', border: 'rgba(251,191,36,0.25)' },
+  enterprise: { bg: 'rgba(167,139,250,0.1)',  fg: '#c4b5fd', border: 'rgba(167,139,250,0.25)' },
+  expired:    { bg: 'rgba(248,113,113,0.1)',  fg: '#fca5a5', border: 'rgba(248,113,113,0.25)' },
 }
 
 export default async function RestaurantDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,6 +64,33 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
   const orderCount30d = statsOrders?.length ?? 0
   const revenue30d = statsOrders?.reduce((s, o) => s + (Number(o.total) || 0), 0) ?? 0
 
+  // Platform-wide benchmark data
+  const { data: allPlatformOrders } = await admin
+    .from('orders')
+    .select('restaurant_id, total')
+    .gte('created_at', thirtyDaysAgo)
+    .neq('status', 'cancelled')
+
+  const platformOrderCount: Record<string, number> = {}
+  const platformRevenue: Record<string, number> = {}
+  for (const o of allPlatformOrders ?? []) {
+    platformOrderCount[o.restaurant_id] = (platformOrderCount[o.restaurant_id] ?? 0) + 1
+    platformRevenue[o.restaurant_id] = (platformRevenue[o.restaurant_id] ?? 0) + (Number(o.total) || 0)
+  }
+  const orderCounts = Object.values(platformOrderCount).sort((a, b) => a - b)
+  const revenueCounts = Object.values(platformRevenue).sort((a, b) => a - b)
+
+  function percentileRank(sorted: number[], value: number): number {
+    if (sorted.length === 0) return 0
+    const below = sorted.filter(v => v < value).length
+    return Math.round((below / sorted.length) * 100)
+  }
+
+  const orderPercentile = percentileRank(orderCounts, orderCount30d)
+  const revenuePercentile = percentileRank(revenueCounts, revenue30d)
+  const platformAvgOrders = orderCounts.length > 0 ? Math.round(orderCounts.reduce((a, b) => a + b, 0) / orderCounts.length) : 0
+  const platformAvgRevenue = revenueCounts.length > 0 ? revenueCounts.reduce((a, b) => a + b, 0) / revenueCounts.length : 0
+
   const menuCount = (menuItems as unknown as { count: number } | null)?.count ?? 0
   const tableCount = (tables as unknown as { count: number } | null)?.count ?? 0
 
@@ -83,27 +110,27 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
     new Date(restaurant.trial_ends_at).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: '960px', margin: '0 auto' }}>
-      <Link href="/platform/restaurants" style={{ color: '#888', fontSize: '0.8rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '20px' }}>
+    <div style={{ padding: '32px 28px', maxWidth: '1000px', margin: '0 auto' }}>
+      <Link href="/platform/restaurants" style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '20px' }}>
         ← Alle Restaurants
       </Link>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '28px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           {restaurant.logo_url ? (
-            <img src={restaurant.logo_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', border: '1px solid #2a2a3e' }} />
+            <img src={restaurant.logo_url} alt="" style={{ width: '52px', height: '52px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.08)' }} />
           ) : (
-            <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: '#2a2a3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>🍽️</div>
+            <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🍽️</div>
           )}
           <div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>{restaurant.name}</h1>
-            <span style={{ color: '#555', fontSize: '0.8rem', fontFamily: 'ui-monospace, monospace' }}>/{restaurant.slug}</span>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', marginBottom: '4px' }}>{restaurant.name}</h1>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.78rem', fontFamily: 'ui-monospace, monospace' }}>/{restaurant.slug}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ padding: '4px 12px', borderRadius: '12px', background: planStyle.bg, color: planStyle.fg, fontSize: '0.75rem', fontWeight: 700 }}>{restaurant.plan}</span>
-          <span style={{ padding: '4px 12px', borderRadius: '12px', background: restaurant.active ? '#065f46' : '#450a0a', color: restaurant.active ? '#6ee7b7' : '#fca5a5', fontSize: '0.75rem', fontWeight: 700 }}>
+          <span style={{ padding: '4px 12px', borderRadius: '20px', background: planStyle.bg, color: planStyle.fg, border: `1px solid ${planStyle.border}`, fontSize: '0.72rem', fontWeight: 700, textTransform: 'capitalize' }}>{restaurant.plan}</span>
+          <span style={{ padding: '4px 12px', borderRadius: '20px', background: restaurant.active ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)', border: `1px solid ${restaurant.active ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)'}`, color: restaurant.active ? '#6ee7b7' : '#fca5a5', fontSize: '0.72rem', fontWeight: 700 }}>
             {restaurant.active ? 'aktiv' : 'inaktiv'}
           </span>
         </div>
@@ -111,13 +138,31 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
 
       <QuickActions slug={restaurant.slug} ownerEmail={ownerEmail} restaurantName={restaurant.name} />
 
+      {/* Sub-navigation */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+        {[
+          { label: 'Übersicht',    href: `/platform/restaurants/${restaurant.id}`, active: true },
+          { label: 'Analytics',  href: `/platform/restaurants/${restaurant.id}/analytics` },
+          { label: 'Orders',     href: `/platform/restaurants/${restaurant.id}/orders` },
+          { label: 'Speisekarte', href: `/platform/restaurants/${restaurant.id}/menu` },
+          { label: 'Tische',     href: `/platform/restaurants/${restaurant.id}/tables` },
+        ].map(n => (
+          <Link key={n.href} href={n.href} style={{
+            padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
+            background: n.active ? 'rgba(124,58,237,0.2)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+          }}>{n.label}</Link>
+        ))}
+      </div>
+
       {isExpiringSoon && (
-        <div style={{ background: '#78350f22', border: '1px solid #92400e66', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', color: '#fcd34d', fontSize: '0.82rem', fontWeight: 600 }}>
-          ⚠️ Trial läuft am {new Date(restaurant.trial_ends_at!).toLocaleDateString('de-DE')} ab
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '10px', padding: '11px 16px', marginBottom: '18px', color: '#fcd34d', fontSize: '0.82rem', fontWeight: 600 }}>
+          Trial läuft am {new Date(restaurant.trial_ends_at!).toLocaleDateString('de-DE')} ab
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(285px, 1fr))', gap: '14px' }}>
         {/* Stats */}
         <Section title="30-Tage-Performance">
           <StatRow label="Bestellungen" value={orderCount30d.toString()} />
@@ -138,13 +183,13 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
 
         {/* Onboarding */}
         <Section title={`Onboarding · ${pct}%`}>
-          <div style={{ height: '4px', background: '#2a2a3e', borderRadius: '4px', marginBottom: '14px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : '#ef4444', borderRadius: '4px', transition: 'width 0.4s' }} />
+          <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginBottom: '14px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#34d399' : 'rgba(124,58,237,0.7)', borderRadius: '4px', transition: 'width 0.4s' }} />
           </div>
           {onboarding.map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid #1a1a2e' }}>
-              <span style={{ fontSize: '0.85rem' }}>{item.done ? '✅' : '⬜'}</span>
-              <span style={{ color: item.done ? '#ccc' : '#666', fontSize: '0.82rem' }}>{item.label}</span>
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ fontSize: '0.78rem', color: item.done ? '#34d399' : 'rgba(255,255,255,0.2)' }}>{item.done ? '✓' : '○'}</span>
+              <span style={{ color: item.done ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.28)', fontSize: '0.82rem' }}>{item.label}</span>
             </div>
           ))}
         </Section>
@@ -158,9 +203,9 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
               trialEndsAt={restaurant.trial_ends_at}
             />
             {restaurant.stripe_subscription_id && (
-              <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #2a2a3e' }}>
-                <div style={{ color: '#888', fontSize: '0.72rem', marginBottom: '4px' }}>Stripe Sub</div>
-                <span style={{ color: '#555', fontSize: '0.75rem', fontFamily: 'ui-monospace, monospace' }}>{restaurant.stripe_subscription_id}</span>
+              <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.72rem', marginBottom: '4px' }}>Stripe Sub</div>
+                <span style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.72rem', fontFamily: 'ui-monospace, monospace' }}>{restaurant.stripe_subscription_id}</span>
               </div>
             )}
           </Section>
@@ -169,15 +214,15 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
         {/* Recent Orders */}
         <Section title="Letzte Bestellungen">
           {(recentOrders?.length ?? 0) === 0 ? (
-            <div style={{ color: '#666', fontSize: '0.8rem' }}>Noch keine Bestellungen.</div>
+            <div style={{ color: 'rgba(255,255,255,0.22)', fontSize: '0.8rem' }}>Noch keine Bestellungen.</div>
           ) : recentOrders!.map(o => (
-            <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #1a1a2e' }}>
+            <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <div>
-                <span style={{ color: '#888', fontSize: '0.72rem', fontFamily: 'ui-monospace, monospace' }}>{o.id.slice(0, 8)}…</span>
-                <div style={{ color: '#555', fontSize: '0.7rem' }}>{new Date(o.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.72rem', fontFamily: 'ui-monospace, monospace' }}>{o.id.slice(0, 8)}…</span>
+                <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.68rem' }}>{new Date(o.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem' }}>€{Number(o.total).toFixed(2)}</div>
+                <div style={{ color: '#34d399', fontWeight: 700, fontSize: '0.85rem' }}>€{Number(o.total).toFixed(2)}</div>
                 <StatusBadge status={o.status} />
               </div>
             </div>
@@ -185,9 +230,20 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
         </Section>
       </div>
 
+      {/* Benchmark */}
+      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>
+          Plattform-Benchmark · 30 Tage · {orderCounts.length} Restaurants
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+          <BenchmarkGauge label="Bestellungen" value={orderCount30d} platformAvg={platformAvgOrders} percentile={orderPercentile} format={v => `${v}`} />
+          <BenchmarkGauge label="Umsatz" value={revenue30d} platformAvg={platformAvgRevenue} percentile={revenuePercentile} format={v => `€${v.toFixed(0)}`} />
+        </div>
+      </div>
+
       {/* Notes */}
-      <div style={{ marginTop: '20px', background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', padding: '20px' }}>
-        <div style={{ color: '#888', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>
+      <div style={{ marginTop: '16px', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '20px' }}>
+        <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>
           Team-Notizen · {(platformNotes as unknown as Array<unknown>)?.length ?? 0}
         </div>
         <Notes
@@ -203,8 +259,8 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', padding: '20px' }}>
-      <div style={{ color: '#888', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px' }}>{title}</div>
+    <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '18px 20px' }}>
+      <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px' }}>{title}</div>
       {children}
     </div>
   )
@@ -212,17 +268,44 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function StatRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #1a1a2e' }}>
-      <span style={{ color: '#888', fontSize: '0.8rem' }}>{label}</span>
-      <span style={{ color: '#ccc', fontSize: '0.8rem', fontFamily: mono ? 'ui-monospace, monospace' : undefined, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem' }}>{label}</span>
+      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontFamily: mono ? 'ui-monospace, monospace' : undefined, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
     </div>
   )
 }
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    new: '#93c5fd', cooking: '#fcd34d', served: '#6ee7b7',
-    cancelled: '#fca5a5', pending_payment: '#c4b5fd',
+    new: '#fbbf24', cooking: '#818cf8', served: '#34d399',
+    cancelled: '#f87171', pending_payment: '#22d3ee',
   }
-  return <span style={{ fontSize: '0.65rem', color: map[status] ?? '#888' }}>{status}</span>
+  return <span style={{ fontSize: '0.65rem', color: map[status] ?? 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{status}</span>
+}
+
+function BenchmarkGauge({ label, value, platformAvg, percentile, format }: {
+  label: string; value: number; platformAvg: number; percentile: number; format: (v: number) => string
+}) {
+  const color = percentile >= 75 ? '#34d399' : percentile >= 40 ? '#fbbf24' : '#f87171'
+  const label2 = percentile >= 75 ? 'Top-Performer' : percentile >= 40 ? 'Durchschnitt' : 'Unter Ø'
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.025)', borderRadius: '12px', padding: '14px 16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '12px' }}>
+        <span style={{ color: 'rgba(255,255,255,0.92)', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{format(value)}</span>
+        <span style={{ color, fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', background: `${color}18` }}>{label2}</span>
+      </div>
+      <div style={{ position: 'relative', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'visible', marginBottom: '8px' }}>
+        <div style={{ height: '100%', width: `${percentile}%`, background: `linear-gradient(to right, rgba(124,58,237,0.3), ${color})`, borderRadius: '4px', transition: 'width 0.5s' }} />
+        <div style={{ position: 'absolute', top: '-3px', left: `${percentile}%`, transform: 'translateX(-50%)', width: '12px', height: '12px', borderRadius: '50%', background: color, border: '2px solid #03030c' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.62rem' }}>0%</span>
+        <span style={{ color, fontSize: '0.68rem', fontWeight: 700 }}>{percentile}. Perzentil</span>
+        <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.62rem' }}>Ø {format(platformAvg)}</span>
+      </div>
+    </div>
+  )
 }
