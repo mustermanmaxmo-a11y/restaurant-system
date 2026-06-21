@@ -4,14 +4,14 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Restaurant } from '@/types/database'
-import type { RestaurantPlan, Reservation } from '@/types/database'
+import type { RestaurantPlan, Reservation, Ingredient } from '@/types/database'
 import { TrialBanner } from '@/components/TrialBanner'
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays,
   Clock, BarChart2, Package, Plug, CreditCard, PartyPopper,
   AlertTriangle, Mail, Building2, Truck, Tag, Palette, Settings,
-  ShoppingBag, Euro, Flame, ArrowRight, ChefHat, Monitor, History, UserRound,
+  ShoppingBag, Euro, Flame, ArrowRight, ChefHat, Monitor, History, UserRound, Siren,
 } from 'lucide-react'
 
 type Order = { id: string; total: number; status: string; created_at: string; customer_name?: string; order_type?: string }
@@ -123,6 +123,7 @@ function AdminContent() {
   const [weekOrders, setWeekOrders] = useState<Order[]>([])
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [todayReservations, setTodayReservations] = useState<Reservation[]>([])
+  const [lowStockItems, setLowStockItems] = useState<Ingredient[]>([])
 
   useEffect(() => {
     async function load() {
@@ -145,7 +146,7 @@ function AdminContent() {
       const today = new Date().toISOString().split('T')[0]
       const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
 
-      const [{ data: todayData }, { data: weekData }, { data: recentData }, { data: reservData }] = await Promise.all([
+      const [{ data: todayData }, { data: weekData }, { data: recentData }, { data: reservData }, { data: stockData }] = await Promise.all([
         supabase.from('orders').select('id, total, status, created_at, customer_name, order_type')
           .eq('restaurant_id', data.id).gte('created_at', `${today}T00:00:00`),
         supabase.from('orders').select('id, total, status, created_at')
@@ -155,12 +156,16 @@ function AdminContent() {
         supabase.from('reservations').select('*')
           .eq('restaurant_id', data.id).eq('date', today)
           .not('status', 'eq', 'cancelled').order('time_from', { ascending: true }),
+        supabase.from('ingredients').select('*')
+          .eq('restaurant_id', data.id),
       ])
 
       setTodayOrders((todayData as Order[]) || [])
       setWeekOrders((weekData as Order[]) || [])
       setRecentOrders((recentData as Order[]) || [])
       setTodayReservations((reservData as Reservation[]) || [])
+      const ingr = (stockData as Ingredient[]) || []
+      setLowStockItems(ingr.filter(i => i.current_stock <= i.min_stock))
     }
     load()
   }, [router])
@@ -325,6 +330,35 @@ function AdminContent() {
             <RevenueBar buckets={weekBuckets} maxRev={maxRev} />
           </div>
         </div>
+
+        {/* Low-stock alert */}
+        {lowStockItems.length > 0 && (
+          <div style={{ background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.25)', borderRadius: '14px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: 'rgba(251,146,60,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px' }}>
+              <Siren size={17} color="#fb923c" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                <span style={{ color: '#fb923c', fontWeight: 700, fontSize: '0.88rem' }}>
+                  {lowStockItems.length} Artikel unter Mindestbestand
+                </span>
+                <button onClick={() => router.push('/admin/inventory')} style={{ background: 'rgba(251,146,60,0.15)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '7px', padding: '4px 11px', cursor: 'pointer', color: '#fb923c', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                  Inventar öffnen →
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '8px' }}>
+                {lowStockItems.slice(0, 6).map(item => (
+                  <span key={item.id} style={{ background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.2)', borderRadius: '6px', padding: '2px 8px', fontSize: '0.75rem', color: '#fb923c', fontWeight: 600 }}>
+                    {item.name} ({item.current_stock} {item.unit})
+                  </span>
+                ))}
+                {lowStockItems.length > 6 && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center' }}>+{lowStockItems.length - 6} weitere</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick actions */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
