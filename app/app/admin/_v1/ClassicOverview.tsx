@@ -4,14 +4,14 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Restaurant } from '@/types/database'
-import type { RestaurantPlan } from '@/types/database'
+import type { RestaurantPlan, Reservation } from '@/types/database'
 import { TrialBanner } from '@/components/TrialBanner'
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, UtensilsCrossed, Armchair, Users, CalendarDays,
   Clock, BarChart2, Package, Plug, CreditCard, PartyPopper,
   AlertTriangle, Mail, Building2, Truck, Tag, Palette, Settings,
-  ShoppingBag, Euro, Flame, ArrowRight, ChefHat,
+  ShoppingBag, Euro, Flame, ArrowRight, ChefHat, Monitor, History, UserRound,
 } from 'lucide-react'
 
 type Order = { id: string; total: number; status: string; created_at: string; customer_name?: string; order_type?: string }
@@ -122,6 +122,7 @@ function AdminContent() {
   const [todayOrders, setTodayOrders] = useState<Order[]>([])
   const [weekOrders, setWeekOrders] = useState<Order[]>([])
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [todayReservations, setTodayReservations] = useState<Reservation[]>([])
 
   useEffect(() => {
     async function load() {
@@ -144,18 +145,22 @@ function AdminContent() {
       const today = new Date().toISOString().split('T')[0]
       const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
 
-      const [{ data: todayData }, { data: weekData }, { data: recentData }] = await Promise.all([
+      const [{ data: todayData }, { data: weekData }, { data: recentData }, { data: reservData }] = await Promise.all([
         supabase.from('orders').select('id, total, status, created_at, customer_name, order_type')
           .eq('restaurant_id', data.id).gte('created_at', `${today}T00:00:00`),
         supabase.from('orders').select('id, total, status, created_at')
           .eq('restaurant_id', data.id).gte('created_at', weekAgo),
         supabase.from('orders').select('id, total, status, created_at, customer_name, order_type')
           .eq('restaurant_id', data.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('reservations').select('*')
+          .eq('restaurant_id', data.id).eq('date', today)
+          .not('status', 'eq', 'cancelled').order('time_from', { ascending: true }),
       ])
 
       setTodayOrders((todayData as Order[]) || [])
       setWeekOrders((weekData as Order[]) || [])
       setRecentOrders((recentData as Order[]) || [])
+      setTodayReservations((reservData as Reservation[]) || [])
     }
     load()
   }, [router])
@@ -321,6 +326,25 @@ function AdminContent() {
           </div>
         </div>
 
+        {/* Quick actions */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <button onClick={() => router.push('/admin/kds')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: '10px', padding: '10px 16px', cursor: 'pointer', color: '#ff6b35', fontWeight: 700, fontSize: '0.82rem', transition: 'background 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,107,53,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,107,53,0.1)' }}
+          >
+            <Monitor size={15} /> Küchen-Display öffnen
+          </button>
+          <button onClick={() => router.push('/admin/orders/history')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '10px', padding: '10px 16px', cursor: 'pointer', color: '#f59e0b', fontWeight: 700, fontSize: '0.82rem', transition: 'background 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.18)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.1)' }}
+          >
+            <History size={15} /> Bestellhistorie
+          </button>
+          <button onClick={() => router.push('/admin/orders')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 16px', cursor: 'pointer', color: 'var(--text)', fontWeight: 600, fontSize: '0.82rem' }}>
+            <ChefHat size={15} /> Bestellungen Live
+          </button>
+        </div>
+
         {/* Recent orders */}
         {recentOrders.length > 0 && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '28px', overflow: 'hidden' }}>
@@ -376,6 +400,53 @@ function AdminContent() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Today's Reservations */}
+        {todayReservations.length > 0 && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '28px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CalendarDays size={16} color="#60a5fa" />
+                <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.88rem' }}>
+                  Reservierungen heute
+                </span>
+                <span style={{ background: 'rgba(96,165,250,0.12)', color: '#60a5fa', borderRadius: '20px', padding: '1px 8px', fontSize: '0.7rem', fontWeight: 700 }}>
+                  {todayReservations.length}
+                </span>
+              </div>
+              <button onClick={() => router.push('/admin/reservations')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#60a5fa', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                Alle <ArrowRight size={12} />
+              </button>
+            </div>
+            {todayReservations.slice(0, 5).map((r, idx) => (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: idx < Math.min(todayReservations.length, 5) - 1 ? '1px solid var(--border)' : 'none', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(96,165,250,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <UserRound size={15} color="#60a5fa" />
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.83rem' }}>{r.customer_name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: '1px' }}>
+                      {r.guests} Gäste{r.note ? ` · ${r.note}` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                  <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.85rem' }}>
+                    {r.time_from}
+                  </span>
+                  <span style={{
+                    background: r.status === 'confirmed' ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                    color: r.status === 'confirmed' ? '#10b981' : '#f59e0b',
+                    borderRadius: '6px', padding: '2px 8px', fontSize: '0.7rem', fontWeight: 700,
+                  }}>
+                    {r.status === 'confirmed' ? 'Bestätigt' : 'Ausstehend'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
