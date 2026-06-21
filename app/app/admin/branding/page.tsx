@@ -758,15 +758,15 @@ export default function BrandingPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--bg)' }}>
 
       {/* ── Header Bar ── */}
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--surface)' }}>
-        <div>
-          <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>Branding & Design</h1>
+      <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexShrink: 0, background: 'var(--surface)', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>Branding & Design</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', margin: '2px 0 0' }}>Alle Änderungen sind sofort live sichtbar.</p>
         </div>
         {/* Section switcher */}
         <div style={{
           display: 'flex', background: 'var(--surface-2)', borderRadius: '8px',
-          padding: '3px', gap: '2px',
+          padding: '3px', gap: '2px', flexShrink: 0,
         }}>
           {(['order-page', 'landing-page'] as const).map(s => (
             <button
@@ -1003,7 +1003,7 @@ export default function BrandingPage() {
               <h2 style={tabHeading}>Farben & Schrift</h2>
               <div style={{ marginBottom: '28px' }}>
                 <label style={sectionLabel}>Farben anpassen</label>
-                <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div style={{ background: 'var(--surface)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: '20px' }}>
                   <div><label style={fieldLabel}>Akzentfarbe</label><ColorPickerInput value={pAccent} onChange={v => { setPrimaryColor(v); setSaved(false) }} onReset={() => { setPrimaryColor(null); setSaved(false) }} /></div>
                   <div><label style={fieldLabel}>Hintergrund</label><ColorPickerInput value={pBg} onChange={v => { setBgColor(v); setSaved(false) }} onReset={() => { setBgColor(null); setSaved(false) }} /></div>
                   <div><label style={fieldLabel}>Header</label><ColorPickerInput value={pHeader} onChange={v => { setHeaderColor(v); setSaved(false) }} onReset={() => { setHeaderColor(null); setSaved(false) }} /></div>
@@ -1035,7 +1035,7 @@ export default function BrandingPage() {
             <div>
               <h2 style={tabHeading}>Layout</h2>
               <label style={sectionLabel}>Layout-Variante</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 130px), 1fr))', gap: '10px' }}>
                 {(['cards', 'list', 'large-cards', 'grid'] as LayoutVariant[]).map(v => {
                   const isLActive = v === layoutVariant
                   const labels: Record<LayoutVariant, string> = { cards: 'Cards', list: 'Liste', 'large-cards': 'Grosse Karten', grid: '2-Spalten' }
@@ -1223,7 +1223,7 @@ export default function BrandingPage() {
                       placeholder="z.B. Authentische Pasta & Pizza seit 1998" rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '3px', textAlign: 'right' }}>{description.length}/160</p>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
                     <div><label style={fieldLabel}>E-Mail</label><input type="email" value={contactEmail} onChange={e => { setContactEmail(e.target.value); setSaved(false) }} placeholder="info@restaurant.de" style={inputStyle} /></div>
                     <div><label style={fieldLabel}>Telefon</label><input type="tel" value={contactPhone} onChange={e => { setContactPhone(e.target.value); setSaved(false) }} placeholder="+49 89 123456" style={inputStyle} /></div>
                   </div>

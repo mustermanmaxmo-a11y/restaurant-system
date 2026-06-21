@@ -441,10 +441,17 @@ export default function MenuPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
-          <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap' }}>Menü verwalten</h1>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#8b5cf618', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <UtensilsCrossed size={18} color="#8b5cf6" />
+          </div>
+          <div>
+            <h1 style={{ color: 'var(--text)', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1 }}>Menü verwalten</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '1px' }}>
+              {categories.length} {categories.length === 1 ? 'Kategorie' : 'Kategorien'} · {items.length} Gerichte
+            </p>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
           {(restaurant?.plan === 'pro' || restaurant?.plan === 'enterprise' || restaurant?.plan === 'trial') && (
@@ -662,6 +669,11 @@ export default function MenuPage() {
           .menu-main { padding: 16px !important; }
           .menu-item-card { flex-wrap: wrap; }
           .menu-item-actions { margin-left: 0 !important; flex-wrap: wrap; }
+          .ai-review-grid { grid-template-columns: 1fr !important; }
+          .btn-label-hide { display: none; }
+        }
+        @media (min-width: 769px) {
+          .btn-label-hide { display: inline; }
         }
       `}</style>
 
@@ -671,7 +683,7 @@ export default function MenuPage() {
           style={{ position: 'fixed', inset: 0, background: '#00000080', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '24px' }}
           onWheel={e => e.stopPropagation()}
         >
-          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: modal === 'ai-import' ? '960px' : '480px', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: modal === 'ai-import' ? 'min(calc(100vw - 24px), 960px)' : 'min(calc(100vw - 24px), 480px)', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
             {(modal === 'add-category' || modal === 'edit-category') && (
               <>
                 <h3 style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '20px' }}>
@@ -812,7 +824,7 @@ export default function MenuPage() {
                                 onChange={() => toggleAiSelected(idx)}
                                 style={{ width: '16px', height: '16px', marginTop: '10px', flexShrink: 0, cursor: 'pointer' }}
                               />
-                              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr 0.7fr', gap: '8px' }}>
+                              <div className="ai-review-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 1fr 0.7fr', gap: '8px' }}>
                                 <input
                                   value={item.name}
                                   onChange={e => updateAiItem(idx, { name: e.target.value })}
