@@ -416,3 +416,12 @@ body::after {
   color: #fda4af;
   border: 1px solid rgba(244, 63, 94, 0.25);
 }
+
+/* Quick-access link hover (dashboard) */
+.p-quick-link > div {
+  transition: background 0.1s, border-color 0.1s;
+}
+.p-quick-link:hover > div {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}

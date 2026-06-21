@@ -430,23 +430,13 @@ export default async function PlatformDashboard() {
               { label: 'Outreach',        href: '/platform/outreach',    dot: '#60a5fa', sub: 'Campaigns & E-Mails' },
               { label: 'Audit Log',       href: '/platform/audit',       dot: 'rgba(255,255,255,0.2)', sub: 'Alle Aktionen' },
             ].map(a => (
-              <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
+              <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }} className="p-quick-link">
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 12px',
                   borderRadius: '9px',
                   background: 'rgba(255,255,255,0.02)',
                   border: '1px solid rgba(255,255,255,0.055)',
-                  transition: 'background 0.1s, border-color 0.1s',
-                }}
-                onMouseEnter={e => {
-                  ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.045)'
-                  ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.1)'
-                }}
-                onMouseLeave={e => {
-                  ;(e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.02)'
-                  ;(e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.055)'
-                }}
-                >
+                }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: a.dot, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600 }}>{a.label}</div>
