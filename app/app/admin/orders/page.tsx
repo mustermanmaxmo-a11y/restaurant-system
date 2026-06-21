@@ -42,14 +42,14 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
       background: 'var(--surface)',
       border: `1px solid ${col.color}33`,
       borderLeft: `3px solid ${col.color}`,
-      borderRadius: '10px',
+      borderRadius: '12px',
       padding: '14px',
       position: 'relative',
       animation: isNew ? 'pulse-border 2s ease-in-out infinite' : 'none',
     }}>
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{
             fontFamily: 'monospace', fontSize: '0.8rem', fontWeight: 700,
             color: col.color, background: col.bg, padding: '2px 7px', borderRadius: '5px',
@@ -68,7 +68,7 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '0.72rem', flexShrink: 0 }}>
           <Clock size={10} />
           {timeAgo(order.created_at)}
         </div>
@@ -84,7 +84,7 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
       {/* Items */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginBottom: '12px' }}>
         {order.items.map((item, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text)' }}>
               <span style={{ color: col.color, fontWeight: 700, marginRight: '5px' }}>{item.qty}×</span>
               {item.name}
@@ -104,10 +104,10 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
         </div>
       )}
 
-      {/* Total */}
+      {/* Total + Actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
         <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.9rem' }}>
-          {order.total.toFixed(2)} €
+          {Number(order.total).toFixed(2)} €
         </span>
 
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -117,7 +117,7 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
               title="Stornieren"
               style={{
                 background: '#FF3B3015', border: '1px solid #FF3B3030', color: '#FF3B30',
-                borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                borderRadius: '7px', padding: '6px 9px', cursor: 'pointer', display: 'flex', alignItems: 'center',
               }}
             >
               <X size={13} />
@@ -136,7 +136,7 @@ function OrderCard({ order, col, onAdvance, onCancel }: {
                 onClick={() => onAdvance(order.id, next)}
                 style={{
                   background: col.color, border: 'none', color: '#fff',
-                  borderRadius: '6px', padding: '5px 12px', cursor: 'pointer',
+                  borderRadius: '7px', padding: '6px 13px', cursor: 'pointer',
                   fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px',
                 }}
               >
@@ -166,7 +166,7 @@ function ServiceCallBanner({ calls, tables, onResolve }: {
             display: 'flex', alignItems: 'center', gap: '10px',
             background: call.type === 'bill' ? '#FF950018' : '#FF3B3018',
             border: `1px solid ${call.type === 'bill' ? '#FF950040' : '#FF3B3040'}`,
-            borderRadius: '8px', padding: '8px 14px',
+            borderRadius: '10px', padding: '8px 14px',
             animation: 'pulse-border 1.5s ease-in-out infinite',
           }}>
             {call.type === 'bill' ? <Receipt size={14} color="#FF9500" /> : <Bell size={14} color="#FF3B30" />}
@@ -175,10 +175,7 @@ function ServiceCallBanner({ calls, tables, onResolve }: {
             </span>
             <button
               onClick={() => onResolve(call.id)}
-              style={{
-                background: 'none', border: 'none', color: 'var(--text-muted)',
-                cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center',
-              }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
             >
               <Check size={13} />
             </button>
@@ -197,8 +194,8 @@ export default function OrdersPage() {
   const [calls, setCalls]         = useState<ServiceCall[]>([])
   const [restaurantId, setRestaurantId] = useState<string | null>(null)
   const [loading, setLoading]     = useState(true)
+  const [mobileCol, setMobileCol] = useState(0)
 
-  // Load restaurant + initial data
   useEffect(() => {
     async function init() {
       try {
@@ -218,8 +215,7 @@ export default function OrdersPage() {
             .in('status', ['new', 'cooking', 'out_for_delivery', 'served'])
             .order('created_at', { ascending: true }),
           supabase.from('service_calls').select('*')
-            .eq('restaurant_id', restaurant.id)
-            .eq('resolved', false),
+            .eq('restaurant_id', restaurant.id).eq('resolved', false),
         ])
 
         const tbl = tableData ?? []
@@ -237,10 +233,7 @@ export default function OrdersPage() {
   }, [])
 
   function enrichOrders(raw: Order[], tbl: Table[]): OrderWithTable[] {
-    return raw.map(o => ({
-      ...o,
-      table_label: tbl.find(t => t.id === o.table_id)?.label,
-    }))
+    return raw.map(o => ({ ...o, table_label: tbl.find(t => t.id === o.table_id)?.label }))
   }
 
   const loadOrders = useCallback(async (rId: string) => {
@@ -257,24 +250,17 @@ export default function OrdersPage() {
     setCalls(data ?? [])
   }, [])
 
-  // Realtime subscriptions
   useEffect(() => {
     if (!restaurantId) return
-
     const orderSub = supabase.channel(`admin-orders-${restaurantId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` },
         () => loadOrders(restaurantId))
       .subscribe()
-
     const callSub = supabase.channel(`admin-calls-${restaurantId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'service_calls', filter: `restaurant_id=eq.${restaurantId}` },
         () => loadCalls(restaurantId))
       .subscribe()
-
-    return () => {
-      supabase.removeChannel(orderSub)
-      supabase.removeChannel(callSub)
-    }
+    return () => { supabase.removeChannel(orderSub); supabase.removeChannel(callSub) }
   }, [restaurantId, loadOrders, loadCalls])
 
   const advanceStatus = useCallback(async (id: string, next: OrderStatus) => {
@@ -306,95 +292,173 @@ export default function OrdersPage() {
   }))
 
   const totalActive = orders.filter(o => o.status !== 'served').length
+  const newCount = cols[0].orders.length
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '28px 24px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <style>{`
         @keyframes pulse-border {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.6; }
         }
+        .orders-desktop { display: grid !important; }
+        .orders-mobile-tabs { display: none !important; }
+        .orders-mobile-col { display: block !important; }
+        @media (max-width: 768px) {
+          .orders-desktop { display: none !important; }
+          .orders-mobile-tabs { display: flex !important; }
+        }
       `}</style>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      {/* Page Header */}
+      <div style={{
+        background: 'var(--surface)', borderBottom: '1px solid var(--border)',
+        padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#FF3B30', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ChefHat size={20} color="#fff" />
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FF3B3018', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ChefHat size={18} color="#FF3B30" />
           </div>
           <div>
-            <h1 style={{ color: 'var(--text)', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <h1 style={{ color: 'var(--text)', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1 }}>
               Bestellungen
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '1px' }}>
-              {totalActive > 0 ? `${totalActive} aktive Bestellung${totalActive !== 1 ? 'en' : ''}` : 'Keine aktiven Bestellungen'}
-              {' · '}
-              <span style={{ color: '#34C759' }}>● Live</span>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              {totalActive > 0 ? `${totalActive} aktiv` : 'Keine aktiven'}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#34C759' }}>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#34C759', display: 'inline-block' }} />
+                Live
+              </span>
             </p>
           </div>
         </div>
+        {newCount > 0 && (
+          <span style={{
+            background: '#FF3B30', color: '#fff', borderRadius: '20px',
+            padding: '3px 10px', fontSize: '0.72rem', fontWeight: 800,
+          }}>
+            {newCount} neu
+          </span>
+        )}
       </div>
 
-      {/* Service Calls */}
-      <ServiceCallBanner calls={calls} tables={tables} onResolve={resolveCall} />
+      <div style={{ padding: '16px 20px 32px' }}>
+        {/* Service Calls */}
+        <ServiceCallBanner calls={calls} tables={tables} onResolve={resolveCall} />
 
-      {/* Kanban columns */}
-      <div style={{ overflowX: 'auto', marginLeft: '-24px', marginRight: '-24px', paddingLeft: '24px', paddingRight: '24px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))', gap: '16px', alignItems: 'start', minWidth: '920px' }}>
-        {cols.map(col => (
-          <div key={col.status}>
-            {/* Column header */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: '12px', padding: '0 2px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color }} />
-                <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.85rem' }}>{col.label}</span>
-              </div>
+        {/* Mobile: column tab bar */}
+        <div className="orders-mobile-tabs" style={{
+          display: 'none',
+          gap: '6px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '2px',
+        }}>
+          {cols.map((col, idx) => (
+            <button
+              key={col.status}
+              onClick={() => setMobileCol(idx)}
+              style={{
+                flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '20px', border: '1.5px solid',
+                borderColor: mobileCol === idx ? col.color : 'var(--border)',
+                background: mobileCol === idx ? col.bg : 'transparent',
+                color: mobileCol === idx ? col.color : 'var(--text-muted)',
+                fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+              }}
+            >
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: col.color, display: 'inline-block' }} />
+              {col.label}
               {col.orders.length > 0 && (
                 <span style={{
-                  background: col.bg, color: col.color, border: `1px solid ${col.color}33`,
-                  borderRadius: '20px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700,
+                  background: mobileCol === idx ? col.color : 'var(--border)',
+                  color: mobileCol === idx ? '#fff' : 'var(--text-muted)',
+                  borderRadius: '10px', padding: '0 6px', fontSize: '0.7rem', lineHeight: '18px',
                 }}>
                   {col.orders.length}
                 </span>
               )}
-            </div>
+            </button>
+          ))}
+        </div>
 
-            {/* Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '100px' }}>
-              {col.orders.length === 0 ? (
+        {/* Mobile: single column view */}
+        <div className="orders-mobile-tabs" style={{ display: 'none' }}>
+          {cols[mobileCol] && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {cols[mobileCol].orders.length === 0 ? (
                 <div style={{
-                  border: `1px dashed ${col.color}22`, borderRadius: '10px',
-                  padding: '28px', textAlign: 'center',
-                  color: 'var(--text-muted)', fontSize: '0.78rem',
+                  border: `1px dashed ${cols[mobileCol].color}22`, borderRadius: '12px',
+                  padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem',
                 }}>
                   Keine Bestellungen
                 </div>
               ) : (
-                col.orders.map(order => (
+                cols[mobileCol].orders.map(order => (
                   <OrderCard
                     key={order.id}
                     order={order}
-                    col={col}
+                    col={cols[mobileCol]}
                     onAdvance={advanceStatus}
                     onCancel={cancelOrder}
                   />
                 ))
               )}
             </div>
-          </div>
-        ))}
-      </div>
-      </div>
+          )}
+        </div>
 
-      {/* Mobile note */}
-      <style>{`
-        @media (max-width: 768px) {
-          .orders-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
+        {/* Desktop: 4-column kanban */}
+        <div
+          className="orders-desktop"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(220px, 1fr))',
+            gap: '16px',
+            alignItems: 'start',
+            overflowX: 'auto',
+          }}
+        >
+          {cols.map(col => (
+            <div key={col.status} style={{ minWidth: '200px' }}>
+              {/* Column header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: '12px', padding: '0 2px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: col.color }} />
+                  <span style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.85rem' }}>{col.label}</span>
+                </div>
+                {col.orders.length > 0 && (
+                  <span style={{
+                    background: col.bg, color: col.color, border: `1px solid ${col.color}33`,
+                    borderRadius: '20px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700,
+                  }}>
+                    {col.orders.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '100px' }}>
+                {col.orders.length === 0 ? (
+                  <div style={{
+                    border: `1px dashed ${col.color}22`, borderRadius: '12px',
+                    padding: '28px', textAlign: 'center',
+                    color: 'var(--text-muted)', fontSize: '0.78rem',
+                  }}>
+                    Keine Bestellungen
+                  </div>
+                ) : (
+                  col.orders.map(order => (
+                    <OrderCard key={order.id} order={order} col={col} onAdvance={advanceStatus} onCancel={cancelOrder} />
+                  ))
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

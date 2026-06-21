@@ -181,7 +181,12 @@ function AdminContent() {
   const weekRevenue = weekOrders.reduce((s, o) => s + (Number(o.total) || 0), 0)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '32px 28px 56px' }} className="fade-up">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '24px 16px 56px' }} className="fade-up">
+      <style>{`
+        @media (min-width: 640px) { .admin-dash-wrap { padding: 32px 28px 56px !important; } }
+        @media (max-width: 639px) { .admin-kpi-grid { grid-template-columns: 1fr 1fr !important; } }
+        @media (max-width: 400px) { .admin-kpi-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
       <div style={{ maxWidth: '920px', margin: '0 auto' }}>
 
         {/* Header */}
@@ -271,7 +276,7 @@ function AdminContent() {
         )}
 
         {/* KPI + Chart row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.6fr', gap: '12px', marginBottom: '24px' }}>
+        <div className="admin-kpi-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.6fr', gap: '12px', marginBottom: '24px' }}>
           {/* KPI cards */}
           {[
             { label: 'Bestellungen heute', value: String(todayOrders.length), icon: ShoppingBag, color: 'var(--accent)' },
