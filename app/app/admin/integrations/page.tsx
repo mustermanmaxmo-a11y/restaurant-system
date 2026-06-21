@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Restaurant } from '@/types/database'
 import { Suspense } from 'react'
-import { Bot, Globe, BookOpen, ChevronUp, ChevronDown, Lightbulb, AlertTriangle } from 'lucide-react'
+import { Bot, Globe, BookOpen, ChevronUp, ChevronDown, Lightbulb, AlertTriangle, Plug } from 'lucide-react'
 
 interface PosConnection {
   provider: string
@@ -17,7 +17,7 @@ const PROVIDERS = [
     id: 'stripe_terminal',
     name: 'Stripe Terminal',
     desc: 'Physisches Kartenlesegerät direkt über Stripe — empfohlen für maximale Integration.',
-    color: '#6c63ff',
+    color: 'var(--accent)',
     manual: true,
     docsUrl: 'https://stripe.com/docs/terminal',
     devUrl: 'https://stripe.com/docs/terminal',
@@ -154,12 +154,17 @@ function IntegrationsContent() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '1.2rem' }}>←</button>
-        <h1 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }}>Zahlungs-Integrationen</h1>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Plug size={18} color="var(--accent)" />
+        </div>
+        <div>
+          <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.01em', lineHeight: 1 }}>Zahlungs-Integrationen</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '1px' }}>POS & KI-Anbindungen</p>
+        </div>
       </div>
 
-      <div style={{ padding: '24px', maxWidth: '720px', margin: '0 auto' }}>
+      <div style={{ padding: '16px 20px 40px', maxWidth: '720px', margin: '0 auto' }}>
         {/* Status-Meldung */}
         {statusMsg && (
           <div style={{
@@ -267,14 +272,14 @@ function IntegrationsContent() {
         {restaurant && (restaurant.plan === 'pro' || restaurant.plan === 'enterprise' || restaurant.plan === 'trial') && (
           <div style={{
             marginTop: '24px', background: 'var(--surface)',
-            border: `1px solid ${aiKeyMasked ? '#6c63ff44' : 'var(--border)'}`,
+            border: `1px solid ${aiKeyMasked ? 'var(--border-accent)' : 'var(--border)'}`,
             borderRadius: '16px', padding: '24px',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#6c63ff' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent)' }} />
               <h3 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Bot size={16} /> KI-Assistent</h3>
               {restaurant.plan === 'enterprise' ? (
-                <span style={{ background: '#6c63ff20', color: '#a78bfa', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                <span style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', borderRadius: '6px', padding: '2px 8px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase' }}>
                   Enterprise — aktiv
                 </span>
               ) : aiKeyMasked ? (
@@ -447,7 +452,7 @@ function IntegrationsContent() {
                       ))}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))', gap: '10px', marginTop: '16px' }}>
                       <div style={{ background: '#14532d22', border: '1px solid #14532d44', borderRadius: '8px', padding: '10px 14px' }}>
                         <p style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> Kosten</p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>~0,001€ pro Anfrage · 5€ ≈ 5.000 Chats</p>
@@ -503,7 +508,7 @@ function IntegrationsContent() {
             onClick={() => setSetupModal(null)}
           >
             <div
-              style={{ background: 'var(--surface)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '480px', border: '1px solid var(--border)' }}
+              style={{ background: 'var(--surface)', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: 'min(100vw - 24px, 480px)', border: '1px solid var(--border)' }}
               onClick={e => e.stopPropagation()}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
