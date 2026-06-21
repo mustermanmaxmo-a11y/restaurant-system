@@ -9,7 +9,8 @@ import type { Table, Restaurant, RestaurantPlan } from '@/types/database'
 import { getPlanLimits } from '@/lib/plan-limits'
 import FloorPlanEditor from '@/components/FloorPlanEditor'
 import { useLanguage } from '@/components/providers/language-provider'
-import { Armchair, Map, Check } from 'lucide-react'
+import { Armchair, Map, Check, Activity } from 'lucide-react'
+import type { Order } from '@/types/database'
 
 export default function TablesPage() {
   const router = useRouter()
@@ -24,8 +25,22 @@ export default function TablesPage() {
   const [saving, setSaving] = useState(false)
   const [qrModal, setQrModal] = useState<Table | null>(null)
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
-  const [adminTab, setAdminTab] = useState<'tables' | 'floorplan'>('tables')
+  const [adminTab, setAdminTab] = useState<'tables' | 'floorplan' | 'status'>('tables')
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [activeOrders, setActiveOrders] = useState<Order[]>([])
+  const [servedOrders, setServedOrders] = useState<Order[]>([])
+
+  const loadTableOrders = useCallback(async (restaurantId: string) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const { data: active } = await supabase
+      .from('orders').select('*').eq('restaurant_id', restaurantId)
+      .in('status', ['new', 'cooking']).gte('created_at', today.toISOString())
+    const { data: served } = await supabase
+      .from('orders').select('*').eq('restaurant_id', restaurantId)
+      .eq('status', 'served').gte('created_at', today.toISOString())
+    setActiveOrders((active as Order[]) || [])
+    setServedOrders((served as Order[]) || [])
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -35,10 +50,20 @@ export default function TablesPage() {
       if (!resto) { router.push('/admin/setup'); return }
       setRestaurant(resto)
       await loadTables(resto.id)
+      await loadTableOrders(resto.id)
       setLoading(false)
     }
     load()
-  }, [router])
+  }, [router, loadTableOrders])
+
+  useEffect(() => {
+    if (!restaurant) return
+    const ch = supabase.channel(`table-status-${restaurant.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurant.id}` },
+        () => loadTableOrders(restaurant.id))
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [restaurant, loadTableOrders])
 
   async function loadTables(restaurantId: string) {
     const { data } = await supabase.from('tables').select('*').eq('restaurant_id', restaurantId).order('table_num')
@@ -157,10 +182,14 @@ export default function TablesPage() {
 
       {/* Tab bar */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', display: 'flex', padding: '0 24px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, scrollbarWidth: 'none' as never, msOverflowStyle: 'none' as never }}>
-        {([['tables', <><Armchair size={14} /> Tische</>], ['floorplan', <><Map size={14} /> Grundriss</>]] as const).map(([tab, label]) => (
+        {([
+          ['tables', <><Armchair size={14} /> Tische</>],
+          ['status', <><Activity size={14} /> Live-Status</>],
+          ['floorplan', <><Map size={14} /> Grundriss</>],
+        ] as [string, React.ReactNode][]).map(([tab, label]) => (
           <button
             key={tab}
-            onClick={() => setAdminTab(tab)}
+            onClick={() => setAdminTab(tab as 'tables' | 'floorplan' | 'status')}
             style={{
               padding: '10px 16px', background: 'none', border: 'none', whiteSpace: 'nowrap', flexShrink: 0,
               color: adminTab === tab ? 'var(--accent)' : 'var(--text-muted)',
@@ -181,7 +210,11 @@ export default function TablesPage() {
         />
       )}
 
-      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', display: adminTab === 'floorplan' ? 'none' : undefined }}>
+      {adminTab === 'status' && (
+        <TableStatusBoard tables={tables} activeOrders={activeOrders} servedOrders={servedOrders} />
+      )}
+
+      <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto', display: adminTab !== 'tables' ? 'none' : undefined }}>
         {tables.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><Armchair size={48} color="var(--text-muted)" /></div>
@@ -297,6 +330,102 @@ export default function TablesPage() {
               <button onClick={() => setQrModal(null)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'var(--accent-text)', fontWeight: 600, cursor: 'pointer' }}>{t('common.close')}</button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TableStatusBoard({ tables, activeOrders, servedOrders }: {
+  tables: Table[]
+  activeOrders: Order[]
+  servedOrders: Order[]
+}) {
+  const activeTableIds  = new Set(activeOrders.filter(o => o.table_id).map(o => o.table_id!))
+  const servedTableIds  = new Set(servedOrders.filter(o => o.table_id).map(o => o.table_id!))
+
+  const diningTables = tables.filter(t => t.active)
+
+  function getStatus(tableId: string): 'active' | 'served' | 'free' {
+    if (activeTableIds.has(tableId)) return 'active'
+    if (servedTableIds.has(tableId)) return 'served'
+    return 'free'
+  }
+
+  const freeCount   = diningTables.filter(t => getStatus(t.id) === 'free').length
+  const activeCount = diningTables.filter(t => getStatus(t.id) === 'active').length
+  const servedCount = diningTables.filter(t => getStatus(t.id) === 'served').length
+
+  const STATUS_STYLES = {
+    free:   { label: 'Frei',       bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.3)',  dot: '#10b981', text: '#10b981' },
+    active: { label: 'Bestellt',   bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.35)', dot: '#f59e0b', text: '#f59e0b' },
+    served: { label: 'Serviert',   bg: 'rgba(108,99,255,0.1)', border: 'rgba(108,99,255,0.35)', dot: '#6c63ff', text: '#6c63ff' },
+  }
+
+  return (
+    <div style={{ padding: '20px 24px', minHeight: '400px' }}>
+      {/* Legend + summary */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        {(['free', 'active', 'served'] as const).map(s => (
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '7px', background: STATUS_STYLES[s].bg, border: `1px solid ${STATUS_STYLES[s].border}`, borderRadius: '9px', padding: '7px 14px', fontSize: '0.8rem', fontWeight: 600 }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: STATUS_STYLES[s].dot, flexShrink: 0 }} />
+            <span style={{ color: STATUS_STYLES[s].text }}>{STATUS_STYLES[s].label}</span>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: '2px' }}>
+              {s === 'free' ? freeCount : s === 'active' ? activeCount : servedCount}
+            </span>
+          </div>
+        ))}
+        <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center' }}>
+          Live · aktualisiert automatisch
+        </div>
+      </div>
+
+      {diningTables.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          Keine aktiven Tische vorhanden
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 130px), 1fr))', gap: '12px' }}>
+          {diningTables.map(table => {
+            const status = getStatus(table.id)
+            const st = STATUS_STYLES[status]
+            const orders = status === 'active'
+              ? activeOrders.filter(o => o.table_id === table.id)
+              : status === 'served'
+              ? servedOrders.filter(o => o.table_id === table.id)
+              : []
+            const itemCount = orders.reduce((s, o) => s + (o.items?.length || 0), 0)
+            const revenue   = orders.reduce((s, o) => s + (o.total || 0), 0)
+
+            return (
+              <div key={table.id} style={{
+                background: st.bg,
+                border: `1.5px solid ${st.border}`,
+                borderRadius: '14px',
+                padding: '16px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                position: 'relative',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text)' }}>
+                    {table.table_num}
+                  </span>
+                  <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: st.dot, boxShadow: `0 0 8px ${st.dot}88` }} />
+                </div>
+                <div style={{ fontSize: '0.72rem', color: st.text, fontWeight: 700 }}>
+                  {st.label}
+                </div>
+                {orders.length > 0 && (
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.5 }}>
+                    {orders.length} Bestellung{orders.length > 1 ? 'en' : ''}<br />
+                    {itemCount} Gerichte · € {revenue.toFixed(2)}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

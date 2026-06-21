@@ -12,7 +12,7 @@ import {
   Users, Clock, BarChart2, CreditCard, Sun, Moon, LogOut,
   Utensils, Palette, ChefHat, Package, Tag, X, Menu as MenuIcon,
   Settings, Mail, Truck, Plug, ChevronDown, ChevronRight,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Monitor, History,
 } from 'lucide-react'
 import AdminChatWidget from '@/components/AdminChatWidget'
 
@@ -64,8 +64,10 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
     {
       id: 'core',
       items: [
-        { icon: LayoutDashboard, label: t('nav.overview'),  href: '/admin' },
-        { icon: ChefHat,         label: t('nav.orders'),    href: '/admin/orders' },
+        { icon: LayoutDashboard, label: t('nav.overview'),    href: '/admin' },
+        { icon: ChefHat,         label: t('nav.orders'),      href: '/admin/orders' },
+        { icon: History,         label: 'Bestellhistorie',    href: '/admin/orders/history' },
+        { icon: Monitor,         label: 'Küchen-Display',     href: '/admin/kds' },
       ],
     },
     {
