@@ -453,13 +453,42 @@ export default function InventoryPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <style>{`
+        .inv-table-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 180px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+        .inv-table-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 180px; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+        .inv-waste-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-top: 24px; }
+        .inv-weekly-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 4px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+        .inv-weekly-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid var(--border); align-items: center; }
+        .inv-po-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .inv-sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 768px) {
+          .inv-table-header { display: none; }
+          .inv-table-row { grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-areas: "name name name name" "stock unit min price" "act act act act"; gap: 4px 8px; padding: 14px 16px; }
+          .inv-table-row > *:nth-child(1) { grid-area: name; }
+          .inv-table-row > *:nth-child(2) { grid-area: stock; }
+          .inv-table-row > *:nth-child(3) { grid-area: unit; }
+          .inv-table-row > *:nth-child(4) { grid-area: min; }
+          .inv-table-row > *:nth-child(5) { grid-area: price; }
+          .inv-table-row > *:nth-child(6) { grid-area: act; }
+          .inv-waste-layout { grid-template-columns: 1fr; }
+          .inv-weekly-header { display: none; }
+          .inv-weekly-row { grid-template-columns: 1fr 1fr; gap: 4px 8px; }
+          .inv-po-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+          .inv-sup-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{ padding: '24px 24px 0', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, padding: '24px 24px 0', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <h1 style={{ color: 'var(--text)', fontSize: '1.4rem', fontWeight: 700, marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}><Package size={22} /> Lagerbestand</h1>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{ingredients.length} Zutaten · {suppliers.length} Lieferanten</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fb923c18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Package size={18} color="#fb923c" />
+              </div>
+              <div>
+                <h1 style={{ color: 'var(--text)', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1 }}>Lagerbestand</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '1px' }}>{ingredients.length} Zutaten · {suppliers.length} Lieferanten</p>
+              </div>
             </div>
             {tab === 'bestand' && (
               <button onClick={openAddIng} style={btnPrimary}>+ Zutat</button>
@@ -471,9 +500,9 @@ export default function InventoryPage() {
 
           {/* Low stock banner */}
           {lowStockCount > 0 && (
-            <div style={{ background: '#431407', border: '1px solid #fb923c44', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '10px', padding: '10px 16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <AlertTriangle size={16} color="#fb923c" />
-              <span style={{ color: '#fdba74', fontSize: '0.875rem', fontWeight: 500 }}>
+              <span style={{ color: '#fb923c', fontSize: '0.875rem', fontWeight: 500 }}>
                 {lowStockCount} {lowStockCount === 1 ? 'Zutat hat' : 'Zutaten haben'} niedrigen Bestand
                 {' — '}
                 <button onClick={() => setTab('bestellungen')} style={{ background: 'none', border: 'none', color: '#fb923c', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem', padding: 0 }}>

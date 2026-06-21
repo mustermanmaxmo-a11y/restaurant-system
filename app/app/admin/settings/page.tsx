@@ -295,13 +295,25 @@ export default function SettingsPage() {
   if (loading) return null
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: '640px' }}>
-      <h1 style={{ color: 'var(--text)', fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px' }}>
-        Einstellungen
-      </h1>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '40px' }}>
-        Konto & Datenschutz
-      </p>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* Sticky header */}
+      <div style={{
+        background: 'var(--surface)', borderBottom: '1px solid var(--border)',
+        padding: '14px 20px', display: 'flex', alignItems: 'center',
+        position: 'sticky', top: 0, zIndex: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#94a3b818', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ShieldCheck size={18} color="#94a3b8" />
+          </div>
+          <div>
+            <h1 style={{ color: 'var(--text)', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1 }}>Einstellungen</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '1px' }}>Konto & Datenschutz</p>
+          </div>
+        </div>
+      </div>
+
+    <div style={{ padding: '24px 20px 48px', maxWidth: '660px' }}>
 
       {/* Google Review URL */}
       {restaurant && (
@@ -325,7 +337,7 @@ export default function SettingsPage() {
             placeholder="https://g.page/r/..."
             style={{
               width: '100%', boxSizing: 'border-box',
-              background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)',
+              background: 'var(--bg)', border: '1px solid var(--border)',
               borderRadius: '10px', padding: '10px 14px',
               color: 'var(--text)', fontSize: '0.875rem', marginBottom: '12px',
               fontFamily: 'inherit', outline: 'none',
@@ -380,7 +392,7 @@ export default function SettingsPage() {
             onChange={e => setRatingEmailDelayHours(parseInt(e.target.value) || 0)}
             style={{
               width: '120px', boxSizing: 'border-box',
-              background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)',
+              background: 'var(--bg)', border: '1px solid var(--border)',
               borderRadius: '10px', padding: '10px 14px',
               color: 'var(--text)', fontSize: '0.875rem', marginBottom: '6px',
               fontFamily: 'inherit', outline: 'none',
@@ -439,7 +451,7 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Globaler Schwellwert (Bestand unter X → Alert)</label>
-                <input type="number" min={1} max={100} value={alerts.default_threshold} onChange={e => setAlerts(p => ({ ...p, default_threshold: parseInt(e.target.value) || 1 }))} style={{ width: '100%', boxSizing: 'border-box', background: 'var(--surface-2, #1a1a2a)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
+                <input type="number" min={1} max={100} value={alerts.default_threshold} onChange={e => setAlerts(p => ({ ...p, default_threshold: parseInt(e.target.value) || 1 }))} style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit', outline: 'none' }} />
               </div>
 
               {([
@@ -1137,6 +1149,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }
