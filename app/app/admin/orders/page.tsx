@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { setOrderStatus } from '@/lib/orders/setOrderStatus'
 import { Order, OrderStatus, ServiceCall, Table } from '@/types/database'
-import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X, User, FileText } from 'lucide-react'
+import { ChefHat, Bell, Receipt, Clock, Users, Truck, ShoppingBag, Check, X, User, FileText, Euro, Monitor, History } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/components/providers/language-provider'
 
 type OrderWithTable = Order & { table_label?: string }
@@ -188,6 +189,7 @@ function ServiceCallBanner({ calls, tables, onResolve }: {
 
 export default function OrdersPage() {
   const { t } = useLanguage()
+  const router = useRouter()
   const [orders, setOrders]       = useState<OrderWithTable[]>([])
   const [tables, setTables]       = useState<Table[]>([])
   const tablesRef                 = useRef<Table[]>([])
@@ -293,6 +295,8 @@ export default function OrdersPage() {
 
   const totalActive = orders.filter(o => o.status !== 'served').length
   const newCount = cols[0].orders.length
+  const servedRevenue = orders.filter(o => o.status === 'served').reduce((s, o) => s + (o.total || 0), 0)
+  const servedCount   = orders.filter(o => o.status === 'served').length
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
@@ -341,6 +345,27 @@ export default function OrdersPage() {
             {newCount} neu
           </span>
         )}
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', padding: '5px 12px' }}>
+          <Euro size={13} color="#10b981" />
+          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10b981' }}>€ {servedRevenue.toFixed(2)}</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: '2px' }}>{servedCount} serviert</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '5px 12px' }}>
+          <ChefHat size={13} color="#f59e0b" />
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f59e0b' }}>{totalActive} aktiv</span>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+          <button onClick={() => router.push('/admin/kds')} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,107,53,0.1)', border: '1px solid rgba(255,107,53,0.25)', borderRadius: '8px', padding: '5px 11px', cursor: 'pointer', color: '#ff6b35', fontSize: '0.78rem', fontWeight: 700 }}>
+            <Monitor size={13} /> KDS
+          </button>
+          <button onClick={() => router.push('/admin/orders/history')} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 11px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 600 }}>
+            <History size={13} /> Verlauf
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '16px 20px 32px' }}>
