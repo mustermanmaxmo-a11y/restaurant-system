@@ -52,6 +52,7 @@ export interface ColorSet {
   accent: string
   accentDim: string
   accentGlow: string
+  accentSecondary: string
   text: string
   muted: string
   muted2: string
@@ -74,6 +75,7 @@ export function buildColorsFromRestaurant(restaurant: Partial<Restaurant>): Colo
   const pkg = getDesignPackage(readCfgString(cfg, 'design_package') ?? restaurant.design_package ?? undefined)
 
   const accent = readCfgString(cfg, 'primary_color') ?? restaurant.primary_color ?? pkg.preview.primaryColor
+  const accentSecondary = readCfgString(cfg, 'accent_secondary') ?? accent
   const bg = readCfgString(cfg, 'bg_color') ?? restaurant.bg_color ?? pkg.preview.bgColor
   const surface = readCfgString(cfg, 'surface_color') ?? restaurant.surface_color ?? pkg.preview.surfaceColor
   const cardBg = readCfgString(cfg, 'card_color') ?? restaurant.card_color ?? pkg.preview.cardColor
@@ -99,6 +101,7 @@ export function buildColorsFromRestaurant(restaurant: Partial<Restaurant>): Colo
     accent,
     accentDim: `${accent}1f`,
     accentGlow: `${accent}47`,
+    accentSecondary,
     text,
     muted,
     muted2,
