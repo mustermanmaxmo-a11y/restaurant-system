@@ -26,12 +26,15 @@ export interface BrandOverrides {
   [key: string]: unknown
 }
 
+export type HeroLayout = 'classic-overlay' | 'bold-statement' | 'split' | 'centered-minimal' | 'gradient-glow'
+
 export interface ResolvedBrand {
   surface: BrandSurface
   colors: ColorSet
   font: FontPair
   fontPairKey: string
   layoutVariant: string
+  heroLayout: HeroLayout
   borderRadius: 'sharp' | 'rounded' | 'pill'
   hoverEffect: 'scale' | 'glow' | 'underline' | 'color-shift' | 'none'
   animationStyle: 'fade' | 'slide' | 'none'
@@ -85,12 +88,19 @@ export function resolveBrand(
 
   if (surface === 'landing') delete safeOverrides.layout_variant
 
+  const heroLayout = pickEnum(
+    readCfgString(cfg, 'hero_layout'),
+    ['classic-overlay', 'bold-statement', 'split', 'centered-minimal', 'gradient-glow'] as const,
+    'classic-overlay',
+  )
+
   return {
     surface,
     colors,
     font,
     fontPairKey,
     layoutVariant,
+    heroLayout,
     borderRadius: pickEnum(readCfgString(cfg, 'border_radius'), ['sharp', 'rounded', 'pill'] as const, 'rounded'),
     hoverEffect: pickEnum(readCfgString(cfg, 'hover_effect'), ['scale', 'glow', 'underline', 'color-shift', 'none'] as const, 'scale'),
     animationStyle: pickEnum(readCfgString(cfg, 'animation_style'), ['fade', 'slide', 'none'] as const, 'fade'),
