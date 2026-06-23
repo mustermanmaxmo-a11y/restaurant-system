@@ -20,7 +20,10 @@ export async function GET(req: NextRequest) {
     .order('name')
     .limit(60)
 
-  if (q) query = query.or(`name.ilike.%${q}%,slug.ilike.%${q}%`)
+  if (q) {
+    const safeQ = q.replace(/[,()\\%]/g, '')
+    if (safeQ) query = query.or(`name.ilike.%${safeQ}%,slug.ilike.%${safeQ}%`)
+  }
   if (plan && plan !== 'all') query = query.eq('plan', plan)
   if (status === 'active') query = query.eq('active', true)
   if (status === 'inactive') query = query.eq('active', false)
