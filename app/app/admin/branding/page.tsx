@@ -12,6 +12,7 @@ import { useLanguage } from '@/components/providers/language-provider'
 import { getPlanLimits } from '@/lib/plan-limits'
 import { ImageIcon, Check, Palette, Loader2, Sparkles, ChevronDown, Maximize2, X, Send, LayoutGrid, Layers, Scan, Smartphone, Tablet, Monitor, Star, RotateCw, Eye } from 'lucide-react'
 import { UpgradeHint } from '@/components/UpgradeHint'
+import { TemplatePreviewCard } from '@/components/landing/TemplatePreviewCard'
 import LandingPageTab from './LandingPageTab'
 
 // ─── ShineBorder ─────────────────────────────────────────────────────────────
@@ -951,7 +952,6 @@ export default function BrandingPage() {
                     const isApplying = applyingTemplateId === tpl.id
                     const justApplied = templateApplied === tpl.id
                     const cfg = tpl.config ?? {}
-                    const swatches = [cfg.bg_color, cfg.surface_color, cfg.primary_color, cfg.button_color, cfg.text_color].filter(Boolean)
                     const tierColor = tpl.plan_tier === 'premium' ? '#8B5CF6' : tpl.plan_tier === 'pro' ? '#F59E0B' : '#4B5563'
                     return (
                       <div key={tpl.id} style={{
@@ -964,15 +964,8 @@ export default function BrandingPage() {
                             <Check size={10} /> Aktiv
                           </div>
                         )}
-                        <div style={{ height: '70px', borderRadius: '8px', background: cfg.bg_color, marginBottom: '10px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <div style={{ width: '70%', height: '40px', borderRadius: '6px', background: cfg.surface_color || cfg.card_color, display: 'flex', alignItems: 'center', padding: '0 8px', gap: '6px' }}>
-                            <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: cfg.primary_color }} />
-                            <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: cfg.text_color, opacity: 0.4 }} />
-                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: cfg.button_color || cfg.primary_color }} />
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '3px', marginBottom: '8px' }}>
-                          {swatches.map((c, i) => <div key={i} style={{ width: '16px', height: '16px', borderRadius: '50%', background: c, border: '1px solid var(--border)' }} />)}
+                        <div style={{ marginBottom: '10px' }}>
+                          <TemplatePreviewCard config={cfg} name={tpl.name} />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                           <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.82rem' }}>{tpl.name}</div>
