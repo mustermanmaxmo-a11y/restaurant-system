@@ -880,56 +880,16 @@ export default function BrandingPage() {
             <div>
               <div style={{ marginBottom: '20px' }}>
                 <h2 style={tabHeading}>Template-Bibliothek</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px' }}>50+ kuratierte Designs — wähle eines, das zu deinem Restaurant passt.</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px' }}>Premium Designs — wähle eines, das zu deinem Restaurant passt.</p>
               </div>
-              <label style={sectionLabel}>Design-Paket</label>
-              {(() => {
-                const emailReady = ['modern-classic', 'elegant-gold', 'warm-trattoria'].includes(designPackage)
-                const currentName = DESIGN_PACKAGES.find(p => p.id === designPackage)?.name ?? 'Modern Classic'
-                return (
-                  <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--border)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    📧 Deine Marketing-Emails nutzen automatisch den Stil <strong style={{ color: 'var(--text)' }}>{emailReady ? currentName : 'Modern Classic'}</strong>
-                    {!emailReady && <span> (für „{currentName}" folgt der dedizierte Email-Stil bald)</span>}
-                    . Pro Template lässt sich der Stil im Template-Editor überschreiben.
-                  </div>
-                )
-              })()}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px', marginBottom: '28px' }}>
-                {DESIGN_PACKAGES.map(p => {
-                  const isActive = p.id === designPackage
-                  const card = (
-                    <button key={p.id} onClick={() => applyPackage(p)} style={{
-                      width: '100%', background: isActive ? `${p.preview.primaryColor}12` : 'var(--surface)',
-                      border: isActive ? `2px solid ${p.preview.primaryColor}` : '2px solid var(--border)',
-                      borderRadius: '12px', padding: '14px 12px', cursor: 'pointer', textAlign: 'left',
-                      position: 'relative', transition: 'border-color 0.15s, background 0.15s',
-                    }}>
-                      {isActive && (
-                        <div style={{ position: 'absolute', top: '8px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', background: p.preview.primaryColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}><Check size={11} /></div>
-                      )}
-                      <div style={{ display: 'flex', gap: '3px', marginBottom: '10px' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: `linear-gradient(135deg, ${p.preview.primaryColor}, ${darken(p.preview.primaryColor, 40)})` }} />
-                        <div style={{ flex: 1, height: '20px', borderRadius: '4px', background: p.preview.bgColor, border: '1px solid var(--border)' }}>
-                          <div style={{ width: '40%', height: '6px', borderRadius: '3px', background: p.preview.primaryColor, margin: '7px 4px', opacity: 0.7 }} />
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '1.1rem', marginBottom: '3px' }}>{p.emoji}</div>
-                      <div style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.78rem', lineHeight: 1.2 }}>{p.name}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.65rem', marginTop: '4px', lineHeight: 1.3 }}>{p.description}</div>
-                    </button>
-                  )
-                  return isActive ? (
-                    <ShineBorder key={p.id} color={[p.preview.primaryColor, darken(p.preview.primaryColor, 30), '#ffffff22']}>{card}</ShineBorder>
-                  ) : card
-                })}
-              </div>
-              <label style={sectionLabel}>50+ Templates</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
                 {[
-                  { id: 'all', label: 'Alle' }, { id: 'fast-food', label: 'Fast Food' }, { id: 'fine-dining', label: 'Fine Dining' },
-                  { id: 'casual', label: 'Casual' }, { id: 'bar', label: 'Bar' }, { id: 'cafe', label: 'Café' },
-                  { id: 'asian', label: 'Asian' }, { id: 'italian', label: 'Italian' }, { id: 'bavarian', label: 'Bayerisch' },
-                  { id: 'street-food', label: 'Street Food' }, { id: 'scandinavian', label: 'Skandinavisch' },
+                  { id: 'all', label: 'Alle' },
+                  { id: 'italian', label: 'Italienisch' },
+                  { id: 'fastcasual', label: 'Burger & Street Food' },
+                  { id: 'japanese', label: 'Japanisch' },
+                  { id: 'vegan', label: 'Vegan' },
+                  { id: 'asian', label: 'Asiatisch' },
                 ].map(cat => {
                   const isCatActive = cat.id === templateCategory
                   return (
@@ -941,8 +901,6 @@ export default function BrandingPage() {
                   )
                 })}
               </div>
-              <input type="text" value={templateSearch} onChange={e => setTemplateSearch(e.target.value)}
-                placeholder="Templates durchsuchen…" style={{ ...inputStyle, marginBottom: '14px' }} />
               {templatesLoading && <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Lade Templates…</div>}
               {!templatesLoading && templates.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', padding: '20px 0' }}>Keine Templates gefunden.</div>}
               {!templatesLoading && templates.length > 0 && (
