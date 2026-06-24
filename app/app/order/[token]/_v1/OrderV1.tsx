@@ -517,6 +517,11 @@ export default function OrderV1() {
 
   // Derived colors — updates automatically when restaurant branding loads
   const C = restaurant ? buildColorsFromRestaurant(restaurant) : buildColors()
+  const cfg = (restaurant?.design_config ?? {}) as Record<string, unknown>
+  const cardBorderRadius = (['sharp', 'rounded', 'pill'].includes(cfg.border_radius as string)
+    ? cfg.border_radius : 'rounded') as 'sharp' | 'rounded' | 'pill'
+  const cardStyleToken = (['elevated', 'flat', 'outlined', 'ghost'].includes(cfg.card_style as string)
+    ? cfg.card_style : 'elevated') as 'elevated' | 'flat' | 'outlined' | 'ghost'
   const layoutVariant = (restaurant?.layout_variant as 'cards' | 'list' | 'grid' | 'large-cards') ?? getDesignPackage(restaurant?.design_package).layoutVariant
 
   // ─── Loading ───────────────────────────────────────────────────────────────
@@ -1128,7 +1133,7 @@ export default function OrderV1() {
                     const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
                     const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
                     const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
-                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} special={specials[item.id]} displayName={displayName} displayDesc={displayDesc} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite onToggleFavorite={() => toggleFavorite(item.id)} />
+                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} special={specials[item.id]} displayName={displayName} displayDesc={displayDesc} borderRadius={cardBorderRadius} cardStyle={cardStyleToken} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite onToggleFavorite={() => toggleFavorite(item.id)} />
                   })}
                 </MenuItemGrid>
               )}
@@ -1152,7 +1157,7 @@ export default function OrderV1() {
                     const translations = item.translations as Record<string, { name: string; description: string }> | null | undefined
                     const displayName = (lang && translations?.[lang]?.name) ? translations[lang].name : item.name
                     const displayDesc = (lang && translations?.[lang]?.description) ? translations[lang].description : item.description
-                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} displayName={displayName} displayDesc={displayDesc} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />
+                    return <MenuItemCard key={item.id} item={item} qty={qty} layout={layoutVariant} colors={C} index={idx} displayName={displayName} displayDesc={displayDesc} borderRadius={cardBorderRadius} cardStyle={cardStyleToken} onOpen={() => setSelectedItem(item)} onAdd={() => addItem(item)} onRemove={() => removeItem(item)} isFavorite={favorites.has(item.id)} onToggleFavorite={() => toggleFavorite(item.id)} />
                   })}
                 </MenuItemGrid>
               </div>

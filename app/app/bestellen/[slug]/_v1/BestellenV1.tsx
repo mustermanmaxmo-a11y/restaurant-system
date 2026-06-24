@@ -495,6 +495,11 @@ export default function BestellenV1() {
   }
 
   const C = restaurant ? buildColorsFromRestaurant(restaurant) : buildColors()
+  const cfg = (restaurant?.design_config ?? {}) as Record<string, unknown>
+  const cardBorderRadius = (['sharp', 'rounded', 'pill'].includes(cfg.border_radius as string)
+    ? cfg.border_radius : 'rounded') as 'sharp' | 'rounded' | 'pill'
+  const cardStyleToken = (['elevated', 'flat', 'outlined', 'ghost'].includes(cfg.card_style as string)
+    ? cfg.card_style : 'elevated') as 'elevated' | 'flat' | 'outlined' | 'ghost'
   const spring = { type: 'spring' as const, stiffness: 420, damping: 26 }
   const springBouncy = { type: 'spring' as const, stiffness: 500, damping: 18 }
 
@@ -1787,6 +1792,8 @@ export default function BestellenV1() {
                         displayDesc={displayDesc}
                         index={idx}
                         special={specials[item.id]}
+                        borderRadius={cardBorderRadius}
+                        cardStyle={cardStyleToken}
                         onOpen={() => setSelectedItem(item)}
                         onAdd={() => orderMode === 'group-active' ? addToGroupCart(item) : addToCart(item)}
                         onRemove={() => orderMode === 'group-active' ? removeFromGroupCart(item) : removeFromCart(item.id)}
