@@ -1263,13 +1263,22 @@ export default function BestellenV1() {
     ? (FONT_PAIRS[restaurant.font_pair ?? getDesignPackage(restaurant.design_package).fontPair] ?? FONT_PAIRS['syne-dmsans'])
     : FONT_PAIRS['syne-dmsans']
   const brandVars = (restaurant ? {
+    '--bg': C.bg,
+    '--surface': C.surface,
+    '--surface-2': C.surface2,
+    '--card-bg': C.cardBg,
+    '--text': C.text,
+    '--text-muted': C.muted,
+    '--border': C.border,
     '--accent': C.accent,
     '--accent-hover': darken(C.accent, 15),
     '--accent-subtle': `${C.accent}18`,
     '--accent-text': isLightColor(C.accent) ? '#111111' : '#ffffff',
     '--border-accent': `${C.accent}33`,
     '--header-bg': C.headerBg,
+    '--header-text': C.headerText,
     '--btn-bg': C.buttonBg,
+    '--btn-text': C.buttonText,
     '--font-heading': brandFp.heading,
     '--font-body': brandFp.body,
   } : {}) as React.CSSProperties
@@ -1285,10 +1294,10 @@ export default function BestellenV1() {
               <img src={restaurant.logo_url} alt="" style={{ width: '52px', height: '52px', objectFit: 'contain', borderRadius: '10px', background: 'rgba(255,255,255,0.1)', padding: '4px', flexShrink: 0, marginTop: '2px' }} />
             )}
           <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '5px' }}>Willkommen bei</p>
+            <p style={{ color: 'var(--header-text)', opacity: 0.45, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '5px' }}>Willkommen bei</p>
             <h1 style={{ color: 'var(--header-text)', fontWeight: 800, fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', letterSpacing: '-0.02em', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurant?.name}</h1>
             {restaurant?.description && (
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem', marginTop: '3px', lineHeight: 1.3 }}>{restaurant.description}</p>
+              <p style={{ color: 'var(--header-text)', opacity: 0.5, fontSize: '0.72rem', marginTop: '3px', lineHeight: 1.3 }}>{restaurant.description}</p>
             )}
           </div>
           </div>{/* end logo+text wrapper */}
