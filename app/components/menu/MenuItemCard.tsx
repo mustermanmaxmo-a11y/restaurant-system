@@ -24,6 +24,8 @@ export interface MenuItemCardProps {
   onOpen: () => void
   isFavorite?: boolean
   onToggleFavorite?: () => void
+  borderRadius?: 'sharp' | 'rounded' | 'pill'
+  cardStyle?: 'elevated' | 'flat' | 'outlined' | 'ghost'
 }
 
 // Helpers: resolve color — either from ColorSet or CSS variable fallback
@@ -31,10 +33,34 @@ function c(colors: ColorSet | undefined, key: keyof ColorSet, cssVar: string): s
   return colors ? colors[key] : `var(${cssVar})`
 }
 
+function resolveRadius(br: 'sharp' | 'rounded' | 'pill' | undefined): string {
+  if (br === 'sharp') return '4px'
+  if (br === 'pill') return '999px'
+  return '16px'
+}
+
 // ─── Cards Layout (Standard — matches current design exactly) ────────────────
 function CardsLayout(props: MenuItemCardProps) {
-  const { item, qty, colors, special, displayName, displayDesc, index, onAdd, onRemove, onOpen, isFavorite, onToggleFavorite } = props
+  const { item, qty, colors, special, displayName, displayDesc, index, onAdd, onRemove, onOpen, isFavorite, onToggleFavorite, borderRadius, cardStyle } = props
   const inCart = qty > 0
+  const radius = resolveRadius(borderRadius)
+
+  const boxShadow = (cardStyle === 'flat' || cardStyle === 'ghost')
+    ? 'none'
+    : inCart ? '0 2px 12px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.06)'
+
+  const border = cardStyle === 'outlined'
+    ? `1.5px solid ${c(colors, 'accent', '--accent')}66`
+    : cardStyle === 'ghost'
+    ? `1px solid ${c(colors, 'border', '--border')}`
+    : inCart
+    ? `1.5px solid ${c(colors, 'accent', '--accent')}`
+    : '1.5px solid transparent'
+
+  const background = cardStyle === 'ghost'
+    ? 'transparent'
+    : c(colors, 'cardBg', '--surface')
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
@@ -44,14 +70,14 @@ function CardsLayout(props: MenuItemCardProps) {
       whileTap={{ scale: 0.97 }}
       onClick={onOpen}
       style={{
-        background: c(colors, 'cardBg', '--surface'),
-        borderRadius: '16px',
+        background,
+        borderRadius: radius,
         padding: '14px',
         display: 'flex',
         gap: '14px',
         alignItems: 'center',
-        border: inCart ? `1.5px solid ${c(colors, 'accent', '--accent')}` : '1.5px solid transparent',
-        boxShadow: inCart ? '0 2px 12px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.06)',
+        border,
+        boxShadow,
         cursor: 'pointer',
       }}
     >
@@ -185,8 +211,16 @@ function LargeCardsLayout(props: MenuItemCardProps) {
 
 // ─── Grid Layout (2-column, square-ish cards) ────────────────────────────────
 function GridLayout(props: MenuItemCardProps) {
-  const { item, qty, colors, special, displayName, index, onAdd, onRemove, onOpen } = props
+  const { item, qty, colors, special, displayName, index, onAdd, onRemove, onOpen, borderRadius, cardStyle } = props
   const inCart = qty > 0
+  const radius = resolveRadius(borderRadius)
+  const border = cardStyle === 'outlined'
+    ? `1.5px solid ${c(colors, 'accent', '--accent')}66`
+    : cardStyle === 'ghost'
+    ? `1px solid ${c(colors, 'border', '--border')}`
+    : inCart
+    ? `1.5px solid ${c(colors, 'accent', '--accent')}`
+    : `1px solid ${c(colors, 'border', '--border')}`
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
@@ -197,9 +231,9 @@ function GridLayout(props: MenuItemCardProps) {
       onClick={onOpen}
       style={{
         background: c(colors, 'cardBg', '--surface'),
-        borderRadius: '14px',
+        borderRadius: radius,
         overflow: 'hidden',
-        border: inCart ? `1.5px solid ${c(colors, 'accent', '--accent')}` : `1px solid ${c(colors, 'border', '--border')}`,
+        border,
         cursor: 'pointer',
         transition: 'border-color 0.2s ease',
       }}
