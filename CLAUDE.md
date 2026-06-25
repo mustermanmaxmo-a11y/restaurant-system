@@ -122,3 +122,34 @@ Ein funktionierendes, skalierbares Restaurant-System mit:
 - stabiler Infrastruktur
 - moderner UI
 - sauberer Codebasis
+
+---
+
+## 🗄️ Supabase Setup (manuell erforderlich)
+
+Folgende Supabase Storage Buckets müssen manuell im Dashboard angelegt sein:
+
+| Bucket | Typ | Zweck |
+|--------|-----|-------|
+| `branding` | **Public** | Landing Page Bilder: hero, logo, gallery |
+
+Fehlt ein Bucket → Upload-Endpoint gibt 500 zurück.
+
+---
+
+## 🏗️ Landing Page Architektur
+
+Die öffentliche Landing Page (`/[slug]/info`) ist so aufgebaut:
+
+```
+page.tsx
+  └── <LandingHero>          → template-spezifischer Hero-Block
+        └── HeroClassicOverlay / HeroBoldStatement / HeroSplit / HeroCenteredMinimal / HeroGradientGlow
+  └── <LandingPageSections>  → 10 gemeinsame Sektionen (immer gleich, unabhängig vom Template)
+        Info-Strip → Galerie → Featured Menu → Über uns → Öffnungszeiten
+        → Bewertungen → Reservierungs-CTA → Kontakt → Instagram → Footer
+```
+
+Neues Template hinzufügen = nur eine neue Hero-Komponente schreiben. Sektionen sind geteilt.
+
+Kanonischer Typ: `app/lib/landing-content.ts` → `LandingPageContent`
