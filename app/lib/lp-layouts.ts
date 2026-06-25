@@ -1,9 +1,8 @@
 // app/lib/lp-layouts.ts
-import type { LandingPageContent } from './landing-content'
-export type { LandingPageContent, OpeningHours, OpeningHoursDay, ReviewQuote } from './landing-content'
+import type { LandingPageContent, LpLayoutSlug } from './landing-content'
+export type { LandingPageContent, LpLayoutSlug, OpeningHours, OpeningHoursDay, ReviewQuote } from './landing-content'
 
 export const LP_LAYOUT_SLUGS = ['classic-hero', 'split-hero', 'minimal', 'bold-fullscreen'] as const
-export type LpLayoutSlug = typeof LP_LAYOUT_SLUGS[number]
 
 export interface LpLayout {
   slug: LpLayoutSlug

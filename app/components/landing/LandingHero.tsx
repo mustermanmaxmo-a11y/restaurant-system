@@ -1,6 +1,6 @@
 // app/components/landing/LandingHero.tsx
 import type { ResolvedBrand } from '@/lib/resolve-brand'
-import type { HeroContent, FeaturedItem } from './types'
+import type { LandingPageContent, FeaturedItem } from './types'
 import { HeroClassicOverlay } from './HeroClassicOverlay'
 import { HeroBoldStatement } from './HeroBoldStatement'
 import { HeroSplit } from './HeroSplit'
@@ -9,7 +9,7 @@ import { HeroGradientGlow } from './HeroGradientGlow'
 
 interface LandingHeroProps {
   brand: ResolvedBrand
-  content: HeroContent
+  content: LandingPageContent
   ctaHref: string
   restaurantName: string
   featuredItems?: FeaturedItem[]

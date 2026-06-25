@@ -1,12 +1,8 @@
+// app/components/landing/types.ts
 import type { ResolvedBrand } from '@/lib/resolve-brand'
+import type { LandingPageContent } from '@/lib/landing-content'
 
-export interface HeroContent {
-  hero_image_url?: string
-  headline?: string
-  subheadline?: string
-  about_text?: string
-  cta_text?: string
-}
+export type { LandingPageContent }
 
 export interface FeaturedItem {
   id: string
@@ -17,7 +13,7 @@ export interface FeaturedItem {
 
 export interface HeroProps {
   brand: ResolvedBrand
-  content: HeroContent
+  content: LandingPageContent
   ctaHref: string
   restaurantName: string
   featuredItems?: FeaturedItem[]

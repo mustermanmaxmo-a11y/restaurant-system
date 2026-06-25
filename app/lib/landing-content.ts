@@ -1,5 +1,7 @@
 // app/lib/landing-content.ts
 
+export type LpLayoutSlug = 'classic-hero' | 'split-hero' | 'minimal' | 'bold-fullscreen'
+
 export interface ReviewQuote {
   text: string
   author: string
@@ -32,7 +34,7 @@ export interface LandingPageContent {
   cta_text?: string
   cta_url?: string
   lp_design_package?: string
-  lp_layout?: string
+  lp_layout?: LpLayoutSlug
 
   // Kontakt
   address?: string
