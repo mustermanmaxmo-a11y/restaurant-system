@@ -22,7 +22,7 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
 
   const [{ data: restaurant }, { data: allOrders }] = await Promise.all([
     admin.from('restaurants').select('id, name, slug, plan').eq('id', id).single(),
-    (admin as any).from('orders')
+    admin.from('orders')
       .select('id, table_number, total, status, created_at, updated_at')
       .eq('restaurant_id', id)
       .gte('created_at', d90)

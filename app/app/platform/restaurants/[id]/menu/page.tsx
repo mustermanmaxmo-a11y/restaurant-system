@@ -17,7 +17,7 @@ export default async function RestaurantMenuPage({ params }: { params: Promise<{
       .eq('restaurant_id', id)
       .order('category_id')
       .order('name'),
-    (admin as any).from('menu_categories')
+    admin.from('menu_categories')
       .select('id, name, sort_order')
       .eq('restaurant_id', id)
       .order('sort_order'),

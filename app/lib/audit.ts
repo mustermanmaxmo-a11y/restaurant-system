@@ -12,8 +12,7 @@ type AuditParams = {
 export async function logAudit(params: AuditParams): Promise<void> {
   try {
     const admin = createSupabaseAdmin()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).from('platform_audit_log').insert(params)
+    await admin.from('platform_audit_log').insert(params)
   } catch {
     // audit failures must never break main flow
   }
