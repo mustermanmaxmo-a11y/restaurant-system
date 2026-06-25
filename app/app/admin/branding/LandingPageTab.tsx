@@ -634,14 +634,68 @@ export default function LandingPageTab({ restaurant }: Props) {
               </div>
             </div>
 
-            {/* ── Review Link ── */}
+            {/* ── Bewertungen ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
               <div style={sectionTitle}>Bewertungen</div>
-              <div>
-                <label style={fieldLabel}>Google / Tripadvisor Link</label>
-                <input type="text" value={content.review_url ?? ''}
-                  onChange={e => setContent(prev => ({ ...prev, review_url: e.target.value }))}
-                  placeholder="https://g.page/..." style={inputStyle} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={fieldLabel}>Google Rating <span style={{ opacity: 0.4 }}>(z.B. 4.8)</span></label>
+                    <input
+                      type="number" min="1" max="5" step="0.1"
+                      value={content.google_rating ?? ''}
+                      onChange={e => setContent(prev => ({ ...prev, google_rating: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                      placeholder="4.8" style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={fieldLabel}>Anzahl Bewertungen</label>
+                    <input
+                      type="number" min="0"
+                      value={content.google_review_count ?? ''}
+                      onChange={e => setContent(prev => ({ ...prev, google_review_count: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+                      placeholder="247" style={inputStyle}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={fieldLabel}>Google Maps Link</label>
+                  <input
+                    type="text"
+                    value={content.google_maps_url ?? ''}
+                    onChange={e => setContent(prev => ({ ...prev, google_maps_url: e.target.value }))}
+                    placeholder="https://maps.app.goo.gl/..." style={inputStyle}
+                  />
+                </div>
+                {[0, 1, 2].map(i => {
+                  const quote = content.review_quotes?.[i]
+                  return (
+                    <div key={i} style={{ background: 'var(--surface)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Zitat {i + 1}</div>
+                      <textarea
+                        rows={2}
+                        value={quote?.text ?? ''}
+                        onChange={e => setContent(prev => {
+                          const quotes = [...(prev.review_quotes ?? [{ text: '', author: '' }, { text: '', author: '' }, { text: '', author: '' }])]
+                          quotes[i] = { ...quotes[i], text: e.target.value }
+                          return { ...prev, review_quotes: quotes }
+                        })}
+                        placeholder="Tolles Essen, super Atmosphäre…"
+                        style={{ ...inputStyle, resize: 'vertical' as const }}
+                      />
+                      <input
+                        type="text"
+                        value={quote?.author ?? ''}
+                        onChange={e => setContent(prev => {
+                          const quotes = [...(prev.review_quotes ?? [{ text: '', author: '' }, { text: '', author: '' }, { text: '', author: '' }])]
+                          quotes[i] = { ...quotes[i], author: e.target.value }
+                          return { ...prev, review_quotes: quotes }
+                        })}
+                        placeholder="Max M." style={inputStyle}
+                      />
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
