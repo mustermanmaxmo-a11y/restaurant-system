@@ -3,19 +3,11 @@ import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveBrand } from '@/lib/resolve-brand'
 import { LandingHero } from '@/components/landing/LandingHero'
+import { LandingPageSections } from '@/components/landing/LandingPageSections'
+import type { LandingPageContent } from '@/lib/landing-content'
 import type { FeaturedItem } from '@/components/landing/types'
 
 export const dynamic = 'force-dynamic'
-
-interface LandingPageContent {
-  logo_url?: string
-  hero_image_url?: string
-  headline?: string
-  subheadline?: string
-  about_text?: string
-  cta_text?: string
-  cta_url?: string
-}
 
 interface LandingPageRow {
   id: string
@@ -99,27 +91,40 @@ export default async function PublicLandingPage({
     hero_image_url: content.hero_image_url,
     headline: content.headline,
     subheadline: content.subheadline,
-    lp_layout: (landingPage.content as Record<string, unknown>)?.lp_layout as string | undefined,
+    lp_layout: content.lp_layout,
   })
 
-  let featuredItems: FeaturedItem[] = []
-  if (brand.heroLayout === 'bold-statement') {
-    const { data: items } = await admin
-      .from('menu_items')
-      .select('id, name, price, image_url')
-      .eq('restaurant_id', resto.id)
-      .eq('available', true)
-      .limit(4)
-    featuredItems = (items ?? []) as FeaturedItem[]
-  }
+  const { data: itemsData } = await admin
+    .from('menu_items')
+    .select('id, name, price, image_url')
+    .eq('restaurant_id', resto.id)
+    .eq('available', true)
+    .not('image_url', 'is', null)
+    .order('sort_order', { ascending: true })
+    .limit(4)
+
+  const featuredItems: FeaturedItem[] = (itemsData ?? []) as FeaturedItem[]
 
   return (
-    <LandingHero
-      brand={brand}
-      content={content}
-      ctaHref={content.cta_url || `/bestellen/${resto.slug}`}
-      restaurantName={resto.name}
-      featuredItems={featuredItems}
-    />
+    <div style={{
+      fontFamily: `${brand.font.body}, system-ui, sans-serif`,
+      background: brand.colors.bg,
+      color: brand.colors.text,
+    }}>
+      <LandingHero
+        brand={brand}
+        content={content}
+        ctaHref={content.cta_url || `/bestellen/${resto.slug}`}
+        restaurantName={resto.name}
+        featuredItems={featuredItems}
+      />
+      <LandingPageSections
+        brand={brand}
+        content={content}
+        restaurantName={resto.name}
+        slug={resto.slug}
+        featuredItems={featuredItems}
+      />
+    </div>
   )
 }
