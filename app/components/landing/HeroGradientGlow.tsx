@@ -11,7 +11,7 @@ export function HeroGradientGlow({ brand, content, ctaHref, restaurantName }: He
   const gradientBg = `linear-gradient(90deg, ${secondary}, ${colors.accent})`
 
   return (
-    <div style={{ fontFamily: `${font.body}, system-ui, sans-serif`, background: colors.bg, color: colors.text, minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
       {/* ── Ambient glows ── */}
       <div style={{ position: 'fixed', top: '-100px', right: '-80px', width: '300px', height: '300px', borderRadius: '50%', background: `radial-gradient(circle, ${colors.accent}30 0%, transparent 70%)`, pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', bottom: '-60px', left: '40px', width: '200px', height: '200px', borderRadius: '50%', background: `radial-gradient(circle, ${secondary}25 0%, transparent 70%)`, pointerEvents: 'none', zIndex: 0 }} />
@@ -71,17 +71,6 @@ export function HeroGradientGlow({ brand, content, ctaHref, restaurantName }: He
             </div>
           ))}
         </div>
-
-        {/* ── About ── */}
-        {content.about_text && (
-          <section style={{ padding: '28px 20px', borderTop: `1px solid ${colors.border}` }}>
-            <p style={{ color: colors.muted, lineHeight: 1.7, fontSize: '0.9rem' }}>{content.about_text}</p>
-          </section>
-        )}
-
-        <footer style={{ padding: '20px', textAlign: 'center', color: colors.muted, fontSize: '0.7rem', borderTop: `1px solid ${colors.border}` }}>
-          {restaurantName}
-        </footer>
       </div>
     </div>
   )

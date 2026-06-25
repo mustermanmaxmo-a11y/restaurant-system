@@ -7,7 +7,7 @@ export function HeroBoldStatement({ brand, content, ctaHref, restaurantName, fea
   const restWords = lines.slice(1).join(' ')
 
   return (
-    <div style={{ fontFamily: `${font.body}, system-ui, sans-serif`, background: colors.bg, color: colors.text, minHeight: '100vh' }}>
+    <div>
       {/* ── Header bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', gap: '12px', borderBottom: `1px solid ${colors.border}` }}>
         {brand.logoUrl && (
@@ -67,17 +67,6 @@ export function HeroBoldStatement({ brand, content, ctaHref, restaurantName, fea
           </div>
         </div>
       )}
-
-      {/* ── About ── */}
-      {content.about_text && (
-        <section style={{ padding: '32px 20px', borderTop: `1px solid ${colors.border}` }}>
-          <div style={{ color: colors.muted, lineHeight: 1.7, fontSize: '0.9rem', maxWidth: '600px' }}>{content.about_text}</div>
-        </section>
-      )}
-
-      <footer style={{ padding: '20px', textAlign: 'center', color: colors.muted, fontSize: '0.72rem', borderTop: `1px solid ${colors.border}` }}>
-        {restaurantName}
-      </footer>
     </div>
   )
 }
