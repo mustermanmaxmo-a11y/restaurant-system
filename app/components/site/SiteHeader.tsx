@@ -11,7 +11,8 @@ interface SiteHeaderProps {
   slug: string
   restaurantName: string
   logoUrl?: string
-  active?: SiteNavKey
+  /** Page-level nav key. 'kontakt' is an anchor, not a page, so it can't be active. */
+  active?: Exclude<SiteNavKey, 'kontakt'>
 }
 
 export function SiteHeader({ colors, font, slug, restaurantName, logoUrl, active }: SiteHeaderProps) {
@@ -26,11 +27,11 @@ export function SiteHeader({ colors, font, slug, restaurantName, logoUrl, active
       fontFamily: `${font.body}, system-ui, sans-serif`,
     }}>
       <style>{`
-        .sh-desktop { display: flex; }
-        .sh-burger { display: none; }
+        .site-header-desktop { display: flex; }
+        .site-header-burger { display: none; }
         @media (max-width: 768px) {
-          .sh-desktop { display: none; }
-          .sh-burger { display: flex; }
+          .site-header-desktop { display: none; }
+          .site-header-burger { display: flex; }
         }
       `}</style>
 
@@ -51,7 +52,7 @@ export function SiteHeader({ colors, font, slug, restaurantName, logoUrl, active
         </a>
 
         {/* Desktop-Navi */}
-        <nav className="sh-desktop" style={{ alignItems: 'center', gap: '24px' }}>
+        <nav className="site-header-desktop" style={{ alignItems: 'center', gap: '24px' }}>
           {nav.map(item => (
             <a key={item.key} href={item.href} style={{
               fontSize: '0.85rem', fontWeight: item.active ? 700 : 500,
@@ -62,7 +63,7 @@ export function SiteHeader({ colors, font, slug, restaurantName, logoUrl, active
 
         {/* Mobiler Burger-Button */}
         <button
-          className="sh-burger"
+          className="site-header-burger"
           onClick={() => setOpen(o => !o)}
           aria-label="Menü"
           aria-expanded={open}
@@ -76,7 +77,7 @@ export function SiteHeader({ colors, font, slug, restaurantName, logoUrl, active
 
       {/* Mobiles Dropdown-Panel */}
       {open && (
-        <nav className="sh-burger" style={{ flexDirection: 'column', borderTop: `1px solid ${colors.border}`, padding: '8px 20px 16px' }}>
+        <nav className="site-header-burger" style={{ flexDirection: 'column', borderTop: `1px solid ${colors.border}`, padding: '8px 20px 16px' }}>
           {nav.map(item => (
             <a key={item.key} href={item.href} onClick={() => setOpen(false)} style={{
               padding: '12px 0', fontSize: '0.95rem', fontWeight: item.active ? 700 : 500,
