@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { scheduleRatingEmail } from '@/lib/marketing/scheduleRatingEmail'
+import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 
 export const dynamic = 'force-dynamic'
 
-// TODO(A2-followup): add session check — only authenticated staff should
-// be able to schedule rating emails. Currently relies on the dedupeId
-// to prevent abuse (one message per order regardless of caller).
 export async function POST(request: NextRequest) {
+  const supabase = await createSupabaseServerSSR()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const { orderId } = await request.json()
     if (typeof orderId !== 'string' || !orderId) {
