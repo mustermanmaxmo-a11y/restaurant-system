@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
+import { GET } from '../restaurant/[slug]/route'
 
 // ── Mock Supabase + plan-limits ───────────────────────────────────────────────
 const mockSingle = vi.fn()
@@ -31,8 +32,6 @@ function makeGET(slug: string) {
 
 // ── GET /api/restaurant/[slug] ───────────────────────────────────────────────
 describe('GET /api/restaurant/[slug]', () => {
-  const { GET } = await import('../[slug]/route')
-
   beforeEach(() => vi.clearAllMocks())
 
   it('returns 404 when restaurant does not exist', async () => {

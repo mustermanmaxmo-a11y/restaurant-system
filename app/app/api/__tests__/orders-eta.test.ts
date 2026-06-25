@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
+import { POST } from '../orders/calculate-eta/route'
 
 // ── Mock Supabase ─────────────────────────────────────────────────────────────
 const mockPresence = vi.fn()
@@ -47,8 +48,6 @@ function makeRequest(body: Record<string, unknown>) {
 }
 
 describe('POST /api/orders/calculate-eta', () => {
-  const { POST } = await import('../calculate-eta/route')
-
   beforeEach(() => {
     vi.clearAllMocks()
     ;(mockOpenOrders as any)._callCount = 0

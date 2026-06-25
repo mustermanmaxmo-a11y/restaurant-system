@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
+import { POST as validatePOST } from '../checkout/validate-code/route'
+import { POST as usePOST } from '../checkout/use-code/route'
 
 // ── Mock Supabase admin ──────────────────────────────────────────────────────
 const mockMaybeSingle = vi.fn()
@@ -42,7 +44,7 @@ function makeRequest(body: Record<string, unknown>) {
 
 // ── validate-code ────────────────────────────────────────────────────────────
 describe('POST /api/checkout/validate-code', () => {
-  const { POST } = await import('../validate-code/route')
+  const POST = validatePOST
 
   beforeEach(() => vi.clearAllMocks())
 
@@ -124,7 +126,7 @@ describe('POST /api/checkout/validate-code', () => {
 
 // ── use-code ─────────────────────────────────────────────────────────────────
 describe('POST /api/checkout/use-code', () => {
-  const { POST } = await import('../use-code/route')
+  const POST = usePOST
 
   beforeEach(() => vi.clearAllMocks())
 
