@@ -227,7 +227,7 @@ interface Props {
 }
 
 export default function LandingPageTab({ restaurant }: Props) {
-  const [activeTab, setActiveTab] = useState<LpTab>('templates')
+  const [activeTab, setActiveTab] = useState<LpTab>('inhalt')
   const [landingPage, setLandingPage] = useState<LandingPageRow | null>(null)
   const [content, setContent] = useState<LandingPageContent>({})
   const [lpLayout, setLpLayout] = useState<LpLayoutSlug>('classic-hero')
@@ -264,13 +264,13 @@ export default function LandingPageTab({ restaurant }: Props) {
   }, [restaurant])
 
   // ── Save ────────────────────────────────────────────────────────────────────
-  async function handleSave(overrides?: Partial<{ is_published: boolean }>) {
+  async function handleSave(overrides?: Partial<{ is_published: boolean; contentOverride: LandingPageContent }>) {
     setSaving(true); setSaveError(''); setSaved(false)
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
     if (!token) { setSaving(false); return }
 
-    const fullContent: LandingPageContent = { ...content, lp_layout: lpLayout }
+    const fullContent: LandingPageContent = { ...(overrides?.contentOverride ?? content), lp_layout: lpLayout }
 
     const res = await fetch('/api/admin/landing-page', {
       method: 'PATCH',
@@ -316,13 +316,16 @@ export default function LandingPageTab({ restaurant }: Props) {
 
     if (res.ok) {
       const j = await res.json()
+      let updatedContent: LandingPageContent
       if (type === 'gallery') {
-        setContent(prev => ({ ...prev, gallery: [...(prev.gallery ?? []), j.url].slice(0, 6) }))
+        updatedContent = { ...content, gallery: [...(content.gallery ?? []), j.url].slice(0, 6) }
       } else if (type === 'hero') {
-        setContent(prev => ({ ...prev, hero_image_url: j.url }))
+        updatedContent = { ...content, hero_image_url: j.url }
       } else {
-        setContent(prev => ({ ...prev, logo_url: j.url }))
+        updatedContent = { ...content, logo_url: j.url }
       }
+      setContent(updatedContent)
+      await handleSave({ contentOverride: updatedContent })
     }
   }
 
