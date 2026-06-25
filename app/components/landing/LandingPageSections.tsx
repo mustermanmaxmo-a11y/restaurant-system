@@ -6,7 +6,6 @@ import type { FeaturedItem } from './types'
 interface Props {
   brand: ResolvedBrand
   content: LandingPageContent
-  restaurantName: string
   slug: string
   featuredItems: FeaturedItem[]
 }
@@ -26,7 +25,7 @@ function hasAnyOpeningHours(oh: OpeningHours): boolean {
   return DAY_ORDER.some(d => oh[d as keyof OpeningHours] !== undefined)
 }
 
-export function LandingPageSections({ brand, content, restaurantName, slug, featuredItems }: Props) {
+export function LandingPageSections({ brand, content, slug, featuredItems }: Props) {
   const { colors, font } = brand
   const todayKey = getTodayKey()
 
@@ -225,7 +224,7 @@ export function LandingPageSections({ brand, content, restaurantName, slug, feat
 
       {/* ── 8. Kontakt & Anfahrt ── */}
       {(content.address || content.phone || content.email) && (
-        <section style={sectionStyle}>
+        <section id="kontakt" style={sectionStyle}>
           <div style={innerStyle}>
             <div style={sectionLabel}>Kontakt & Anfahrt</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -287,17 +286,6 @@ export function LandingPageSections({ brand, content, restaurantName, slug, feat
         </section>
       )}
 
-      {/* ── 10. Footer ── */}
-      <footer style={{ padding: '28px 24px', borderTop: `1px solid ${colors.border}`, textAlign: 'center' }}>
-        <div style={{ color: colors.muted, fontFamily: `${font.heading}, Georgia, serif`, fontStyle: 'italic', fontSize: '0.9rem', marginBottom: '10px' }}>
-          {restaurantName}
-        </div>
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href="/legal/impressum" style={{ color: colors.muted, fontSize: '0.72rem', textDecoration: 'none' }}>Impressum</a>
-          <a href="/legal/datenschutz" style={{ color: colors.muted, fontSize: '0.72rem', textDecoration: 'none' }}>Datenschutz</a>
-          <span style={{ color: colors.muted, fontSize: '0.72rem' }}>© {new Date().getFullYear()}</span>
-        </div>
-      </footer>
     </>
   )
 }

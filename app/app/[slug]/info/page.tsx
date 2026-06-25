@@ -4,6 +4,8 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { resolveBrand } from '@/lib/resolve-brand'
 import { LandingHero } from '@/components/landing/LandingHero'
 import { LandingPageSections } from '@/components/landing/LandingPageSections'
+import { SiteHeader } from '@/components/site/SiteHeader'
+import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LandingPageContent } from '@/lib/landing-content'
 import type { FeaturedItem } from '@/components/landing/types'
 
@@ -111,6 +113,14 @@ export default async function PublicLandingPage({
       background: brand.colors.bg,
       color: brand.colors.text,
     }}>
+      <SiteHeader
+        colors={brand.colors}
+        font={brand.font}
+        slug={resto.slug}
+        restaurantName={resto.name}
+        logoUrl={content.logo_url ?? resto.logo_url ?? undefined}
+        active="start"
+      />
       <LandingHero
         brand={brand}
         content={content}
@@ -121,9 +131,13 @@ export default async function PublicLandingPage({
       <LandingPageSections
         brand={brand}
         content={content}
-        restaurantName={resto.name}
         slug={resto.slug}
         featuredItems={featuredItems}
+      />
+      <SiteFooter
+        colors={brand.colors}
+        font={brand.font}
+        restaurantName={resto.name}
       />
     </div>
   )
