@@ -1,6 +1,11 @@
 // app/components/landing/LandingPageSections.tsx
 import type { ResolvedBrand } from '@/lib/resolve-brand'
 import type { LandingPageContent, OpeningHours } from '@/lib/landing-content'
+import { isSectionVisible } from '@/lib/landing-visibility'
+import { TeamSection } from './sections/TeamSection'
+import { StorySection } from './sections/StorySection'
+import { AmbianceSection } from './sections/AmbianceSection'
+import { AwardsSection } from './sections/AwardsSection'
 import type { FeaturedItem } from './types'
 
 interface Props {
@@ -80,7 +85,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
       </div>
 
       {/* ── 2. Galerie ── */}
-      {(content.gallery ?? []).length > 0 && (
+      {isSectionVisible('gallery', content) && (content.gallery ?? []).length > 0 && (
         <section style={sectionStyle}>
           <div style={innerStyle}>
             <div style={sectionLabel}>Unsere Küche</div>
@@ -97,7 +102,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
       )}
 
       {/* ── 3. Featured Menu ── */}
-      {featuredItems.length > 0 && (
+      {isSectionVisible('featured_menu', content) && featuredItems.length > 0 && (
         <section style={sectionStyle}>
           <div style={innerStyle}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -123,7 +128,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
       )}
 
       {/* ── 4. Über uns ── */}
-      {content.about_text && (
+      {isSectionVisible('about', content) && content.about_text && (
         <section style={sectionStyle}>
           <div style={innerStyle}>
             <h2 style={{ fontFamily: `${font.heading}, Georgia, serif`, fontStyle: 'italic', fontSize: '1.6rem', color: colors.text, marginBottom: '14px', fontWeight: 700 }}>Über uns</h2>
@@ -132,8 +137,23 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
         </section>
       )}
 
-      {/* ── 5. Öffnungszeiten ── */}
-      {content.opening_hours && hasAnyOpeningHours(content.opening_hours) && (
+      {/* ── 5. Team ── */}
+      {isSectionVisible('team', content) && (content.team?.length ?? 0) > 0 && (
+        <TeamSection brand={brand} team={content.team!} />
+      )}
+
+      {/* ── 6. Geschichte ── */}
+      {isSectionVisible('story', content) && content.story_text && (
+        <StorySection brand={brand} storyText={content.story_text} imageUrl={content.story_image_url} foundedYear={content.founded_year} />
+      )}
+
+      {/* ── 7. Atmosphäre ── */}
+      {isSectionVisible('ambiance', content) && (content.ambiance_gallery?.length ?? 0) > 0 && (
+        <AmbianceSection brand={brand} images={content.ambiance_gallery!} />
+      )}
+
+      {/* ── 8. Öffnungszeiten ── */}
+      {isSectionVisible('opening_hours', content) && content.opening_hours && hasAnyOpeningHours(content.opening_hours) && (
         <section style={sectionStyle}>
           <div style={innerStyle}>
             <div style={sectionLabel}>Öffnungszeiten</div>
@@ -163,8 +183,13 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
         </section>
       )}
 
-      {/* ── 6. Bewertungen ── */}
-      {content.google_rating != null && (
+      {/* ── 9. Auszeichnungen ── */}
+      {isSectionVisible('awards', content) && (content.awards?.length ?? 0) > 0 && (
+        <AwardsSection brand={brand} awards={content.awards!} />
+      )}
+
+      {/* ── 10. Bewertungen ── */}
+      {isSectionVisible('reviews', content) && content.google_rating != null && (
         <section style={{ ...sectionStyle, background: colors.surface }}>
           <div style={innerStyle}>
             <div style={sectionLabel}>Bewertungen</div>
@@ -202,7 +227,8 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
         </section>
       )}
 
-      {/* ── 7. Reservierung CTA ── */}
+      {/* ── 11. Reservierung CTA ── */}
+      {isSectionVisible('reservation_cta', content) && (
       <section style={{ padding: '56px 24px', background: colors.accent, textAlign: 'center' }}>
         <div style={{ maxWidth: '560px', margin: '0 auto' }}>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '12px' }}>Reservierung</div>
@@ -221,9 +247,10 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
           </a>
         </div>
       </section>
+      )}
 
-      {/* ── 8. Kontakt & Anfahrt ── */}
-      {(content.address || content.phone || content.email) && (
+      {/* ── 12. Kontakt & Anfahrt ── */}
+      {isSectionVisible('contact', content) && (content.address || content.phone || content.email) && (
         <section id="kontakt" style={sectionStyle}>
           <div style={innerStyle}>
             <div style={sectionLabel}>Kontakt & Anfahrt</div>
@@ -255,8 +282,8 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
         </section>
       )}
 
-      {/* ── 9. Instagram ── */}
-      {content.instagram && (
+      {/* ── 13. Instagram ── */}
+      {isSectionVisible('instagram', content) && content.instagram && (
         <section style={{ ...sectionStyle, background: colors.surface }}>
           <div style={{ ...innerStyle, display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <div style={{
