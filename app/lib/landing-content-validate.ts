@@ -8,6 +8,7 @@ const SECTION_KEYS: SectionKey[] = [
   'awards', 'opening_hours', 'reviews', 'reservation_cta', 'contact', 'instagram',
 ]
 const DAY_KEYS = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'] as const
+const LP_LAYOUTS = new Set<string>(['classic-hero', 'split-hero', 'minimal', 'bold-fullscreen'])
 
 function asString(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined
@@ -72,7 +73,8 @@ function asReviewQuotes(v: unknown): ReviewQuote[] | undefined {
       const o = q as Record<string, unknown>
       if (typeof o.text !== 'string' || typeof o.author !== 'string') return null
       const quote: ReviewQuote = { text: o.text, author: o.author }
-      if (typeof o.stars === 'number') quote.stars = o.stars
+      const stars = asNumber(o.stars)
+      if (stars !== undefined) quote.stars = stars
       return quote
     })
     .filter((q): q is ReviewQuote => q !== null)
@@ -99,7 +101,7 @@ export function sanitizeLandingContent(raw: unknown): LandingPageContent {
 
   const stringKeys = [
     'logo_url', 'hero_image_url', 'headline', 'subheadline', 'about_text', 'cta_text', 'cta_url',
-    'lp_design_package', 'lp_layout', 'address', 'maps_url', 'phone', 'email', 'instagram', 'facebook',
+    'lp_design_package', 'address', 'maps_url', 'phone', 'email', 'instagram', 'facebook',
     'review_url', 'google_maps_url', 'story_text', 'story_image_url', 'founded_year',
   ] as const
   for (const k of stringKeys) {
@@ -119,6 +121,11 @@ export function sanitizeLandingContent(raw: unknown): LandingPageContent {
   const awards = asAwards(o.awards); if (awards) c.awards = awards
   const quotes = asReviewQuotes(o.review_quotes); if (quotes) c.review_quotes = quotes
   const vis = asSectionVisibility(o.section_visibility); if (vis) c.section_visibility = vis
+
+  const layout = asString(o.lp_layout)
+  if (layout !== undefined && LP_LAYOUTS.has(layout)) {
+    c.lp_layout = layout as LandingPageContent['lp_layout']
+  }
 
   return c
 }

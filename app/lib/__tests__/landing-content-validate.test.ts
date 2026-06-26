@@ -63,4 +63,22 @@ describe('sanitizeLandingContent', () => {
     })
     expect(out.opening_hours).toEqual({ mo: { open: true, from: '10:00', to: '22:00' }, di: { open: false } })
   })
+
+  it('verwirft NaN/Infinity bei review_quotes.stars', () => {
+    const out = sanitizeLandingContent({
+      review_quotes: [
+        { text: 'super', author: 'A', stars: Number.NaN },
+        { text: 'top', author: 'B', stars: 5 },
+      ],
+    })
+    expect(out.review_quotes).toEqual([
+      { text: 'super', author: 'A' },
+      { text: 'top', author: 'B', stars: 5 },
+    ])
+  })
+
+  it('übernimmt lp_layout nur bei gültigem Slug', () => {
+    expect(sanitizeLandingContent({ lp_layout: 'split-hero' }).lp_layout).toBe('split-hero')
+    expect(sanitizeLandingContent({ lp_layout: 'bogus-layout' }).lp_layout).toBeUndefined()
+  })
 })
