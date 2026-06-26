@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { sanitizeLandingContent } from '@/lib/landing-content-validate'
+import type { LandingPageContent } from '@/lib/landing-content'
 
 export const dynamic = 'force-dynamic'
-
-export interface LandingPageContent {
-  logo_url?: string
-  hero_image_url?: string
-  headline?: string
-  subheadline?: string
-  about_text?: string
-  cta_text?: string
-  cta_url?: string
-}
 
 interface LandingPageRow {
   id: string
@@ -33,15 +25,6 @@ const VALID_SLUGS = [
   'street-energy',
 ] as const
 
-const ALLOWED_CONTENT_KEYS: ReadonlySet<string> = new Set([
-  'logo_url',
-  'hero_image_url',
-  'headline',
-  'subheadline',
-  'about_text',
-  'cta_text',
-  'cta_url',
-])
 
 async function getUser(req: NextRequest) {
   const auth = req.headers.get('authorization')
@@ -144,23 +127,13 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  // Validate content fields
+  // Validate content fields (typbewusst: behält alle bekannten Felder, verwirft Müll)
   let safeContent: LandingPageContent | undefined
   if (content !== undefined) {
     if (typeof content !== 'object' || content === null || Array.isArray(content)) {
       return NextResponse.json({ error: 'content muss ein Objekt sein' }, { status: 400 })
     }
-    const cleaned: LandingPageContent = {}
-    for (const [key, val] of Object.entries(content)) {
-      if (!ALLOWED_CONTENT_KEYS.has(key)) continue
-      if (val !== undefined && typeof val !== 'string') {
-        return NextResponse.json({ error: `Feld "${key}" muss ein String sein` }, { status: 400 })
-      }
-      if (typeof val === 'string') {
-        (cleaned as Record<string, string>)[key] = val
-      }
-    }
-    safeContent = cleaned
+    safeContent = sanitizeLandingContent(content)
   }
 
   const isOwner = await checkOwnership(user.id, restaurant_id)
