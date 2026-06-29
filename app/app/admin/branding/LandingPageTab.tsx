@@ -653,6 +653,123 @@ export default function LandingPageTab({ restaurant }: Props) {
                 })}
               </div>
             </div>
+
+            {/* ── Team ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Team</div>
+                <VisibilityToggle visible={isVis('team')} onChange={v => setVisible('team', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(content.team ?? []).map((member, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '10px', alignItems: 'center', background: 'var(--surface)', borderRadius: '8px', padding: '10px' }}>
+                    <ImageDropzone label="" previewUrl={member.photo_url} uploading={!!uploading[`team-${i}`]}
+                      onFile={async f => {
+                        const url = await uploadImage(f, 'team', `team-${i}`)
+                        if (url) setContent(prev => {
+                          const team = [...(prev.team ?? [])]; team[i] = { ...team[i], photo_url: url }; return { ...prev, team }
+                        })
+                      }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input type="text" value={member.name} placeholder="Name"
+                        onChange={e => setContent(prev => { const team = [...(prev.team ?? [])]; team[i] = { ...team[i], name: e.target.value }; return { ...prev, team } })}
+                        style={inputStyle} />
+                      <input type="text" value={member.role} placeholder="Rolle (z.B. Chefkoch)"
+                        onChange={e => setContent(prev => { const team = [...(prev.team ?? [])]; team[i] = { ...team[i], role: e.target.value }; return { ...prev, team } })}
+                        style={inputStyle} />
+                    </div>
+                    <button onClick={() => setContent(prev => ({ ...prev, team: (prev.team ?? []).filter((_, j) => j !== i) }))}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setContent(prev => ({ ...prev, team: [...(prev.team ?? []), { name: '', role: '' }] }))}
+                  style={{ padding: '8px', borderRadius: '8px', border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  + Mitglied hinzufügen
+                </button>
+              </div>
+            </div>
+
+            {/* ── Geschichte ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Unsere Geschichte</div>
+                <VisibilityToggle visible={isVis('story')} onChange={v => setVisible('story', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <ImageDropzone label="Bild" previewUrl={content.story_image_url} uploading={!!uploading['story']}
+                  onFile={async f => { const url = await uploadImage(f, 'story', 'story'); if (url) setContent(prev => ({ ...prev, story_image_url: url })) }} />
+                <div>
+                  <label style={fieldLabel}>Gegründet (Jahr)</label>
+                  <input type="text" value={content.founded_year ?? ''} maxLength={20}
+                    onChange={e => setContent(prev => ({ ...prev, founded_year: e.target.value }))}
+                    placeholder="1998" style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ ...fieldLabel, marginBottom: 0 }}>Geschichte</label>
+                    <button onClick={() => handleGenerateField('story')} disabled={generatingField === 'story'}
+                      style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700 }}>
+                      {generatingField === 'story' ? '⟳' : '✦ KI'}
+                    </button>
+                  </div>
+                  <textarea value={content.story_text ?? ''} rows={4}
+                    onChange={e => setContent(prev => ({ ...prev, story_text: e.target.value }))}
+                    placeholder="Erzähle die Geschichte deines Restaurants…" style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Atmosphäre ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Atmosphäre <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 8)</span></div>
+                <VisibilityToggle visible={isVis('ambiance')} onChange={v => setVisible('ambiance', v)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {(content.ambiance_gallery ?? []).map((url, i) => (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <img src={url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <button onClick={() => setContent(prev => ({ ...prev, ambiance_gallery: (prev.ambiance_gallery ?? []).filter((_, j) => j !== i) }))}
+                      style={{ position: 'absolute', top: '3px', right: '3px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  </div>
+                ))}
+                {(content.ambiance_gallery ?? []).length < 8 && (
+                  <ImageDropzone label="" previewUrl={undefined} uploading={!!uploading['ambiance']}
+                    onFile={async f => { const url = await uploadImage(f, 'ambiance', 'ambiance'); if (url) setContent(prev => ({ ...prev, ambiance_gallery: [...(prev.ambiance_gallery ?? []), url].slice(0, 8) })) }}
+                    hint="Foto hinzufügen" />
+                )}
+              </div>
+            </div>
+
+            {/* ── Auszeichnungen ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Auszeichnungen & Presse</div>
+                <VisibilityToggle visible={isVis('awards')} onChange={v => setVisible('awards', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(content.awards ?? []).map((award, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '10px', alignItems: 'center', background: 'var(--surface)', borderRadius: '8px', padding: '10px' }}>
+                    <ImageDropzone label="" previewUrl={award.logo_url} uploading={!!uploading[`award-${i}`]}
+                      onFile={async f => { const url = await uploadImage(f, 'award', `award-${i}`); if (url) setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], logo_url: url }; return { ...prev, awards } }) }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input type="text" value={award.title} placeholder="Titel (z.B. Gault&Millau)"
+                        onChange={e => setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], title: e.target.value }; return { ...prev, awards } })}
+                        style={inputStyle} />
+                      <input type="text" value={award.subtitle ?? ''} placeholder="Untertitel (z.B. 2024)"
+                        onChange={e => setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], subtitle: e.target.value }; return { ...prev, awards } })}
+                        style={inputStyle} />
+                    </div>
+                    <button onClick={() => setContent(prev => ({ ...prev, awards: (prev.awards ?? []).filter((_, j) => j !== i) }))}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setContent(prev => ({ ...prev, awards: [...(prev.awards ?? []), { title: '' }] }))}
+                  style={{ padding: '8px', borderRadius: '8px', border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  + Auszeichnung hinzufügen
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
