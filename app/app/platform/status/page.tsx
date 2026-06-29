@@ -85,7 +85,7 @@ export default async function StatusPage() {
   // ── 5. Audit log table ────────────────────────────────────────────────────
   const t4 = Date.now()
   try {
-    const { count, error } = await (admin as any).from('platform_audit_log').select('*', { head: true, count: 'exact' })
+    const { count, error } = await admin.from('platform_audit_log').select('*', { head: true, count: 'exact' })
     const ms = Date.now() - t4
     if (error) {
       checks.push({ name: 'Audit Log', status: 'warn', detail: 'Tabelle nicht gefunden — Migration ausstehend?', ms })

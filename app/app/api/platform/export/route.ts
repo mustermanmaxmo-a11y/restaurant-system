@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   if (type === 'orders') {
     const days = Number(req.nextUrl.searchParams.get('days') ?? '30')
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
-    const { data } = await (admin as any)
+    const { data } = await admin
       .from('orders')
       .select('id, restaurant_id, table_number, total, status, created_at, updated_at')
       .gte('created_at', since)
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
 
   if (type === 'audit') {
     if (role !== 'owner' && role !== 'co_founder') return NextResponse.json({ error: 'forbidden' }, { status: 403 })
-    const { data } = await (admin as any)
+    const { data } = await admin
       .from('platform_audit_log')
       .select('id, actor_email, action, target_type, target_id, target_name, details, created_at')
       .order('created_at', { ascending: false })

@@ -36,8 +36,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
     admin.from('tables').select('id', { count: 'exact', head: true }).eq('restaurant_id', id),
     admin.from('orders').select('id, total, created_at, status').eq('restaurant_id', id).order('created_at', { ascending: false }).limit(5),
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (admin as any).from('platform_notes')
+    admin.from('platform_notes')
       .select('id, author_email, content, pinned, created_at')
       .eq('restaurant_id', id)
       .order('pinned', { ascending: false })

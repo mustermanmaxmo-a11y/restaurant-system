@@ -42,7 +42,7 @@ export default async function PlatformAuditPage() {
   if (!['owner', 'co_founder', 'developer'].includes(role)) redirect('/platform')
 
   const admin = createSupabaseAdmin()
-  const { data } = await (admin as any).from('platform_audit_log')
+  const { data } = await admin.from('platform_audit_log')
     .select('id, actor_email, action, target_type, target_id, target_name, details, created_at')
     .order('created_at', { ascending: false })
     .limit(200)

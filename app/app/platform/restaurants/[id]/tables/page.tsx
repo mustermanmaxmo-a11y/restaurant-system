@@ -15,7 +15,7 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
   const [{ data: restaurant }, { data: tables }, { data: allOrders }] = await Promise.all([
     admin.from('restaurants').select('id, name, slug').eq('id', id).single(),
     admin.from('tables').select('id, table_number, qr_code_url, created_at').eq('restaurant_id', id).order('table_number'),
-    (admin as any).from('orders')
+    admin.from('orders')
       .select('id, table_number, total, status, created_at')
       .eq('restaurant_id', id)
       .gte('created_at', d90)

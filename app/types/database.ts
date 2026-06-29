@@ -382,3 +382,23 @@ export interface ShiftPlan {
   created_at: string
   updated_at: string
 }
+
+export interface PlatformNote {
+  id: string
+  restaurant_id: string
+  author_email: string
+  content: string
+  pinned: boolean
+  created_at: string
+}
+
+export interface PlatformAuditLog {
+  id: string
+  actor_email: string
+  action: string
+  target_type: string | null
+  target_id: string | null
+  target_name: string | null
+  details: Record<string, unknown> | null
+  created_at: string
+}
