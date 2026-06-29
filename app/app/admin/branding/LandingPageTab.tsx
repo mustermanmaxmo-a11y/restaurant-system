@@ -163,7 +163,7 @@ export default function LandingPageTab({ restaurant }: Props) {
     autosaveTimer.current = setTimeout(() => { void handleSave() }, 800)
     return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, lpLayout])
+  }, [content, lpLayout, isPublished])
 
   // ── Save ────────────────────────────────────────────────────────────────────
   async function handleSave(overrides?: Partial<{ is_published: boolean; contentOverride: LandingPageContent }>) {
