@@ -63,10 +63,14 @@ export async function generateMetadata({
 
 export default async function PublicLandingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { slug } = await params
+  const sp = await searchParams
+  const isPreview = sp.preview === '1'
   const admin = createSupabaseAdmin()
 
   const { data: restaurant } = await admin
@@ -83,7 +87,7 @@ export default async function PublicLandingPage({
     .eq('restaurant_id', (restaurant as RestaurantRow).id)
     .maybeSingle()
 
-  if (!lp || !(lp as LandingPageRow).is_published) notFound()
+  if (!lp || (!(lp as LandingPageRow).is_published && !isPreview)) notFound()
 
   const landingPage = lp as LandingPageRow
   const resto = restaurant as RestaurantRow
