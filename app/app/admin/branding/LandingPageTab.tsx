@@ -110,6 +110,26 @@ function ImageDropzone({
   )
 }
 
+// ─── VisibilityToggle ──────────────────────────────────────────────────────────
+function VisibilityToggle({ visible, onChange }: { visible: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!visible)}
+      title={visible ? 'Sektion sichtbar — klicken zum Ausblenden' : 'Sektion ausgeblendet — klicken zum Einblenden'}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
+        border: `1.5px solid ${visible ? 'var(--accent)' : 'var(--border)'}`,
+        background: visible ? 'var(--accent)' : 'transparent',
+        color: visible ? '#fff' : 'var(--text-muted)',
+        fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+      }}
+    >
+      {visible ? '👁 Sichtbar' : '🚫 Aus'}
+    </button>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props {
   restaurant: Restaurant
@@ -200,36 +220,41 @@ export default function LandingPageTab({ restaurant }: Props) {
     await handleSave({ is_published: next })
   }
 
-  async function handleUpload(file: File, type: 'hero' | 'logo' | 'gallery') {
-    setUploading(prev => ({ ...prev, [type]: true }))
+  // Lädt ein Bild hoch und gibt die URL zurück (oder null). busyKey steuert den Lade-Spinner.
+  async function uploadImage(file: File, apiType: string, busyKey: string): Promise<string | null> {
+    setUploading(prev => ({ ...prev, [busyKey]: true }))
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
 
     const form = new FormData()
     form.append('restaurant_id', restaurant.id)
     form.append('file', file)
-    form.append('type', type)
+    form.append('type', apiType)
 
     const res = await fetch('/api/admin/landing-page/upload', {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
     })
-    setUploading(prev => ({ ...prev, [type]: false }))
+    setUploading(prev => ({ ...prev, [busyKey]: false }))
+    if (!res.ok) return null
+    const j = await res.json()
+    return typeof j.url === 'string' ? j.url : null
+  }
 
-    if (res.ok) {
-      const j = await res.json()
-      let updatedContent: LandingPageContent
-      if (type === 'gallery') {
-        updatedContent = { ...content, gallery: [...(content.gallery ?? []), j.url].slice(0, 6) }
-      } else if (type === 'hero') {
-        updatedContent = { ...content, hero_image_url: j.url }
-      } else {
-        updatedContent = { ...content, logo_url: j.url }
-      }
-      setContent(updatedContent)
-      await handleSave({ contentOverride: updatedContent })
+  async function handleUpload(file: File, type: 'hero' | 'logo' | 'gallery') {
+    const url = await uploadImage(file, type, type)
+    if (!url) return
+    let updatedContent: LandingPageContent
+    if (type === 'gallery') {
+      updatedContent = { ...content, gallery: [...(content.gallery ?? []), url].slice(0, 6) }
+    } else if (type === 'hero') {
+      updatedContent = { ...content, hero_image_url: url }
+    } else {
+      updatedContent = { ...content, logo_url: url }
     }
+    setContent(updatedContent)
+    await handleSave({ contentOverride: updatedContent })
   }
 
   async function handleGenerate() {
@@ -260,6 +285,33 @@ export default function LandingPageTab({ restaurant }: Props) {
         : {}),
     }))
   }
+
+  const [generatingField, setGeneratingField] = useState<string | null>(null)
+  async function handleGenerateField(field: 'about' | 'story') {
+    setGeneratingField(field); setGenerateError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) { setGeneratingField(null); return }
+
+    const res = await fetch('/api/ai/landing-section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ restaurant_id: restaurant.id, field }),
+    })
+    setGeneratingField(null)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setGenerateError(j.error ?? 'KI-Generierung fehlgeschlagen'); return
+    }
+    const j = await res.json()
+    if (typeof j.text === 'string') {
+      setContent(prev => field === 'about' ? { ...prev, about_text: j.text } : { ...prev, story_text: j.text })
+    }
+  }
+
+  const isVis = (key: SectionKey) => content.section_visibility?.[key] !== false
+  const setVisible = (key: SectionKey, visible: boolean) =>
+    setContent(prev => ({ ...prev, section_visibility: { ...prev.section_visibility, [key]: visible } }))
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
