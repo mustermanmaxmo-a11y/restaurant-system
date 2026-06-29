@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { resolveBrand } from '@/lib/resolve-brand'
 import { LandingHero } from '@/components/landing/LandingHero'
 import { LandingPageSections } from '@/components/landing/LandingPageSections'
@@ -21,6 +22,7 @@ interface LandingPageRow {
 
 interface RestaurantRow {
   id: string
+  owner_id: string
   name: string
   slug: string
   description: string | null
@@ -70,16 +72,25 @@ export default async function PublicLandingPage({
 }) {
   const { slug } = await params
   const sp = await searchParams
-  const isPreview = sp.preview === '1'
+  const wantsPreview = sp.preview === '1'
   const admin = createSupabaseAdmin()
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
+    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
     .eq('slug', slug)
     .maybeSingle()
 
   if (!restaurant) notFound()
+
+  // Vorschau unveröffentlichter Entwürfe nur für den eingeloggten Besitzer (Cookie-Session).
+  // Verhindert IDOR: ?preview=1 darf keine fremden, unveröffentlichten Seiten offenlegen.
+  let isPreview = false
+  if (wantsPreview) {
+    const ssr = await createSupabaseServerSSR()
+    const { data: { user } } = await ssr.auth.getUser()
+    isPreview = !!user && user.id === (restaurant as RestaurantRow).owner_id
+  }
 
   const { data: lp } = await admin
     .from('landing_pages')
