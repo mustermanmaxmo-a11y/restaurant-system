@@ -10,6 +10,8 @@ import {
   type OpeningHours,
 } from '@/lib/lp-layouts'
 import type { Restaurant } from '@/types/database'
+import type { SectionKey } from '@/lib/landing-content'
+import { PreviewPane } from './editor/PreviewPane'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 type LpTab = 'templates' | 'inhalt' | 'farben' | 'layout' | 'ki-chat'
@@ -108,119 +110,6 @@ function ImageDropzone({
   )
 }
 
-// ─── LpPreview ────────────────────────────────────────────────────────────────
-function LpPreview({ content, layout }: {
-  content: LandingPageContent
-  layout: LpLayoutSlug
-}) {
-  return (
-    <div style={{ background: 'var(--surface)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', fontFamily: 'system-ui, sans-serif', fontSize: '11px' }}>
-
-      {/* Hero — varies by layout */}
-      {layout === 'split-hero' ? (
-        <div style={{ display: 'flex', minHeight: '80px' }}>
-          <div style={{
-            width: '45%', flexShrink: 0,
-            background: content.hero_image_url
-              ? `url(${content.hero_image_url}) center/cover`
-              : 'var(--accent)',
-            opacity: content.hero_image_url ? 1 : 0.15,
-          }} />
-          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px', background: 'var(--surface-2)', padding: '2px', marginBottom: '6px' }} />}
-            <div style={{ fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, marginBottom: '4px' }}>{content.headline || 'Headline'}</div>
-            <div style={{ color: 'var(--text-muted)', lineHeight: 1.3 }}>{content.subheadline || 'Subheadline'}</div>
-          </div>
-        </div>
-      ) : layout === 'minimal' ? (
-        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '8px' }} />}
-          <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>{content.headline || 'Headline'}</div>
-          <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>{content.subheadline}</div>
-        </div>
-      ) : (
-        <div style={{
-          minHeight: '80px',
-          background: content.hero_image_url
-            ? `linear-gradient(to bottom, ${layout === 'bold-fullscreen' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'}, var(--surface) 90%), url(${content.hero_image_url}) center/cover`
-            : 'var(--surface-2)',
-          padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '6px' }} />}
-          <div style={{ fontWeight: 800, color: content.hero_image_url ? '#fff' : 'var(--text)', textShadow: content.hero_image_url ? '0 1px 3px rgba(0,0,0,0.7)' : 'none' }}>{content.headline || 'Headline'}</div>
-          {content.subheadline && <div style={{ color: content.hero_image_url ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginTop: '4px', textShadow: content.hero_image_url ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>{content.subheadline}</div>}
-        </div>
-      )}
-
-      {/* Feature Badges */}
-      {(content.feature_badges ?? []).length > 0 && (
-        <div style={{ padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {(content.feature_badges ?? []).map(b => (
-            <span key={b} style={{ padding: '2px 8px', borderRadius: '10px', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '9px', opacity: 0.85 }}>{b}</span>
-          ))}
-        </div>
-      )}
-
-      {/* About */}
-      {content.about_text && (
-        <div style={{ padding: '8px 12px', background: 'var(--surface-2)', color: 'var(--text-muted)', lineHeight: 1.5 }}>{content.about_text}</div>
-      )}
-
-      {/* Gallery */}
-      {(content.gallery ?? []).length > 0 && (
-        <div style={{ padding: '8px 12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
-            {(content.gallery ?? []).slice(0, 3).map((url, i) => (
-              <img key={i} src={url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' }} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Opening Hours */}
-      {content.opening_hours && Object.keys(content.opening_hours).length > 0 && (
-        <div style={{ padding: '8px 12px', background: 'var(--surface-2)' }}>
-          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Öffnungszeiten</div>
-          {DAYS.filter(d => content.opening_hours?.[d.key]).map(d => {
-            const val = content.opening_hours![d.key]!
-            return (
-              <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                <span>{d.label.slice(0, 2)}.</span>
-                <span>{val.open ? `${val.from} – ${val.to}` : 'Geschlossen'}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Contact */}
-      {(content.address || content.phone || content.email) && (
-        <div style={{ padding: '8px 12px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kontakt</div>
-          {content.address && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📍 {content.address}</div>}
-          {content.phone && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📞 {content.phone}</div>}
-          {content.email && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>✉️ {content.email}</div>}
-          {content.instagram && <div style={{ color: 'var(--accent)', marginBottom: '2px' }}>@ {content.instagram}</div>}
-        </div>
-      )}
-
-      {/* Review */}
-      {content.review_url && (
-        <div style={{ padding: '6px 12px' }}>
-          <span style={{ background: 'var(--surface-2)', color: 'var(--accent)', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '9px' }}>⭐ Bewertung lesen</span>
-        </div>
-      )}
-
-      {/* CTA */}
-      <div style={{ padding: '12px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '7px', background: 'var(--accent)', color: '#fff', fontWeight: 700 }}>
-          {content.cta_text || 'Jetzt bestellen'}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 interface Props {
   restaurant: Restaurant
@@ -238,6 +127,9 @@ export default function LandingPageTab({ restaurant }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  const [reloadToken, setReloadToken] = useState(0)
+  const didLoad = useRef(false)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Load ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -259,9 +151,19 @@ export default function LandingPageTab({ restaurant }: Props) {
       const c = lp.content ?? {}
       setLpLayout(c.lp_layout ?? 'classic-hero')
       setContent(c)
+      didLoad.current = true
     }
     load()
   }, [restaurant])
+
+  // Debounced Auto-Save: speichert ~0,8s nach der letzten Änderung und lädt danach die Vorschau neu.
+  useEffect(() => {
+    if (!didLoad.current) return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(() => { void handleSave() }, 800)
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, lpLayout])
 
   // ── Save ────────────────────────────────────────────────────────────────────
   async function handleSave(overrides?: Partial<{ is_published: boolean; contentOverride: LandingPageContent }>) {
@@ -289,6 +191,7 @@ export default function LandingPageTab({ restaurant }: Props) {
     const j = await res.json()
     setLandingPage(j.data)
     if (overrides?.is_published !== undefined) setIsPublished(overrides.is_published)
+    setReloadToken(t => t + 1)
     setSaved(true); setTimeout(() => setSaved(false), 2500)
   }
 
@@ -807,16 +710,12 @@ export default function LandingPageTab({ restaurant }: Props) {
 
       </div>
 
-      {/* Right preview */}
+      {/* Right preview — echte Live-Vorschau via iframe */}
       <div style={{
-        width: '280px', flexShrink: 0, borderLeft: '1px solid var(--border)',
-        background: 'var(--surface-2)', padding: '16px', overflowY: 'auto', paddingTop: '60px',
+        width: '440px', flexShrink: 0, borderLeft: '1px solid var(--border)',
+        background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', paddingTop: '52px',
       }}>
-        <div style={{ ...fieldLabel, marginBottom: '8px' }}>Vorschau</div>
-        {isPublished && (
-          <div style={{ fontSize: '0.68rem', color: '#10b981', marginBottom: '8px', fontWeight: 600 }}>● Live</div>
-        )}
-        <LpPreview content={content} layout={lpLayout} />
+        <PreviewPane slug={restaurant.slug ?? ''} reloadToken={reloadToken} />
       </div>
 
     </div>
