@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 
 const MAX_BYTES = 8 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const
-const ALLOWED_UPLOAD_TYPES = ['hero', 'logo', 'gallery'] as const
+const ALLOWED_UPLOAD_TYPES = ['hero', 'logo', 'gallery', 'story', 'ambiance', 'team', 'award'] as const
+const MULTI_TYPES = new Set(['gallery', 'ambiance', 'team', 'award'])
 
 async function getUser(req: NextRequest) {
   const auth = req.headers.get('authorization')
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     typeof uploadType !== 'string' ||
     !(ALLOWED_UPLOAD_TYPES as readonly string[]).includes(uploadType)
   ) {
-    return NextResponse.json({ error: 'type muss "hero", "logo" oder "gallery" sein' }, { status: 400 })
+    return NextResponse.json({ error: 'Ungültiger Upload-Typ' }, { status: 400 })
   }
 
   if (file.size > MAX_BYTES) {
@@ -73,9 +74,9 @@ export async function POST(req: NextRequest) {
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
   const timestamp = Date.now()
-  const storagePath = uploadType === 'gallery'
-  ? `landing-pages/${restaurantId}/gallery/${timestamp}.${ext}`
-  : `landing-pages/${restaurantId}/${uploadType}-${timestamp}.${ext}`
+  const storagePath = MULTI_TYPES.has(uploadType)
+    ? `landing-pages/${restaurantId}/${uploadType}/${timestamp}.${ext}`
+    : `landing-pages/${restaurantId}/${uploadType}-${timestamp}.${ext}`
 
   const admin = createSupabaseAdmin()
   const arrayBuffer = await file.arrayBuffer()
