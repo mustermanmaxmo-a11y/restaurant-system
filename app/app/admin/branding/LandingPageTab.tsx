@@ -428,7 +428,16 @@ export default function LandingPageTab({ restaurant }: Props) {
             </div>
 
             <div>
-              <label style={fieldLabel}>Über uns <span style={{ opacity: 0.4 }}>(max. 500)</span></label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ ...fieldLabel, marginBottom: 0 }}>Über uns <span style={{ opacity: 0.4 }}>(max. 500)</span></label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button onClick={() => handleGenerateField('about')} disabled={generatingField === 'about'}
+                    style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700 }}>
+                    {generatingField === 'about' ? '⟳' : '✦ KI'}
+                  </button>
+                  <VisibilityToggle visible={isVis('about')} onChange={v => setVisible('about', v)} />
+                </div>
+              </div>
               <textarea value={content.about_text ?? ''} maxLength={500} rows={4}
                 onChange={e => setContent(prev => ({ ...prev, about_text: e.target.value }))}
                 placeholder="Beschreibe dein Restaurant…" style={{ ...inputStyle, resize: 'vertical' }} />
@@ -453,7 +462,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Kontakt ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Kontakt & Adresse</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Kontakt & Adresse</div>
+                <VisibilityToggle visible={isVis('contact')} onChange={v => setVisible('contact', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={fieldLabel}>Adresse</label>
@@ -496,7 +508,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Öffnungszeiten ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Öffnungszeiten</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Öffnungszeiten</div>
+                <VisibilityToggle visible={isVis('opening_hours')} onChange={v => setVisible('opening_hours', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {DAYS.map(day => {
                   const val = content.opening_hours?.[day.key] ?? { open: true, from: '11:00', to: '22:00' }
@@ -539,7 +554,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Galerie ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Foto-Galerie <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 6 Bilder)</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Foto-Galerie <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 6 Bilder)</span></div>
+                <VisibilityToggle visible={isVis('gallery')} onChange={v => setVisible('gallery', v)} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
                 {(content.gallery ?? []).map((url, i) => (
                   <div key={i} style={{ position: 'relative' }}>
@@ -591,7 +609,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Bewertungen ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Bewertungen</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Bewertungen</div>
+                <VisibilityToggle visible={isVis('reviews')} onChange={v => setVisible('reviews', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
@@ -768,6 +789,23 @@ export default function LandingPageTab({ restaurant }: Props) {
                   style={{ padding: '8px', borderRadius: '8px', border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
                   + Auszeichnung hinzufügen
                 </button>
+              </div>
+            </div>
+
+            {/* ── Weitere Sektionen ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={sectionTitle}>Weitere Sektionen ein-/ausblenden</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {([
+                  { key: 'featured_menu' as SectionKey, label: 'Menü-Highlights' },
+                  { key: 'reservation_cta' as SectionKey, label: 'Reservierungs-Aufruf' },
+                  { key: 'instagram' as SectionKey, label: 'Instagram' },
+                ]).map(s => (
+                  <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>{s.label}</span>
+                    <VisibilityToggle visible={isVis(s.key)} onChange={v => setVisible(s.key, v)} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
