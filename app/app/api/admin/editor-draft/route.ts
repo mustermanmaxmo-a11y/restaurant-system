@@ -56,8 +56,29 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     draft,
     last_published_at: lastPublishedAt,
-    has_unpublished_changes: hasUnpublishedChanges(draft.draft_updated_at, lastPublishedAt),
+    // Ein frisch initialisierter (nicht gespeicherter) Entwurf == Live → keine offenen Änderungen.
+    has_unpublished_changes: existing ? hasUnpublishedChanges(existing.draft_updated_at, lastPublishedAt) : false,
   })
+}
+
+// DELETE — Entwurf verwerfen (draft_config = null). Nächster GET liefert frischen Entwurf aus Live-Stand.
+export async function DELETE(req: NextRequest) {
+  const { user } = await getUser(req)
+  if (!user) return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
+
+  const restaurantId = req.nextUrl.searchParams.get('restaurant_id')
+  if (!restaurantId) return NextResponse.json({ error: 'restaurant_id erforderlich' }, { status: 400 })
+
+  const resto = await loadOwnedRestaurant(user.id, restaurantId)
+  if (!resto) return NextResponse.json({ error: 'Kein Zugriff' }, { status: 403 })
+
+  const admin = createSupabaseAdmin()
+  const { error } = await admin.from('restaurants').update({ draft_config: null }).eq('id', restaurantId)
+  if (error) {
+    console.error('editor-draft DELETE error:', error)
+    return NextResponse.json({ error: 'Verwerfen fehlgeschlagen' }, { status: 500 })
+  }
+  return NextResponse.json({ ok: true })
 }
 
 // PATCH — Entwurf auto-speichern (ganzer Entwurf wird ersetzt)
