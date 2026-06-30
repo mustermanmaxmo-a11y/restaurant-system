@@ -2,8 +2,8 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from '@sentry/nextjs'
 
 const securityHeaders = [
-  // Prevent clickjacking — no iframes from other origins
-  { key: 'X-Frame-Options', value: 'DENY' },
+  // Prevent clickjacking — allow same-origin framing only (needed for the admin live-preview iframe)
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   // Prevent MIME-type sniffing
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   // Only send origin in Referer header, never full URL
@@ -31,6 +31,8 @@ const securityHeaders = [
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      // Modern equivalent of X-Frame-Options: only our own pages may embed our pages (admin live-preview)
+      "frame-ancestors 'self'",
     ].join('; '),
   },
 ]
