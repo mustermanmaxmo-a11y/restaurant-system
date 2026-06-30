@@ -78,7 +78,7 @@ export default async function PublicLandingPage({
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package, draft_config')
+    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -106,8 +106,15 @@ export default async function PublicLandingPage({
   let content: LandingPageContent = landingPage.content ?? {}
 
   // Im Besitzer-Preview Entwurf statt Live lesen (falls vorhanden).
+  // Separate, fehlertolerante Abfrage: bricht NICHT, falls die draft_config-Spalte
+  // (Migration 071) noch nicht existiert — dann fällt alles auf den Live-Stand zurück.
   if (isPreview) {
-    const draft = (restaurant as RestaurantRow & { draft_config?: DraftConfig | null }).draft_config
+    const { data: draftRow } = await admin
+      .from('restaurants')
+      .select('draft_config')
+      .eq('id', resto.id)
+      .maybeSingle()
+    const draft = (draftRow as { draft_config?: DraftConfig | null } | null)?.draft_config
     if (draft && draft.brand) {
       resto = {
         ...resto,
