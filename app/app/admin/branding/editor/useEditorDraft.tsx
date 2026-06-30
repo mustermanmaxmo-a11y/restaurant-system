@@ -60,15 +60,17 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
         setHasUnpublishedChanges(!!j.has_unpublished_changes)
       }
       setLoading(false)
-      didLoad.current = true
     }
     load()
     return () => { active = false }
   }, [restaurantId])
 
-  // Debounced Auto-Save bei jeder Entwurf-Änderung (nach dem ersten Laden)
+  // Debounced Auto-Save bei jeder Entwurf-Änderung (NICHT beim initialen Laden:
+  // der erste draft-Set wird übersprungen, sonst würde sofort ein Save laufen und
+  // fälschlich "nicht veröffentlichte Änderungen" markieren).
   useEffect(() => {
-    if (!didLoad.current || !draft) return
+    if (!draft) return
+    if (!didLoad.current) { didLoad.current = true; return }
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
     saveTimer.current = setTimeout(async () => {
