@@ -8,6 +8,7 @@ import { LandingPageSections } from '@/components/landing/LandingPageSections'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LandingPageContent } from '@/lib/landing-content'
+import type { DraftConfig } from '@/lib/editor-draft'
 import type { FeaturedItem } from '@/components/landing/types'
 
 export const dynamic = 'force-dynamic'
@@ -101,8 +102,37 @@ export default async function PublicLandingPage({
   if (!lp || (!(lp as LandingPageRow).is_published && !isPreview)) notFound()
 
   const landingPage = lp as LandingPageRow
-  const resto = restaurant as RestaurantRow
-  const content: LandingPageContent = landingPage.content ?? {}
+  let resto = restaurant as RestaurantRow
+  let content: LandingPageContent = landingPage.content ?? {}
+
+  // Im Besitzer-Preview Entwurf statt Live lesen (falls vorhanden).
+  // Separate, fehlertolerante Abfrage: bricht NICHT, falls die draft_config-Spalte
+  // (Migration 071) noch nicht existiert — dann fällt alles auf den Live-Stand zurück.
+  if (isPreview) {
+    const { data: draftRow } = await admin
+      .from('restaurants')
+      .select('draft_config')
+      .eq('id', resto.id)
+      .maybeSingle()
+    const draft = (draftRow as { draft_config?: DraftConfig | null } | null)?.draft_config
+    if (draft && draft.brand) {
+      resto = {
+        ...resto,
+        design_package: draft.brand.design_package ?? resto.design_package,
+        layout_variant: draft.brand.layout_variant ?? resto.layout_variant,
+        font_pair: draft.brand.font_pair ?? resto.font_pair,
+        primary_color: draft.brand.primary_color,
+        bg_color: draft.brand.bg_color,
+        header_color: draft.brand.header_color,
+        card_color: draft.brand.card_color,
+        button_color: draft.brand.button_color,
+        text_color: draft.brand.text_color,
+        design_config: draft.brand.design_config as Record<string, unknown> | null,
+        logo_url: draft.brand.logo_url,
+      }
+      content = draft.landing_content ?? content
+    }
+  }
 
   const brand = resolveBrand(resto, 'landing', {
     hero_image_url: content.hero_image_url,
