@@ -4,6 +4,7 @@ import { useEditorDraft } from './useEditorDraft'
 import type { SectionKey } from '@/lib/landing-content'
 
 export type NavSelection =
+  | { kind: 'basis' }
   | { kind: 'section'; key: SectionKey }
   | { kind: 'brand'; key: 'colors' | 'logo' }
   | { kind: 'tool'; key: 'templates' | 'ai-chat' | 'ai-scan' | 'requests' }
@@ -11,7 +12,6 @@ export type NavSelection =
 export type NavMode = 'pages' | 'brand'
 
 const START_SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: 'about', label: 'Über uns' },
   { key: 'gallery', label: 'Galerie' },
   { key: 'featured_menu', label: 'Menü-Highlights' },
   { key: 'team', label: 'Team' },
@@ -59,7 +59,7 @@ export function EditorNav({
     ...prev, section_visibility: { ...prev.section_visibility, [k]: !(prev.section_visibility?.[k] !== false) },
   }))
 
-  const isSel = (s: NavSelection) => s.kind === selection.kind && s.key === selection.key
+  const isSel = (s: NavSelection) => JSON.stringify(s) === JSON.stringify(selection)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -79,6 +79,7 @@ export function EditorNav({
         {mode === 'pages' && (
           <>
             <div style={{ fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', fontWeight: 700, padding: '8px 10px 4px' }}>Start-Sektionen</div>
+            <button onClick={() => onSelect({ kind: 'basis' })} style={rowStyle(isSel({ kind: 'basis' }))}>Hero &amp; Intro</button>
             {START_SECTIONS.map(s => {
               const active = isSel({ kind: 'section', key: s.key })
               return (
@@ -98,7 +99,7 @@ export function EditorNav({
         )}
 
         {mode === 'brand' && BRAND_ITEMS.map(item => (
-          <button key={`${item.sel.kind}-${item.sel.key}`} onClick={() => onSelect(item.sel)} style={rowStyle(isSel(item.sel))}>
+          <button key={'key' in item.sel ? `${item.sel.kind}-${item.sel.key}` : item.sel.kind} onClick={() => onSelect(item.sel)} style={rowStyle(isSel(item.sel))}>
             {item.label}
           </button>
         ))}
