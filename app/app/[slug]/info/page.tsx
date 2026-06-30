@@ -8,6 +8,7 @@ import { LandingPageSections } from '@/components/landing/LandingPageSections'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LandingPageContent } from '@/lib/landing-content'
+import type { DraftConfig } from '@/lib/editor-draft'
 import type { FeaturedItem } from '@/components/landing/types'
 
 export const dynamic = 'force-dynamic'
@@ -77,7 +78,7 @@ export default async function PublicLandingPage({
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
+    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package, draft_config')
     .eq('slug', slug)
     .maybeSingle()
 
@@ -101,8 +102,30 @@ export default async function PublicLandingPage({
   if (!lp || (!(lp as LandingPageRow).is_published && !isPreview)) notFound()
 
   const landingPage = lp as LandingPageRow
-  const resto = restaurant as RestaurantRow
-  const content: LandingPageContent = landingPage.content ?? {}
+  let resto = restaurant as RestaurantRow
+  let content: LandingPageContent = landingPage.content ?? {}
+
+  // Im Besitzer-Preview Entwurf statt Live lesen (falls vorhanden).
+  if (isPreview) {
+    const draft = (restaurant as RestaurantRow & { draft_config?: DraftConfig | null }).draft_config
+    if (draft && draft.brand) {
+      resto = {
+        ...resto,
+        design_package: draft.brand.design_package ?? resto.design_package,
+        layout_variant: draft.brand.layout_variant ?? resto.layout_variant,
+        font_pair: draft.brand.font_pair ?? resto.font_pair,
+        primary_color: draft.brand.primary_color,
+        bg_color: draft.brand.bg_color,
+        header_color: draft.brand.header_color,
+        card_color: draft.brand.card_color,
+        button_color: draft.brand.button_color,
+        text_color: draft.brand.text_color,
+        design_config: draft.brand.design_config as Record<string, unknown> | null,
+        logo_url: draft.brand.logo_url,
+      }
+      content = draft.landing_content ?? content
+    }
+  }
 
   const brand = resolveBrand(resto, 'landing', {
     hero_image_url: content.hero_image_url,
