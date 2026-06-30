@@ -7,6 +7,11 @@ import type { LandingPageContent } from '@/lib/landing-content'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
+/** Standard-Marke-Felder, die ein design_config/Delta auf die Entwurf-Spalten mappt. */
+const BRAND_COLOR_KEYS: (keyof DraftBrand)[] = [
+  'primary_color', 'bg_color', 'header_color', 'card_color', 'button_color', 'text_color', 'font_pair', 'layout_variant',
+]
+
 interface EditorDraftContextValue {
   draft: DraftConfig | null
   loading: boolean
@@ -17,7 +22,11 @@ interface EditorDraftContextValue {
   reloadToken: number
   updateBrand: (partial: Partial<DraftBrand>) => void
   updateLandingContent: (updater: (prev: LandingPageContent) => LandingPageContent) => void
+  /** Wendet ein design_config / Delta (von Template/KI) auf den Entwurf an (Spalten + design_config). */
+  applyDesignConfig: (cfg: Record<string, unknown>) => void
   publish: () => Promise<boolean>
+  /** Verwirft den Entwurf → zurück auf den Live-Stand. */
+  discard: () => Promise<void>
 }
 
 const Ctx = createContext<EditorDraftContextValue | null>(null)
@@ -46,28 +55,32 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
   const didLoad = useRef(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const loadDraft = useCallback(async () => {
+    const headers = await authHeader()
+    const res = await fetch(`/api/admin/editor-draft?restaurant_id=${restaurantId}`, { headers })
+    if (res.ok) {
+      const j = await res.json()
+      didLoad.current = false // nächster draft-Set ist ein Load, kein Edit → kein Autosave
+      setDraft(j.draft)
+      setLastPublishedAt(j.last_published_at ?? null)
+      setHasUnpublishedChanges(!!j.has_unpublished_changes)
+      setSaveStatus('idle')
+      setReloadToken(t => t + 1)
+    }
+  }, [restaurantId])
+
   // Initiales Laden
   useEffect(() => {
     let active = true
-    async function load() {
-      const headers = await authHeader()
-      const res = await fetch(`/api/admin/editor-draft?restaurant_id=${restaurantId}`, { headers })
-      if (!active) return
-      if (res.ok) {
-        const j = await res.json()
-        setDraft(j.draft)
-        setLastPublishedAt(j.last_published_at ?? null)
-        setHasUnpublishedChanges(!!j.has_unpublished_changes)
-      }
-      setLoading(false)
-    }
-    load()
+    ;(async () => {
+      await loadDraft()
+      if (active) setLoading(false)
+    })()
     return () => { active = false }
-  }, [restaurantId])
+  }, [loadDraft])
 
-  // Debounced Auto-Save bei jeder Entwurf-Änderung (NICHT beim initialen Laden:
-  // der erste draft-Set wird übersprungen, sonst würde sofort ein Save laufen und
-  // fälschlich "nicht veröffentlichte Änderungen" markieren).
+  // Debounced Auto-Save bei jeder Entwurf-Änderung (NICHT beim Laden: der erste
+  // draft-Set nach einem Load wird übersprungen, sonst liefe sofort ein Save).
   useEffect(() => {
     if (!draft) return
     if (!didLoad.current) { didLoad.current = true; return }
@@ -76,8 +89,7 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
     saveTimer.current = setTimeout(async () => {
       const headers = { 'Content-Type': 'application/json', ...(await authHeader()) }
       const res = await fetch('/api/admin/editor-draft', {
-        method: 'PATCH',
-        headers,
+        method: 'PATCH', headers,
         body: JSON.stringify({ restaurant_id: restaurantId, draft }),
       })
       if (res.ok) {
@@ -101,6 +113,20 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
     setDraft(prev => prev ? { ...prev, landing_content: updater(prev.landing_content) } : prev)
   }, [])
 
+  const applyDesignConfig = useCallback((cfg: Record<string, unknown>) => {
+    setDraft(prev => {
+      if (!prev) return prev
+      const b: DraftBrand = { ...prev.brand }
+      const bRec = b as unknown as Record<string, unknown>
+      for (const k of BRAND_COLOR_KEYS) {
+        const val = cfg[k]
+        if (typeof val === 'string') bRec[k] = val
+      }
+      b.design_config = { ...(prev.brand.design_config ?? {}), ...cfg }
+      return { ...prev, brand: b }
+    })
+  }, [])
+
   const publish = useCallback(async (): Promise<boolean> => {
     setPublishing(true)
     const headers = { 'Content-Type': 'application/json', ...(await authHeader()) }
@@ -117,10 +143,16 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
     return false
   }, [restaurantId])
 
+  const discard = useCallback(async () => {
+    const headers = await authHeader()
+    await fetch(`/api/admin/editor-draft?restaurant_id=${restaurantId}`, { method: 'DELETE', headers })
+    await loadDraft()
+  }, [restaurantId, loadDraft])
+
   return (
     <Ctx.Provider value={{
       draft, loading, saveStatus, hasUnpublishedChanges, lastPublishedAt, publishing, reloadToken,
-      updateBrand, updateLandingContent, publish,
+      updateBrand, updateLandingContent, applyDesignConfig, publish, discard,
     }}>
       {children}
     </Ctx.Provider>
