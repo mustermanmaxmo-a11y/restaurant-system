@@ -2,8 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from '@sentry/nextjs'
 
 const securityHeaders = [
-  // Prevent clickjacking — allow same-origin framing only (needed for the admin live-preview iframe)
-  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  // Kein X-Frame-Options mehr: es kann nur EINE Origin erlauben (SAMEORIGIN), würde aber
+  // das Einbetten der Live-Vorschau über apex↔www blockieren (Admin auf getorderiq.de,
+  // Inhalt auf www.getorderiq.de). Clickjacking-Schutz übernimmt CSP `frame-ancestors` unten.
   // Prevent MIME-type sniffing
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   // Only send origin in Referer header, never full URL
@@ -31,8 +32,8 @@ const securityHeaders = [
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
-      // Modern equivalent of X-Frame-Options: only our own pages may embed our pages (admin live-preview)
-      "frame-ancestors 'self'",
+      // Wer darf unsere Seiten einbetten: nur eigene Hosts (Admin-Live-Vorschau), inkl. apex↔www.
+      "frame-ancestors 'self' https://getorderiq.de https://www.getorderiq.de",
     ].join('; '),
   },
 ]
