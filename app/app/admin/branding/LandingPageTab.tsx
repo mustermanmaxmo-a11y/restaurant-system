@@ -10,6 +10,8 @@ import {
   type OpeningHours,
 } from '@/lib/lp-layouts'
 import type { Restaurant } from '@/types/database'
+import type { SectionKey } from '@/lib/landing-content'
+import { PreviewPane } from './editor/PreviewPane'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 type LpTab = 'templates' | 'inhalt' | 'farben' | 'layout' | 'ki-chat'
@@ -108,116 +110,23 @@ function ImageDropzone({
   )
 }
 
-// ─── LpPreview ────────────────────────────────────────────────────────────────
-function LpPreview({ content, layout }: {
-  content: LandingPageContent
-  layout: LpLayoutSlug
-}) {
+// ─── VisibilityToggle ──────────────────────────────────────────────────────────
+function VisibilityToggle({ visible, onChange }: { visible: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div style={{ background: 'var(--surface)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)', fontFamily: 'system-ui, sans-serif', fontSize: '11px' }}>
-
-      {/* Hero — varies by layout */}
-      {layout === 'split-hero' ? (
-        <div style={{ display: 'flex', minHeight: '80px' }}>
-          <div style={{
-            width: '45%', flexShrink: 0,
-            background: content.hero_image_url
-              ? `url(${content.hero_image_url}) center/cover`
-              : 'var(--accent)',
-            opacity: content.hero_image_url ? 1 : 0.15,
-          }} />
-          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', borderRadius: '4px', background: 'var(--surface-2)', padding: '2px', marginBottom: '6px' }} />}
-            <div style={{ fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, marginBottom: '4px' }}>{content.headline || 'Headline'}</div>
-            <div style={{ color: 'var(--text-muted)', lineHeight: 1.3 }}>{content.subheadline || 'Subheadline'}</div>
-          </div>
-        </div>
-      ) : layout === 'minimal' ? (
-        <div style={{ padding: '20px', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '8px' }} />}
-          <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>{content.headline || 'Headline'}</div>
-          <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>{content.subheadline}</div>
-        </div>
-      ) : (
-        <div style={{
-          minHeight: '80px',
-          background: content.hero_image_url
-            ? `linear-gradient(to bottom, ${layout === 'bold-fullscreen' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'}, var(--surface) 90%), url(${content.hero_image_url}) center/cover`
-            : 'var(--surface-2)',
-          padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        }}>
-          {content.logo_url && <img src={content.logo_url} alt="" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px', background: 'var(--surface-2)', padding: '3px', marginBottom: '6px' }} />}
-          <div style={{ fontWeight: 800, color: content.hero_image_url ? '#fff' : 'var(--text)', textShadow: content.hero_image_url ? '0 1px 3px rgba(0,0,0,0.7)' : 'none' }}>{content.headline || 'Headline'}</div>
-          {content.subheadline && <div style={{ color: content.hero_image_url ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginTop: '4px', textShadow: content.hero_image_url ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>{content.subheadline}</div>}
-        </div>
-      )}
-
-      {/* Feature Badges */}
-      {(content.feature_badges ?? []).length > 0 && (
-        <div style={{ padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {(content.feature_badges ?? []).map(b => (
-            <span key={b} style={{ padding: '2px 8px', borderRadius: '10px', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '9px', opacity: 0.85 }}>{b}</span>
-          ))}
-        </div>
-      )}
-
-      {/* About */}
-      {content.about_text && (
-        <div style={{ padding: '8px 12px', background: 'var(--surface-2)', color: 'var(--text-muted)', lineHeight: 1.5 }}>{content.about_text}</div>
-      )}
-
-      {/* Gallery */}
-      {(content.gallery ?? []).length > 0 && (
-        <div style={{ padding: '8px 12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
-            {(content.gallery ?? []).slice(0, 3).map((url, i) => (
-              <img key={i} src={url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' }} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Opening Hours */}
-      {content.opening_hours && Object.keys(content.opening_hours).length > 0 && (
-        <div style={{ padding: '8px 12px', background: 'var(--surface-2)' }}>
-          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Öffnungszeiten</div>
-          {DAYS.filter(d => content.opening_hours?.[d.key]).map(d => {
-            const val = content.opening_hours![d.key]!
-            return (
-              <div key={d.key} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                <span>{d.label.slice(0, 2)}.</span>
-                <span>{val.open ? `${val.from} – ${val.to}` : 'Geschlossen'}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Contact */}
-      {(content.address || content.phone || content.email) && (
-        <div style={{ padding: '8px 12px' }}>
-          <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: '4px', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kontakt</div>
-          {content.address && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📍 {content.address}</div>}
-          {content.phone && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>📞 {content.phone}</div>}
-          {content.email && <div style={{ color: 'var(--text-muted)', marginBottom: '2px' }}>✉️ {content.email}</div>}
-          {content.instagram && <div style={{ color: 'var(--accent)', marginBottom: '2px' }}>@ {content.instagram}</div>}
-        </div>
-      )}
-
-      {/* Review */}
-      {content.review_url && (
-        <div style={{ padding: '6px 12px' }}>
-          <span style={{ background: 'var(--surface-2)', color: 'var(--accent)', padding: '4px 10px', borderRadius: '6px', fontWeight: 700, fontSize: '9px' }}>⭐ Bewertung lesen</span>
-        </div>
-      )}
-
-      {/* CTA */}
-      <div style={{ padding: '12px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', padding: '8px 20px', borderRadius: '7px', background: 'var(--accent)', color: '#fff', fontWeight: 700 }}>
-          {content.cta_text || 'Jetzt bestellen'}
-        </div>
-      </div>
-    </div>
+    <button
+      onClick={() => onChange(!visible)}
+      title={visible ? 'Sektion sichtbar — klicken zum Ausblenden' : 'Sektion ausgeblendet — klicken zum Einblenden'}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
+        border: `1.5px solid ${visible ? 'var(--accent)' : 'var(--border)'}`,
+        background: visible ? 'var(--accent)' : 'transparent',
+        color: visible ? '#fff' : 'var(--text-muted)',
+        fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap',
+      }}
+    >
+      {visible ? '👁 Sichtbar' : '🚫 Aus'}
+    </button>
   )
 }
 
@@ -238,6 +147,9 @@ export default function LandingPageTab({ restaurant }: Props) {
   const [generating, setGenerating] = useState(false)
   const [generateError, setGenerateError] = useState('')
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  const [reloadToken, setReloadToken] = useState(0)
+  const didLoad = useRef(false)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Load ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -259,9 +171,19 @@ export default function LandingPageTab({ restaurant }: Props) {
       const c = lp.content ?? {}
       setLpLayout(c.lp_layout ?? 'classic-hero')
       setContent(c)
+      didLoad.current = true
     }
     load()
   }, [restaurant])
+
+  // Debounced Auto-Save: speichert ~0,8s nach der letzten Änderung und lädt danach die Vorschau neu.
+  useEffect(() => {
+    if (!didLoad.current) return
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current)
+    autosaveTimer.current = setTimeout(() => { void handleSave() }, 800)
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, lpLayout, isPublished])
 
   // ── Save ────────────────────────────────────────────────────────────────────
   async function handleSave(overrides?: Partial<{ is_published: boolean; contentOverride: LandingPageContent }>) {
@@ -289,6 +211,7 @@ export default function LandingPageTab({ restaurant }: Props) {
     const j = await res.json()
     setLandingPage(j.data)
     if (overrides?.is_published !== undefined) setIsPublished(overrides.is_published)
+    setReloadToken(t => t + 1)
     setSaved(true); setTimeout(() => setSaved(false), 2500)
   }
 
@@ -297,36 +220,41 @@ export default function LandingPageTab({ restaurant }: Props) {
     await handleSave({ is_published: next })
   }
 
-  async function handleUpload(file: File, type: 'hero' | 'logo' | 'gallery') {
-    setUploading(prev => ({ ...prev, [type]: true }))
+  // Lädt ein Bild hoch und gibt die URL zurück (oder null). busyKey steuert den Lade-Spinner.
+  async function uploadImage(file: File, apiType: string, busyKey: string): Promise<string | null> {
+    setUploading(prev => ({ ...prev, [busyKey]: true }))
     const { data: { session } } = await supabase.auth.getSession()
     const token = session?.access_token
 
     const form = new FormData()
     form.append('restaurant_id', restaurant.id)
     form.append('file', file)
-    form.append('type', type)
+    form.append('type', apiType)
 
     const res = await fetch('/api/admin/landing-page/upload', {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
     })
-    setUploading(prev => ({ ...prev, [type]: false }))
+    setUploading(prev => ({ ...prev, [busyKey]: false }))
+    if (!res.ok) return null
+    const j = await res.json()
+    return typeof j.url === 'string' ? j.url : null
+  }
 
-    if (res.ok) {
-      const j = await res.json()
-      let updatedContent: LandingPageContent
-      if (type === 'gallery') {
-        updatedContent = { ...content, gallery: [...(content.gallery ?? []), j.url].slice(0, 6) }
-      } else if (type === 'hero') {
-        updatedContent = { ...content, hero_image_url: j.url }
-      } else {
-        updatedContent = { ...content, logo_url: j.url }
-      }
-      setContent(updatedContent)
-      await handleSave({ contentOverride: updatedContent })
+  async function handleUpload(file: File, type: 'hero' | 'logo' | 'gallery') {
+    const url = await uploadImage(file, type, type)
+    if (!url) return
+    let updatedContent: LandingPageContent
+    if (type === 'gallery') {
+      updatedContent = { ...content, gallery: [...(content.gallery ?? []), url].slice(0, 6) }
+    } else if (type === 'hero') {
+      updatedContent = { ...content, hero_image_url: url }
+    } else {
+      updatedContent = { ...content, logo_url: url }
     }
+    setContent(updatedContent)
+    await handleSave({ contentOverride: updatedContent })
   }
 
   async function handleGenerate() {
@@ -357,6 +285,33 @@ export default function LandingPageTab({ restaurant }: Props) {
         : {}),
     }))
   }
+
+  const [generatingField, setGeneratingField] = useState<string | null>(null)
+  async function handleGenerateField(field: 'about' | 'story') {
+    setGeneratingField(field); setGenerateError('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) { setGeneratingField(null); return }
+
+    const res = await fetch('/api/ai/landing-section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ restaurant_id: restaurant.id, field }),
+    })
+    setGeneratingField(null)
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      setGenerateError(j.error ?? 'KI-Generierung fehlgeschlagen'); return
+    }
+    const j = await res.json()
+    if (typeof j.text === 'string') {
+      setContent(prev => field === 'about' ? { ...prev, about_text: j.text } : { ...prev, story_text: j.text })
+    }
+  }
+
+  const isVis = (key: SectionKey) => content.section_visibility?.[key] !== false
+  const setVisible = (key: SectionKey, visible: boolean) =>
+    setContent(prev => ({ ...prev, section_visibility: { ...prev.section_visibility, [key]: visible } }))
 
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -473,7 +428,16 @@ export default function LandingPageTab({ restaurant }: Props) {
             </div>
 
             <div>
-              <label style={fieldLabel}>Über uns <span style={{ opacity: 0.4 }}>(max. 500)</span></label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ ...fieldLabel, marginBottom: 0 }}>Über uns <span style={{ opacity: 0.4 }}>(max. 500)</span></label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button onClick={() => handleGenerateField('about')} disabled={generatingField === 'about'}
+                    style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700 }}>
+                    {generatingField === 'about' ? '⟳' : '✦ KI'}
+                  </button>
+                  <VisibilityToggle visible={isVis('about')} onChange={v => setVisible('about', v)} />
+                </div>
+              </div>
               <textarea value={content.about_text ?? ''} maxLength={500} rows={4}
                 onChange={e => setContent(prev => ({ ...prev, about_text: e.target.value }))}
                 placeholder="Beschreibe dein Restaurant…" style={{ ...inputStyle, resize: 'vertical' }} />
@@ -498,7 +462,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Kontakt ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Kontakt & Adresse</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Kontakt & Adresse</div>
+                <VisibilityToggle visible={isVis('contact')} onChange={v => setVisible('contact', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={fieldLabel}>Adresse</label>
@@ -541,7 +508,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Öffnungszeiten ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Öffnungszeiten</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Öffnungszeiten</div>
+                <VisibilityToggle visible={isVis('opening_hours')} onChange={v => setVisible('opening_hours', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {DAYS.map(day => {
                   const val = content.opening_hours?.[day.key] ?? { open: true, from: '11:00', to: '22:00' }
@@ -584,7 +554,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Galerie ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Foto-Galerie <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 6 Bilder)</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Foto-Galerie <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 6 Bilder)</span></div>
+                <VisibilityToggle visible={isVis('gallery')} onChange={v => setVisible('gallery', v)} />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
                 {(content.gallery ?? []).map((url, i) => (
                   <div key={i} style={{ position: 'relative' }}>
@@ -636,7 +609,10 @@ export default function LandingPageTab({ restaurant }: Props) {
 
             {/* ── Bewertungen ── */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-              <div style={sectionTitle}>Bewertungen</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Bewertungen</div>
+                <VisibilityToggle visible={isVis('reviews')} onChange={v => setVisible('reviews', v)} />
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
@@ -696,6 +672,140 @@ export default function LandingPageTab({ restaurant }: Props) {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+
+            {/* ── Team ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Team</div>
+                <VisibilityToggle visible={isVis('team')} onChange={v => setVisible('team', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(content.team ?? []).map((member, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '10px', alignItems: 'center', background: 'var(--surface)', borderRadius: '8px', padding: '10px' }}>
+                    <ImageDropzone label="" previewUrl={member.photo_url} uploading={!!uploading[`team-${i}`]}
+                      onFile={async f => {
+                        const url = await uploadImage(f, 'team', `team-${i}`)
+                        if (url) setContent(prev => {
+                          const team = [...(prev.team ?? [])]; team[i] = { ...team[i], photo_url: url }; return { ...prev, team }
+                        })
+                      }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input type="text" value={member.name} placeholder="Name"
+                        onChange={e => setContent(prev => { const team = [...(prev.team ?? [])]; team[i] = { ...team[i], name: e.target.value }; return { ...prev, team } })}
+                        style={inputStyle} />
+                      <input type="text" value={member.role} placeholder="Rolle (z.B. Chefkoch)"
+                        onChange={e => setContent(prev => { const team = [...(prev.team ?? [])]; team[i] = { ...team[i], role: e.target.value }; return { ...prev, team } })}
+                        style={inputStyle} />
+                    </div>
+                    <button onClick={() => setContent(prev => ({ ...prev, team: (prev.team ?? []).filter((_, j) => j !== i) }))}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setContent(prev => ({ ...prev, team: [...(prev.team ?? []), { name: '', role: '' }] }))}
+                  style={{ padding: '8px', borderRadius: '8px', border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  + Mitglied hinzufügen
+                </button>
+              </div>
+            </div>
+
+            {/* ── Geschichte ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Unsere Geschichte</div>
+                <VisibilityToggle visible={isVis('story')} onChange={v => setVisible('story', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <ImageDropzone label="Bild" previewUrl={content.story_image_url} uploading={!!uploading['story']}
+                  onFile={async f => { const url = await uploadImage(f, 'story', 'story'); if (url) setContent(prev => ({ ...prev, story_image_url: url })) }} />
+                <div>
+                  <label style={fieldLabel}>Gegründet (Jahr)</label>
+                  <input type="text" value={content.founded_year ?? ''} maxLength={20}
+                    onChange={e => setContent(prev => ({ ...prev, founded_year: e.target.value }))}
+                    placeholder="1998" style={inputStyle} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ ...fieldLabel, marginBottom: 0 }}>Geschichte</label>
+                    <button onClick={() => handleGenerateField('story')} disabled={generatingField === 'story'}
+                      style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700 }}>
+                      {generatingField === 'story' ? '⟳' : '✦ KI'}
+                    </button>
+                  </div>
+                  <textarea value={content.story_text ?? ''} rows={4}
+                    onChange={e => setContent(prev => ({ ...prev, story_text: e.target.value }))}
+                    placeholder="Erzähle die Geschichte deines Restaurants…" style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Atmosphäre ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Atmosphäre <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>(max. 8)</span></div>
+                <VisibilityToggle visible={isVis('ambiance')} onChange={v => setVisible('ambiance', v)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {(content.ambiance_gallery ?? []).map((url, i) => (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <img src={url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                    <button onClick={() => setContent(prev => ({ ...prev, ambiance_gallery: (prev.ambiance_gallery ?? []).filter((_, j) => j !== i) }))}
+                      style={{ position: 'absolute', top: '3px', right: '3px', background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                  </div>
+                ))}
+                {(content.ambiance_gallery ?? []).length < 8 && (
+                  <ImageDropzone label="" previewUrl={undefined} uploading={!!uploading['ambiance']}
+                    onFile={async f => { const url = await uploadImage(f, 'ambiance', 'ambiance'); if (url) setContent(prev => ({ ...prev, ambiance_gallery: [...(prev.ambiance_gallery ?? []), url].slice(0, 8) })) }}
+                    hint="Foto hinzufügen" />
+                )}
+              </div>
+            </div>
+
+            {/* ── Auszeichnungen ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <div style={{ ...sectionTitle, marginBottom: 0 }}>Auszeichnungen & Presse</div>
+                <VisibilityToggle visible={isVis('awards')} onChange={v => setVisible('awards', v)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(content.awards ?? []).map((award, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '64px 1fr auto', gap: '10px', alignItems: 'center', background: 'var(--surface)', borderRadius: '8px', padding: '10px' }}>
+                    <ImageDropzone label="" previewUrl={award.logo_url} uploading={!!uploading[`award-${i}`]}
+                      onFile={async f => { const url = await uploadImage(f, 'award', `award-${i}`); if (url) setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], logo_url: url }; return { ...prev, awards } }) }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <input type="text" value={award.title} placeholder="Titel (z.B. Gault&Millau)"
+                        onChange={e => setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], title: e.target.value }; return { ...prev, awards } })}
+                        style={inputStyle} />
+                      <input type="text" value={award.subtitle ?? ''} placeholder="Untertitel (z.B. 2024)"
+                        onChange={e => setContent(prev => { const awards = [...(prev.awards ?? [])]; awards[i] = { ...awards[i], subtitle: e.target.value }; return { ...prev, awards } })}
+                        style={inputStyle} />
+                    </div>
+                    <button onClick={() => setContent(prev => ({ ...prev, awards: (prev.awards ?? []).filter((_, j) => j !== i) }))}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setContent(prev => ({ ...prev, awards: [...(prev.awards ?? []), { title: '' }] }))}
+                  style={{ padding: '8px', borderRadius: '8px', border: '1.5px dashed var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  + Auszeichnung hinzufügen
+                </button>
+              </div>
+            </div>
+
+            {/* ── Weitere Sektionen ── */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div style={sectionTitle}>Weitere Sektionen ein-/ausblenden</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {([
+                  { key: 'featured_menu' as SectionKey, label: 'Menü-Highlights' },
+                  { key: 'reservation_cta' as SectionKey, label: 'Reservierungs-Aufruf' },
+                  { key: 'instagram' as SectionKey, label: 'Instagram' },
+                ]).map(s => (
+                  <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>{s.label}</span>
+                    <VisibilityToggle visible={isVis(s.key)} onChange={v => setVisible(s.key, v)} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -807,16 +917,12 @@ export default function LandingPageTab({ restaurant }: Props) {
 
       </div>
 
-      {/* Right preview */}
+      {/* Right preview — echte Live-Vorschau via iframe */}
       <div style={{
-        width: '280px', flexShrink: 0, borderLeft: '1px solid var(--border)',
-        background: 'var(--surface-2)', padding: '16px', overflowY: 'auto', paddingTop: '60px',
+        width: '440px', flexShrink: 0, borderLeft: '1px solid var(--border)',
+        background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', paddingTop: '52px',
       }}>
-        <div style={{ ...fieldLabel, marginBottom: '8px' }}>Vorschau</div>
-        {isPublished && (
-          <div style={{ fontSize: '0.68rem', color: '#10b981', marginBottom: '8px', fontWeight: 600 }}>● Live</div>
-        )}
-        <LpPreview content={content} layout={lpLayout} />
+        <PreviewPane slug={restaurant.slug ?? ''} reloadToken={reloadToken} />
       </div>
 
     </div>

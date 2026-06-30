@@ -22,6 +22,8 @@ import { LoyaltyButton, LoyaltyBanner, useLoyalty } from '@/components/bestellen
 import { LoyaltyRedeemBlock } from '@/components/bestellen/LoyaltyRedeemBlock'
 import { redeemLoyaltyReward } from '@/lib/loyalty/api'
 import SmartFilter from '../_components/SmartFilter'
+import { SiteHeader } from '@/components/site/SiteHeader'
+import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, ChefHat, CheckCircle2, XCircle, Clock, User, Users,
@@ -1286,6 +1288,14 @@ export default function BestellenV1() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: pageTab === 'order' ? '100px' : '0', width: '100%', overflowX: 'hidden', ...brandVars, background: 'var(--bg)' }}>
       {/* Brand-Variablen jetzt inline oben am Wurzel-Div (siehe Kommentar) */}
+      <SiteHeader
+        colors={C}
+        font={brandFp}
+        slug={slug}
+        restaurantName={restaurant?.name ?? ''}
+        logoUrl={restaurant?.logo_url ?? undefined}
+        active={pageTab === 'reserve' ? 'reservieren' : 'speisekarte'}
+      />
       {/* Header */}
       <div style={{ background: 'var(--header-bg)', padding: '28px 20px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '12px' }}>
@@ -2169,14 +2179,8 @@ export default function BestellenV1() {
       </AnimatePresence>
       </>}
 
-      {/* Footer */}
-      <div style={{ padding: '32px 24px 24px', textAlign: 'center', borderTop: '1px solid var(--border)', marginTop: '40px' }}>
-        <p style={{ color: '#bbb', fontSize: '0.72rem', marginBottom: '8px', letterSpacing: '0.05em' }}>Powered by RestaurantOS</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-          <a href="/impressum" style={{ color: '#aaa', fontSize: '0.75rem', textDecoration: 'none' }}>Impressum</a>
-          <a href="/datenschutz" style={{ color: '#aaa', fontSize: '0.75rem', textDecoration: 'none' }}>Datenschutz</a>
-        </div>
-      </div>
+      {/* Footer (geteiltes Website-Dach) */}
+      <SiteFooter colors={C} font={brandFp} restaurantName={restaurant?.name ?? ''} />
     </div>
   )
 }

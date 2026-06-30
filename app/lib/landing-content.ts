@@ -8,6 +8,23 @@ export interface ReviewQuote {
   stars?: number
 }
 
+export interface TeamMember {
+  name: string
+  role: string
+  photo_url?: string
+}
+
+export interface Award {
+  title: string
+  subtitle?: string
+  logo_url?: string
+}
+
+export type SectionKey =
+  | 'gallery' | 'featured_menu' | 'about' | 'team' | 'story'
+  | 'ambiance' | 'awards' | 'opening_hours' | 'reviews'
+  | 'reservation_cta' | 'contact' | 'instagram'
+
 export interface OpeningHoursDay {
   open: boolean
   from?: string
@@ -59,4 +76,21 @@ export interface LandingPageContent {
 
   // Öffnungszeiten
   opening_hours?: OpeningHours
+
+  // Team
+  team?: TeamMember[]
+
+  // Geschichte
+  story_text?: string
+  story_image_url?: string
+  founded_year?: string
+
+  // Atmosphäre
+  ambiance_gallery?: string[]
+
+  // Auszeichnungen
+  awards?: Award[]
+
+  // Sichtbarkeit pro Sektion (Default: alle sichtbar)
+  section_visibility?: Partial<Record<SectionKey, boolean>>
 }

@@ -1,9 +1,12 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { resolveBrand } from '@/lib/resolve-brand'
 import { LandingHero } from '@/components/landing/LandingHero'
 import { LandingPageSections } from '@/components/landing/LandingPageSections'
+import { SiteHeader } from '@/components/site/SiteHeader'
+import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LandingPageContent } from '@/lib/landing-content'
 import type { FeaturedItem } from '@/components/landing/types'
 
@@ -19,6 +22,7 @@ interface LandingPageRow {
 
 interface RestaurantRow {
   id: string
+  owner_id: string
   name: string
   slug: string
   description: string | null
@@ -61,19 +65,32 @@ export async function generateMetadata({
 
 export default async function PublicLandingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { slug } = await params
+  const sp = await searchParams
+  const wantsPreview = sp.preview === '1'
   const admin = createSupabaseAdmin()
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
+    .select('id, owner_id, name, slug, description, logo_url, design_config, primary_color, bg_color, surface_color, header_color, button_color, card_color, text_color, font_pair, layout_variant, design_package')
     .eq('slug', slug)
     .maybeSingle()
 
   if (!restaurant) notFound()
+
+  // Vorschau unveröffentlichter Entwürfe nur für den eingeloggten Besitzer (Cookie-Session).
+  // Verhindert IDOR: ?preview=1 darf keine fremden, unveröffentlichten Seiten offenlegen.
+  let isPreview = false
+  if (wantsPreview) {
+    const ssr = await createSupabaseServerSSR()
+    const { data: { user } } = await ssr.auth.getUser()
+    isPreview = !!user && user.id === (restaurant as RestaurantRow).owner_id
+  }
 
   const { data: lp } = await admin
     .from('landing_pages')
@@ -81,7 +98,7 @@ export default async function PublicLandingPage({
     .eq('restaurant_id', (restaurant as RestaurantRow).id)
     .maybeSingle()
 
-  if (!lp || !(lp as LandingPageRow).is_published) notFound()
+  if (!lp || (!(lp as LandingPageRow).is_published && !isPreview)) notFound()
 
   const landingPage = lp as LandingPageRow
   const resto = restaurant as RestaurantRow
@@ -111,6 +128,14 @@ export default async function PublicLandingPage({
       background: brand.colors.bg,
       color: brand.colors.text,
     }}>
+      <SiteHeader
+        colors={brand.colors}
+        font={brand.font}
+        slug={resto.slug}
+        restaurantName={resto.name}
+        logoUrl={content.logo_url ?? resto.logo_url ?? undefined}
+        active="start"
+      />
       <LandingHero
         brand={brand}
         content={content}
@@ -121,9 +146,13 @@ export default async function PublicLandingPage({
       <LandingPageSections
         brand={brand}
         content={content}
-        restaurantName={resto.name}
         slug={resto.slug}
         featuredItems={featuredItems}
+      />
+      <SiteFooter
+        colors={brand.colors}
+        font={brand.font}
+        restaurantName={resto.name}
       />
     </div>
   )
