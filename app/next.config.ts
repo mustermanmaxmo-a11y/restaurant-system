@@ -25,7 +25,10 @@ const securityHeaders = [
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://ingest.de.sentry.io",
       // Stripe.js
       "script-src-elem 'self' 'unsafe-inline' https://js.stripe.com",
-      "frame-src https://js.stripe.com https://hooks.stripe.com",
+      // Web-Worker aus blob: erlauben (sonst greift script-src als Fallback und blockt sie)
+      "worker-src 'self' blob:",
+      // Was die Seite einbetten darf: eigene Seiten (Admin-Live-Vorschau über apex↔www) + Stripe
+      "frame-src 'self' https://getorderiq.de https://www.getorderiq.de https://js.stripe.com https://hooks.stripe.com",
       // Images from Supabase storage, Stripe, and data URIs
       "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
       "font-src 'self'",
