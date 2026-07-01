@@ -21,14 +21,16 @@ function pill(active: boolean): React.CSSProperties {
 }
 
 export function EditorTopBar({
-  slug, restaurantId, page, device, onPageChange, onDeviceChange,
+  slug, restaurantId, page, device, fullscreen, onPageChange, onDeviceChange, onToggleFullscreen,
 }: {
   slug: string
   restaurantId: string
   page: PreviewPage
   device: PreviewDevice
+  fullscreen: boolean
   onPageChange: (p: PreviewPage) => void
   onDeviceChange: (d: PreviewDevice) => void
+  onToggleFullscreen: () => void
 }) {
   const { saveStatus, hasUnpublishedChanges, publishing, publish, discard } = useEditorDraft()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -76,6 +78,7 @@ export function EditorTopBar({
         <div style={{ display: 'flex', gap: '2px' }}>
           <button style={pill(device === 'mobile')} onClick={() => onDeviceChange('mobile')} title="Mobil">📱</button>
           <button style={pill(device === 'desktop')} onClick={() => onDeviceChange('desktop')} title="Desktop">🖥</button>
+          <button style={pill(fullscreen)} onClick={onToggleFullscreen} title={fullscreen ? 'Vollbild beenden (Esc)' : 'Vollbild-Vorschau'}>⛶</button>
         </div>
 
         <span style={{ fontSize: '0.74rem', fontWeight: 600, color: hasUnpublishedChanges ? 'var(--accent)' : 'var(--text-muted)' }}>{statusText}</span>

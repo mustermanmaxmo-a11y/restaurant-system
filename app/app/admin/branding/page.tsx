@@ -23,12 +23,19 @@ export default function BrandingPage() {
   const [device, setDevice] = useState<PreviewDevice>('mobile')
   const [navMode, setNavMode] = useState<NavMode>('pages')
   const [selection, setSelection] = useState<NavSelection>({ kind: 'basis' })
+  const [fullscreen, setFullscreen] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   useEffect(() => {
@@ -61,9 +68,11 @@ export default function BrandingPage() {
   return (
     <EditorDraftProvider restaurantId={restaurant.id}>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--bg)' }}>
-        <EditorTopBar slug={restaurant.slug} restaurantId={restaurant.id} page={page} device={device} onPageChange={setPage} onDeviceChange={setDevice} />
+        <EditorTopBar slug={restaurant.slug} restaurantId={restaurant.id} page={page} device={device} fullscreen={fullscreen} onPageChange={setPage} onDeviceChange={setDevice} onToggleFullscreen={() => setFullscreen(f => !f)} />
 
-        {isMobile ? (
+        {fullscreen ? (
+          <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>{canvas}</div>
+        ) : isMobile ? (
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <div style={{ borderBottom: '1px solid var(--border)', maxHeight: '40vh', overflow: 'hidden', display: 'flex' }}>{nav}</div>
             <div style={{ height: '45vh', flexShrink: 0, borderBottom: '1px solid var(--border)', display: 'flex' }}>{canvas}</div>
