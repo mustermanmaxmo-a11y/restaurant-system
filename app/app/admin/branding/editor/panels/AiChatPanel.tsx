@@ -54,11 +54,11 @@ export function AiChatPanel({ restaurant }: { restaurant: Restaurant }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <h2 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '4px' }}>KI Design-Assistent</h2>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginBottom: '12px' }}>Beschreib dein Wunsch-Design — „Übernehmen" schreibt es in den Entwurf (erst beim Veröffentlichen live).</p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginBottom: '12px' }}>{'Beschreib dein Wunsch-Design — „Übernehmen" schreibt es in den Entwurf (erst beim Veröffentlichen live).'}</p>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '10px', minHeight: '160px', background: 'var(--surface)', borderRadius: '12px', padding: '14px', border: '1px solid var(--border)' }}>
         {messages.length === 0 && (
           <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginTop: '20px', lineHeight: 1.7 }}>
-            „Mach es dunkler" · „Blaue Akzentfarbe" · „Elegantes Gold auf Schwarz"
+            {'„Mach es dunkler" · „Blaue Akzentfarbe" · „Elegantes Gold auf Schwarz"'}
           </div>
         )}
         {messages.map((msg, i) => (

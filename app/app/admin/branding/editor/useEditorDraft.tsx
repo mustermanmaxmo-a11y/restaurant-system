@@ -85,6 +85,7 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
     if (!draft) return
     if (!didLoad.current) { didLoad.current = true; return }
     if (saveTimer.current) clearTimeout(saveTimer.current)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gewollt: Status auf "saving" bei jeder Entwurf-Änderung
     setSaveStatus('saving')
     saveTimer.current = setTimeout(async () => {
       const headers = { 'Content-Type': 'application/json', ...(await authHeader()) }
@@ -102,7 +103,6 @@ export function EditorDraftProvider({ restaurantId, children }: { restaurantId: 
       }
     }, 800)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, restaurantId])
 
   const updateBrand = useCallback((partial: Partial<DraftBrand>) => {

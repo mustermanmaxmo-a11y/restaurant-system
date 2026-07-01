@@ -48,7 +48,7 @@ export function AiScanPanel({ restaurant }: { restaurant: Restaurant }) {
   return (
     <div>
       <h2 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '4px' }}>Design automatisch erkennen</h2>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginBottom: '12px' }}>Screenshot oder URL → die KI erkennt Farben/Schrift. „Übernehmen" schreibt in den Entwurf.</p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginBottom: '12px' }}>{'Screenshot oder URL → die KI erkennt Farben/Schrift. „Übernehmen" schreibt in den Entwurf.'}</p>
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: 'var(--surface-2)', borderRadius: 8, padding: 4 }}>
         {(['screenshot', 'url'] as const).map(t => (
           <button key={t} onClick={() => { setTab(t); setResult(null); setError('') }} style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: tab === t ? 700 : 500, background: tab === t ? 'var(--accent)' : 'transparent', color: tab === t ? '#fff' : 'var(--text-muted)' }}>

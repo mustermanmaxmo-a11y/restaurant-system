@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useEditorDraft } from '../useEditorDraft'
-import type { SectionKey, LandingPageContent } from '@/lib/landing-content'
+import type { SectionKey } from '@/lib/landing-content'
 
 export type SectionTarget = SectionKey | 'basis'
 
@@ -22,11 +22,6 @@ const aiBtn = (busy: boolean): React.CSSProperties => ({
   padding: '3px 8px', cursor: busy ? 'wait' : 'pointer', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700,
 })
 
-const FEATURE_BADGE_OPTIONS = [
-  'Vegetarisch', 'Vegan', 'Glutenfrei', 'Halal',
-  'Lieferung', 'Reservierung', 'Takeaway', 'Catering',
-  'Wifi', 'Terrasse', 'Parkplatz',
-]
 const DAYS = [
   { key: 'mo' as const, label: 'Montag' }, { key: 'di' as const, label: 'Dienstag' },
   { key: 'mi' as const, label: 'Mittwoch' }, { key: 'do' as const, label: 'Donnerstag' },
