@@ -17,11 +17,19 @@ export default function BrandingPage() {
   const router = useRouter()
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
 
   const [page, setPage] = useState<PreviewPage>('start')
   const [device, setDevice] = useState<PreviewDevice>('mobile')
   const [navMode, setNavMode] = useState<NavMode>('pages')
   const [selection, setSelection] = useState<NavSelection>({ kind: 'basis' })
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -46,21 +54,28 @@ export default function BrandingPage() {
     )
   }
 
+  const nav = <EditorNav mode={navMode} onModeChange={setNavMode} selection={selection} onSelect={setSelection} />
+  const canvas = <EditorCanvas slug={restaurant.slug} page={page} device={device} />
+  const panel = <EditorPanel selection={selection} restaurant={restaurant} />
+
   return (
     <EditorDraftProvider restaurantId={restaurant.id}>
       <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--bg)' }}>
-        <EditorTopBar slug={restaurant.slug} page={page} device={device} onPageChange={setPage} onDeviceChange={setDevice} />
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
-          <nav style={{ width: '230px', borderRight: '1px solid var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-            <EditorNav mode={navMode} onModeChange={setNavMode} selection={selection} onSelect={setSelection} />
-          </nav>
-          <div style={{ flex: 1, minWidth: 0, borderRight: '1px solid var(--border)', display: 'flex' }}>
-            <EditorCanvas slug={restaurant.slug} page={page} device={device} />
+        <EditorTopBar slug={restaurant.slug} restaurantId={restaurant.id} page={page} device={device} onPageChange={setPage} onDeviceChange={setDevice} />
+
+        {isMobile ? (
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ borderBottom: '1px solid var(--border)', maxHeight: '40vh', overflow: 'hidden', display: 'flex' }}>{nav}</div>
+            <div style={{ height: '45vh', flexShrink: 0, borderBottom: '1px solid var(--border)', display: 'flex' }}>{canvas}</div>
+            <div style={{ flex: 1 }}>{panel}</div>
           </div>
-          <aside style={{ width: '380px', flexShrink: 0, overflow: 'hidden' }}>
-            <EditorPanel selection={selection} restaurant={restaurant} />
-          </aside>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            <nav style={{ width: '230px', borderRight: '1px solid var(--border)', flexShrink: 0, overflow: 'hidden' }}>{nav}</nav>
+            <div style={{ flex: 1, minWidth: 0, borderRight: '1px solid var(--border)', display: 'flex' }}>{canvas}</div>
+            <aside style={{ width: '380px', flexShrink: 0, overflow: 'hidden' }}>{panel}</aside>
+          </div>
+        )}
       </div>
     </EditorDraftProvider>
   )
