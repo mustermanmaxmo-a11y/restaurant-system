@@ -10,7 +10,6 @@ import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
 import { MenuItemCard } from '@/components/menu/MenuItemCard'
 import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
-import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
 import ChatWidget from '@/components/ChatWidget'
 import { OrderRating } from '@/components/order/OrderRating'
@@ -27,7 +26,7 @@ import { SiteFooter } from '@/components/site/SiteFooter'
 import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, ChefHat, CheckCircle2, XCircle, Clock, User, Users,
-  Link, Bike, PersonStanding, Sun, Moon, Search, PartyPopper, ShoppingCart,
+  Link, Bike, PersonStanding, Search, PartyPopper, ShoppingCart,
   Dices, Map, Shuffle, Bell, X, UtensilsCrossed,
 } from 'lucide-react'
 
@@ -72,7 +71,6 @@ export default function BestellenV1() {
   const params = useParams()
   const searchParams = useSearchParams()
   const slug = params.slug as string
-  const { theme, toggleTheme } = useTheme()
   const { lang, t } = useLanguage()
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
@@ -1316,13 +1314,6 @@ export default function BestellenV1() {
             {restaurant && (
               <LoyaltyButton restaurantId={restaurant.id} accentColor={restaurant.primary_color ?? '#EA580C'} />
             )}
-            <button
-              onClick={toggleTheme}
-              style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-text)' }}
-              title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
           </div>
         </div>
         {/* Page tabs */}

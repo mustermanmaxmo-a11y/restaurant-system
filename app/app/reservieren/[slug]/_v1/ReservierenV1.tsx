@@ -7,9 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { darken } from '@/lib/color-utils'
 import { getDesignPackage } from '@/lib/design-packages'
 import { FONT_PAIRS } from '@/lib/font-pairs'
-import { useTheme } from '@/components/providers/theme-provider'
 import type { Restaurant, Reservation, Table } from '@/types/database'
-import { CheckCircle2, Dices, Map, PartyPopper, PersonStanding, Sun, Moon } from 'lucide-react'
+import { CheckCircle2, Dices, Map, PartyPopper, PersonStanding } from 'lucide-react'
 
 type TableStatus = 'available' | 'tight' | 'taken' | 'no-position'
 type ResInfo = { id: string; table_id: string | null; date: string; time_from: string; guests: number; status: string }
@@ -24,7 +23,6 @@ const TABLE_STATUS_COLORS: Record<TableStatus, string | null> = {
 export default function ReservierenV1() {
   const params = useParams()
   const slug = params.slug as string
-  const { theme, toggleTheme } = useTheme()
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [tables, setTables] = useState<Table[]>([])
@@ -225,13 +223,6 @@ export default function ReservierenV1() {
               )}
             </div>
           </div>
-          <button
-            onClick={toggleTheme}
-            style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-text)', flexShrink: 0, marginTop: '4px' }}
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
         </div>
 
         {/* Tab navigation — link back to ordering */}
