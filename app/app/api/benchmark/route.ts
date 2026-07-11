@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     : null
 
   // Peer snapshots (same category, opt-in, exclude own)
-  let peerQuery = supabase
+  const peerQuery = supabase
     .from('benchmark_snapshots')
     .select('restaurant_id, daily_revenue, order_count, avg_order_value')
     .neq('restaurant_id', restaurantId)

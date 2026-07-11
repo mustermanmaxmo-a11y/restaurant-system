@@ -49,7 +49,7 @@ export default async function PlatformSearchPage({
   }
 
   // email lookup
-  let emailByUserId: Record<string, string> = {}
+  const emailByUserId: Record<string, string> = {}
   if (results.length > 0) {
     const { data: usersRes } = await admin.auth.admin.listUsers({ perPage: 1000 })
     for (const u of usersRes?.users ?? []) {

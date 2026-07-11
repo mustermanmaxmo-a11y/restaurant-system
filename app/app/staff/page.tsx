@@ -1093,7 +1093,7 @@ function ReservationCard({ res }: { res: Reservation }) {
         <p style={{ color: '#555', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Users size={12} /> {res.guests} · <Phone size={12} /> {res.customer_phone}
         </p>
-        {res.note && <p style={{ color: '#444', fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic' }}>„{res.note}"</p>}
+        {res.note && <p style={{ color: '#444', fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic' }}>„{res.note}&quot;</p>}
       </div>
     </div>
   )
