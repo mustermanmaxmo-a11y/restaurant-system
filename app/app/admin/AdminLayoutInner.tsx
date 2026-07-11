@@ -14,7 +14,9 @@ import {
   Settings, Mail, Truck, Plug, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen, Monitor, History, FileText,
 } from 'lucide-react'
-import AdminChatWidget from '@/components/AdminChatWidget'
+import dynamic from 'next/dynamic'
+// CWV: floatendes Admin-Chat-Widget lazy laden — aus dem initialen Admin-Bundle heraushalten.
+const AdminChatWidget = dynamic(() => import('@/components/AdminChatWidget'), { ssr: false })
 
 type NavItem = { icon: React.ElementType; label: string; href: string }
 type NavGroup = { id: string; label?: string; items: NavItem[] }
