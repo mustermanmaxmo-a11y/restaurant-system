@@ -22,7 +22,13 @@ export interface ImmediateEmailInput extends QueueEmailInput {
   immediate: true;
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy: erst bei Bedarf instanziieren, damit `next build` ohne RESEND_API_KEY
+// nicht beim Modul-Import wirft (Resend wirft im Konstruktor ohne Key).
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 function formatFrom(input: QueueEmailInput): string {
   return input.fromName ? `${input.fromName} <${input.fromEmail}>` : input.fromEmail;
@@ -32,7 +38,7 @@ export async function sendEmail(
   input: QueueEmailInput | ImmediateEmailInput
 ): Promise<{ queued: boolean; id?: string }> {
   if ('immediate' in input && input.immediate) {
-    const result = await resend.emails.send({
+    const result = await getResend().emails.send({
       from: formatFrom(input),
       to: input.toEmail,
       subject: input.subject,
