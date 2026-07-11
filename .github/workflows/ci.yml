@@ -1,0 +1,71 @@
+name: CI
+
+# Automatisches Gate für PRs und main-Pushes: Tests + Build müssen grün sein.
+# Lint läuft separat und ist (vorerst) nicht blockierend, weil noch Alt-Schulden
+# bestehen (Stand 2026-07-11: 76 errors / 97 warnings). Ziel: schrittweise auf 0,
+# dann `continue-on-error` entfernen und Lint zum harten Gate machen.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Laufende Runs für denselben Branch abbrechen, wenn ein neuer Commit kommt.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  test-build:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Platzhalter, damit der Build ohne echte Secrets durchläuft.
+          # lib/supabase.ts erzeugt den Browser-Client auf Modulebene und wirft
+          # sonst beim Import. Das sind KEINE echten Zugangsdaten.
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          NEXT_PUBLIC_APP_URL: "https://example.com"
+
+  lint:
+    name: Lint (non-blocking)
+    runs-on: ubuntu-latest
+    # Vorerst nicht blockierend – siehe Kommentar oben.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
