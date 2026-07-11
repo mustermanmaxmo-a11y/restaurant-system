@@ -49,6 +49,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
           NEXT_PUBLIC_APP_URL: "https://example.com"
+          # /api/jobs/send-rating-email exportiert `verifySignatureAppRouter(handler)`,
+          # das beim Modul-Load einen QStash-Receiver aus diesen Keys erzeugt (wirft sonst).
+          # Signaturprüfung läuft nur zur Request-Zeit — Platzhalter genügen für den Build.
+          QSTASH_CURRENT_SIGNING_KEY: "sig_placeholder_current"
+          QSTASH_NEXT_SIGNING_KEY: "sig_placeholder_next"
 
   lint:
     name: Lint (non-blocking)
