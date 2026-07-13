@@ -212,7 +212,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {content.review_quotes!.slice(0, 3).map((q, i) => (
                   <div key={i} style={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: '10px', padding: '14px 16px' }}>
-                    <div style={{ color: colors.text, fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '8px' }}>"{q.text}"</div>
+                    <div style={{ color: colors.text, fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '8px' }}>&quot;{q.text}&quot;</div>
                     <div style={{ color: colors.muted, fontSize: '0.72rem', fontWeight: 600 }}>— {q.author}</div>
                   </div>
                 ))}

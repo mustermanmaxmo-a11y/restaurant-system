@@ -20,7 +20,7 @@ export function PushNotificationBanner({ appContext, restaurantId, userId, staff
   useEffect(() => {
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
-      (navigator as any).standalone === true
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
     setIsPwa(isStandalone)
     const wasDismissed = localStorage.getItem(`push-dismissed-${appContext}`)
     if (wasDismissed) setDismissed(true)

@@ -154,7 +154,7 @@ export function CompareClient({ restaurants }: { restaurants: RestMetrics[] }) {
       {selected.length === 0 && (
         <div style={{ padding: '80px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: '1rem', marginBottom: '12px' }}>Restaurants auswählen zum Vergleichen</div>
-          <div style={{ color: 'rgba(255,255,255,0.08)', fontSize: '0.8rem' }}>Bis zu 4 Restaurants gleichzeitig · klicke auf „+ Restaurant hinzufügen"</div>
+          <div style={{ color: 'rgba(255,255,255,0.08)', fontSize: '0.8rem' }}>Bis zu 4 Restaurants gleichzeitig · klicke auf „+ Restaurant hinzufügen&quot;</div>
         </div>
       )}
 

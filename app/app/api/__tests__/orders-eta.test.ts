@@ -22,12 +22,12 @@ vi.mock('@supabase/supabase-js', () => ({
           if (table === 'restaurants') return mockRestaurant()
           return { data: null, error: null }
         },
-        then: (resolve: Function) => {
+        then: (resolve: (value: unknown) => void) => {
           if (table === 'staff_presence') return Promise.resolve(mockPresence()).then(resolve)
           if (table === 'menu_items') return Promise.resolve(mockMenuItems()).then(resolve)
           if (table === 'orders') {
-            const callCount = (mockOpenOrders as any)._callCount ?? 0;
-            (mockOpenOrders as any)._callCount = callCount + 1
+            const callCount = (mockOpenOrders as unknown as { _callCount?: number })._callCount ?? 0;
+            (mockOpenOrders as unknown as { _callCount?: number })._callCount = callCount + 1
             if (callCount === 0) return Promise.resolve(mockOpenOrders()).then(resolve)
             return Promise.resolve(mockDeliveries()).then(resolve)
           }
@@ -50,7 +50,7 @@ function makeRequest(body: Record<string, unknown>) {
 describe('POST /api/orders/calculate-eta', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(mockOpenOrders as any)._callCount = 0
+    ;(mockOpenOrders as unknown as { _callCount?: number })._callCount = 0
   })
 
   it('returns 400 when restaurantId is missing', async () => {

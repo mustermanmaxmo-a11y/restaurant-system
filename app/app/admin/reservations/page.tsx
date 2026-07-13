@@ -197,7 +197,7 @@ export default function ReservationsPage() {
                             {assignedTable && <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><Armchair size={11} /> {assignedTable.label}</span>}
                           </div>
                           {res.note && (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginTop: '5px', fontStyle: 'italic' }}>„{res.note}"</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginTop: '5px', fontStyle: 'italic' }}>„{res.note}&quot;</p>
                           )}
                         </div>
                       </div>

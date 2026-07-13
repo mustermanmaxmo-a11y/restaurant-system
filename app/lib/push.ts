@@ -33,8 +33,9 @@ export async function sendPushToSubscription(sub: Subscription, payload: PushPay
       },
       JSON.stringify(payload)
     )
-  } catch (err: any) {
-    if (err.statusCode === 410) {
+  } catch (err) {
+    const e = err as { statusCode?: number; message?: string }
+    if (e.statusCode === 410) {
       try {
         const admin = createSupabaseAdmin()
         await admin.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
@@ -42,7 +43,7 @@ export async function sendPushToSubscription(sub: Subscription, payload: PushPay
         console.error('[push] Failed to clean up expired subscription:', sub.endpoint, cleanupErr)
       }
     } else {
-      console.error('[push] Failed to send notification:', err.statusCode, err.message)
+      console.error('[push] Failed to send notification:', e.statusCode, e.message)
     }
   }
 }

@@ -122,7 +122,7 @@ export default function WasteInsights({ restaurantId }: Props) {
 
       {!analysis && !loading && (
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
-          Klicke "Analysieren" um KI-Empfehlungen zu deinen Verlusten zu erhalten.
+          Klicke &quot;Analysieren&quot; um KI-Empfehlungen zu deinen Verlusten zu erhalten.
         </p>
       )}
     </div>

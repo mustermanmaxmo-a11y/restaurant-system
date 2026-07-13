@@ -46,7 +46,7 @@ export function LoyaltyRedeemBlock({
             style={{ width: '18px', height: '18px', accentColor }}
           />
           <span style={{ color: '#F5F5F7', fontSize: '0.85rem' }}>
-            Belohnung „{program.reward_text}" einlösen{' '}
+            Belohnung „{program.reward_text}&quot; einlösen{' '}
             <span style={{ color: accentColor, fontWeight: 700 }}>(–{valueEur} €)</span>
           </span>
         </label>
