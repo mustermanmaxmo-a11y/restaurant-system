@@ -12,7 +12,10 @@ import { MenuItemCard } from '@/components/menu/MenuItemCard'
 import { MenuItemGrid } from '@/components/menu/MenuItemGrid'
 import { useTheme } from '@/components/providers/theme-provider'
 import type { MenuItem, MenuCategory, Order, Restaurant, Reservation, Table, GroupItem, OrderGroup } from '@/types/database'
-import ChatWidget from '@/components/ChatWidget'
+import dynamic from 'next/dynamic'
+// CWV: floatendes Chat-Widget lazy laden — hält es aus dem initialen Bundle der
+// gastseitigen Bestell-Seite (mobile-first, kritischer Ladepfad).
+const ChatWidget = dynamic(() => import('@/components/ChatWidget'), { ssr: false })
 import { OrderRating } from '@/components/order/OrderRating'
 import { ReferralShare } from '@/components/order/ReferralShare'
 import { saveReferralRef, getReferralRef, clearReferralRef } from '@/lib/marketing/referral'
