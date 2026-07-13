@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 // Security: Only menu data (no customer PII) is sent to the Claude API.
 // Specifically: item names, descriptions, prices, allergens, tags, cart item names.
@@ -20,6 +21,14 @@ export async function POST(request: NextRequest) {
 
   if (!restaurantSlug || !message?.trim()) {
     return NextResponse.json({ reply: FALLBACK_REPLY })
+  }
+
+  // Rate-Limit: öffentlicher Gast-Endpoint → Schutz gegen KI-Kosten-Missbrauch.
+  // Per-IP Burst-Limit (15/min): stoppt Skript-Hämmern, bleibt aber großzügig für
+  // echte Gäste hinter geteilter Restaurant-WLAN-IP (kein stündliches Aussperren).
+  const ip = getClientIp(request.headers)
+  if (!(await rateLimit(`menu-assistant:${ip}`, 15, 60_000))) {
+    return NextResponse.json({ reply: 'Einen Moment bitte — gerade sind viele Anfragen unterwegs. Versuch es gleich nochmal.' })
   }
 
   const supabase = createClient(

@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Security: Only aggregated business data (no customer PII) is sent to the Claude API.
 // No customer names, contact info, payment data, or personal information is included.
@@ -37,6 +38,11 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (!restaurant) return NextResponse.json({ reply: FALLBACK })
+
+  // Rate-Limit: begrenzt teure KI-Chat-Anfragen pro Restaurant (Kostenschutz).
+  if (!(await rateLimit(`admin-assistant:${restaurant.id}`, 30, 60 * 60 * 1000))) {
+    return NextResponse.json({ reply: 'Zu viele Anfragen. Bitte warte kurz und versuche es erneut.' })
+  }
 
   const apiKey = await resolveAiKey(restaurant.id)
   if (!apiKey) {

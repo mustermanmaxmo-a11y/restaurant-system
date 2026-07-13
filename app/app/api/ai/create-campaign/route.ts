@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { createSupabaseServerSSR } from '@/lib/supabase-server-ssr'
 import { resolveAiKey } from '@/lib/ai-key'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -24,6 +25,11 @@ export async function POST(request: NextRequest) {
     .eq('owner_id', user.id)
     .maybeSingle()
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 403 })
+
+  // Rate-Limit: begrenzt teure KI-Generierung pro Restaurant (Kostenschutz).
+  if (!(await rateLimit(`create-campaign:${restaurant.id}`, 20, 60 * 60 * 1000))) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte warte eine Stunde.' }, { status: 429 })
+  }
 
   const apiKey = await resolveAiKey(restaurant.id)
   if (!apiKey) return NextResponse.json({ error: 'KI-Feature requires Pro plan.' }, { status: 402 })
