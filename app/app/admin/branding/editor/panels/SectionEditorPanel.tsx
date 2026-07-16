@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useEditorDraft } from '../useEditorDraft'
 import type { SectionKey } from '@/lib/landing-content'
@@ -137,7 +138,7 @@ export function SectionEditorPanel({ section, restaurantId }: { section: Section
               <label style={{ ...fieldLabel, marginBottom: 0 }}>Über uns <span style={{ opacity: 0.4 }}>(max. 500)</span></label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button onClick={() => handleGenerateField('about')} disabled={generatingField === 'about'} style={aiBtn(generatingField === 'about')}>{generatingField === 'about' ? '⟳' : '✦ KI'}</button>
-                <button onClick={() => setVisible('about', !isVis('about'))} title={isVis('about') ? 'Sichtbar' : 'Aus'} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', opacity: isVis('about') ? 1 : 0.4 }}>{isVis('about') ? '👁' : '🚫'}</button>
+                <button onClick={() => setVisible('about', !isVis('about'))} title={isVis('about') ? 'Sichtbar' : 'Aus'} aria-label={isVis('about') ? 'Sektion ausblenden' : 'Sektion einblenden'} style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', opacity: isVis('about') ? 1 : 0.4 }}>{isVis('about') ? <Eye size={15} /> : <EyeOff size={15} />}</button>
               </div>
             </div>
             <textarea value={content.about_text ?? ''} maxLength={500} rows={4} onChange={e => setContent(prev => ({ ...prev, about_text: e.target.value }))} placeholder="Beschreibe dein Restaurant…" style={{ ...inputStyle, resize: 'vertical' }} />

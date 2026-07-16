@@ -322,7 +322,7 @@ export default function SettingsPage() {
           border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
         }}>
           <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
-            ⭐ Google Bewertungen
+            Google Bewertungen
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>
             Wenn Gäste 4–5 Sterne geben, werden sie direkt zu Google weitergeleitet.
@@ -366,7 +366,7 @@ export default function SettingsPage() {
           border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px',
         }}>
           <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>
-            ✉️ Automatische Bewertungs-Email
+            Automatische Bewertungs-Email
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             X Stunden nach &quot;serviert&quot; bekommen Gäste mit Email-Opt-In automatisch eine Bewertungs-Email mit Sterne-Klick.
@@ -426,7 +426,7 @@ export default function SettingsPage() {
       {/* Loyalty / Stempelkarte — moved to /admin/marketing/loyalty */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🎁 Loyalty / Stempelkarte</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Loyalty / Stempelkarte</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '12px' }}>Konfiguration ist umgezogen.</p>
           <a href="/admin/marketing/loyalty" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none' }}>
             → Loyalty-Dashboard öffnen
@@ -437,7 +437,7 @@ export default function SettingsPage() {
       {/* Engpass-Alerts */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>⚠️ Engpass-Alerts</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Engpass-Alerts</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>Automatische Meldungen wenn Menü-Items knapp werden.</p>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -483,7 +483,7 @@ export default function SettingsPage() {
       {/* Email Marketing */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>📧 Email Marketing</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Email Marketing</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Wenn aktiv erscheint beim Checkout eine Opt-in-Checkbox. Kampagnen verwalten unter <a href="/admin/marketing" style={{ color: 'var(--accent)' }}>Marketing</a>.
           </p>
@@ -506,7 +506,7 @@ export default function SettingsPage() {
       {/* KI-Vorbereitungsplan */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🍳 KI-Vorbereitungsplan</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>KI-Vorbereitungsplan</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Täglich generierter Prep-Plan basierend auf Reservierungen und Bestellhistorie.
           </p>
@@ -550,7 +550,7 @@ export default function SettingsPage() {
       {/* CRM Re-Engagement Regeln */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>🔄 Re-Engagement Regeln</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Re-Engagement Regeln</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Automatische Emails an Loyalty-Gäste. Versand täglich via n8n. Verwalte Gäste unter <a href="/admin/marketing" style={{ color: 'var(--accent)' }}>Marketing → Gäste</a>.
           </p>
@@ -584,7 +584,7 @@ export default function SettingsPage() {
       {/* Branchenvergleich / Benchmarking */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>📊 Branchenvergleich</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Branchenvergleich</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Vergleiche deine Kennzahlen anonym mit ähnlichen Restaurants. Nur aggregierte Durchschnitte — kein Restaurant sieht individuelle Daten.
           </p>
@@ -683,7 +683,7 @@ export default function SettingsPage() {
       {/* Online-Zahlung / Stripe Connect */}
       {restaurant && (
         <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', padding: '20px 24px', marginBottom: '20px' }}>
-          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>💳 Online-Zahlung (Stripe)</h2>
+          <h2 style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>Online-Zahlung (Stripe)</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Verbinde dein Stripe-Konto damit Gäste direkt online bezahlen können. Die Online-Zahlung wird vom Platform-Admin aktiviert.
           </p>

@@ -13,9 +13,9 @@ interface Props {
 }
 
 const STATUS_CONFIG = {
-  green:  { color: '#10b981', bg: '#10b98115', label: 'Profitabel', emoji: '🟢' },
-  yellow: { color: '#f59e0b', bg: '#f59e0b15', label: 'Optimierbar', emoji: '🟡' },
-  red:    { color: '#ef4444', bg: '#ef444415', label: 'Streichkandidat', emoji: '🔴' },
+  green:  { color: '#10b981', bg: '#10b98115', label: 'Profitabel' },
+  yellow: { color: '#f59e0b', bg: '#f59e0b15', label: 'Optimierbar' },
+  red:    { color: '#ef4444', bg: '#ef444415', label: 'Streichkandidat' },
 }
 
 export default function ProfitabilityPanel({ restaurantId, items, onClose }: Props) {
@@ -130,8 +130,9 @@ export default function ProfitabilityPanel({ restaurantId, items, onClose }: Pro
                 const cfg = STATUS_CONFIG[status]
                 return (
                   <div key={status} style={{ marginBottom: '20px' }}>
-                    <p style={{ color: cfg.color, fontWeight: 700, fontSize: '0.85rem', marginBottom: '10px' }}>
-                      {cfg.emoji} {cfg.label} ({group.length})
+                    <p style={{ color: cfg.color, fontWeight: 700, fontSize: '0.85rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+                      {cfg.label} ({group.length})
                     </p>
                     {group.map((item: ProfitabilityResult) => (
                       <div key={item.itemId} style={{

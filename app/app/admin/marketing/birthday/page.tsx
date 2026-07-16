@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 type TriggerType = 'birthday' | 'first_order_anniversary' | 'custom_event'
@@ -158,9 +159,9 @@ export default function BirthdayDashboard() {
   }
 
   const triggerLabel: Record<TriggerType, string> = {
-    birthday: '🎂 Geburtstag',
-    first_order_anniversary: '🗓 Bestell-Jahrestag',
-    custom_event: '🎉 Restaurant-Event',
+    birthday: 'Geburtstag',
+    first_order_anniversary: 'Bestell-Jahrestag',
+    custom_event: 'Restaurant-Event',
   }
 
   if (loading && token) return <div style={{ padding: '40px', color: 'var(--text-muted)' }}>Lade…</div>
@@ -170,7 +171,7 @@ export default function BirthdayDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>
-            🎂 Geburtstag & Events
+            Geburtstag & Events
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', marginBottom: 0 }}>
             Automatische Emails mit individuellen Gutschein-Codes
@@ -181,7 +182,7 @@ export default function BirthdayDashboard() {
             onClick={() => setShowAiForm(true)}
             style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
           >
-            ✨ Mit KI erstellen
+            Mit KI erstellen
           </button>
           <button
             onClick={() => setShowForm(true)}
@@ -205,7 +206,7 @@ export default function BirthdayDashboard() {
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {triggerLabel[c.trigger_type]}
                     {c.send_date ? ` · ${c.send_date}` : ''}
-                    {c.sent_at ? ' · ✅ Gesendet' : ''}
+                    {c.sent_at ? ' · Gesendet' : ''}
                   </span>
                   <p style={{ color: 'var(--text)', fontWeight: 700, margin: '4px 0 2px', fontSize: '0.95rem' }}>{c.headline}</p>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>
@@ -223,9 +224,10 @@ export default function BirthdayDashboard() {
                   </button>
                   <button
                     onClick={() => deleteCampaign(c.id)}
-                    style={{ padding: '6px 10px', borderRadius: '8px', border: 'none', background: '#ef444415', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
+                    aria-label="Kampagne löschen"
+                    style={{ display: 'inline-flex', alignItems: 'center', padding: '6px', borderRadius: '8px', border: 'none', background: '#ef444415', color: '#ef4444', cursor: 'pointer' }}
                   >
-                    🗑
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>
@@ -242,7 +244,7 @@ export default function BirthdayDashboard() {
         >
           <div style={{ background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: '28px 24px 40px', width: '100%', maxWidth: '600px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>✨ Kampagne mit KI erstellen</h2>
+              <h2 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>Kampagne mit KI erstellen</h2>
               <button onClick={() => { setShowAiForm(false); setAiDescription(''); setAiError('') }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '16px' }}>
@@ -261,7 +263,7 @@ export default function BirthdayDashboard() {
               disabled={aiLoading || !aiDescription.trim()}
               style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '12px', border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', opacity: aiLoading ? 0.7 : 1 }}
             >
-              {aiLoading ? '✨ KI generiert…' : '✨ Kampagne generieren'}
+              {aiLoading ? 'KI generiert…' : 'Kampagne generieren'}
             </button>
           </div>
         </div>
@@ -281,9 +283,9 @@ export default function BirthdayDashboard() {
 
             <label style={labelStyle}>Trigger</label>
             <select value={form.trigger_type} onChange={e => setForm(f => ({ ...f, trigger_type: e.target.value as TriggerType }))} style={inputStyle}>
-              <option value="birthday">🎂 Geburtstag (täglich automatisch)</option>
-              <option value="first_order_anniversary">🗓 Bestell-Jahrestag (täglich automatisch)</option>
-              <option value="custom_event">🎉 Restaurant-Event (einmalig)</option>
+              <option value="birthday">Geburtstag (täglich automatisch)</option>
+              <option value="first_order_anniversary">Bestell-Jahrestag (täglich automatisch)</option>
+              <option value="custom_event">Restaurant-Event (einmalig)</option>
             </select>
 
             {form.trigger_type === 'custom_event' && (
@@ -294,7 +296,7 @@ export default function BirthdayDashboard() {
             )}
 
             <label style={labelStyle}>Betreff</label>
-            <input type="text" value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Alles Gute zum Geburtstag 🎂" style={inputStyle} />
+            <input type="text" value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Alles Gute zum Geburtstag" style={inputStyle} />
 
             <label style={labelStyle}>Headline (groß in der Email)</label>
             <input type="text" value={form.headline} onChange={e => setForm(f => ({ ...f, headline: e.target.value }))} placeholder="Heute ist dein Tag!" style={inputStyle} />

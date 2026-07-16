@@ -265,8 +265,8 @@ function KDSCard({ order, tableMap, now, actionLabel, actionColor, onAction, isU
 
       {/* Note */}
       {order.note && (
-        <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '8px', padding: '6px 10px', fontSize: '0.78rem', color: '#fbbf24', marginBottom: '12px' }}>
-          ⚠ {order.note}
+        <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '8px', padding: '6px 10px', fontSize: '0.78rem', color: '#fbbf24', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <AlertTriangle size={13} style={{ flexShrink: 0 }} /> {order.note}
         </div>
       )}
 

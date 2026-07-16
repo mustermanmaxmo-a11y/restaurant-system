@@ -159,7 +159,7 @@ export default function OverviewPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                   <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '1rem', margin: 0 }}>{loc.name}</p>
                   <span style={{ background: 'var(--bg)', color: 'var(--text-muted)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid var(--border)' }}>{loc.plan}</span>
-                  {loc.hasAlert && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700 }}>⚠ Bestand niedrig</span>}
+                  {loc.hasAlert && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={12} /> Bestand niedrig</span>}
                 </div>
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Umsatz: <strong style={{ color: 'var(--text)' }}>{loc.revenue7d.toFixed(0)} €</strong></span>

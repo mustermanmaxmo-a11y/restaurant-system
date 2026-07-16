@@ -94,7 +94,7 @@ export default function ReviewsAdminPage() {
 
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '24px', color: 'var(--text)' }}>⭐ Google Reviews</h1>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '24px', color: 'var(--text)' }}>★ Google Reviews</h1>
 
       {stats && (
         <>
@@ -103,7 +103,7 @@ export default function ReviewsAdminPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px' }}>
               <Stat label="Emails verschickt" value={stats.emails_sent.toString()} />
               <Stat label="Bewertungen" value={stats.ratings_received.toString()} />
-              <Stat label="Davon positiv (4-5⭐)" value={`${stats.positive_ratings} (${stats.positive_percent}%)`} />
+              <Stat label="Davon positiv (4-5★)" value={`${stats.positive_ratings} (${stats.positive_percent}%)`} />
               <Stat label="Google-Klicks" value={stats.google_clicks.toString()} />
             </div>
           </section>
@@ -117,7 +117,7 @@ export default function ReviewsAdminPage() {
                 const pct = (count / max) * 100
                 return (
                   <div key={s} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ minWidth: '80px', fontSize: '0.85rem', color: 'var(--text)' }}>{'⭐'.repeat(s)}</div>
+                    <div style={{ minWidth: '80px', fontSize: '0.85rem', color: 'var(--text)' }}>{'★'.repeat(s)}</div>
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: '4px', height: '20px', position: 'relative' }}>
                       <div style={{ background: '#EA580C', width: `${pct}%`, height: '100%', borderRadius: '4px', transition: 'width 0.4s' }} />
                     </div>
@@ -145,7 +145,7 @@ export default function ReviewsAdminPage() {
               {recentFeedback.map(r => (
                 <tr key={r.id}>
                   <td style={tdStyle}>{new Date(r.created_at).toLocaleDateString('de-DE')}</td>
-                  <td style={tdStyle}>{'⭐'.repeat(r.stars)}</td>
+                  <td style={tdStyle}>{'★'.repeat(r.stars)}</td>
                   <td style={tdStyle}>{r.feedback}</td>
                 </tr>
               ))}

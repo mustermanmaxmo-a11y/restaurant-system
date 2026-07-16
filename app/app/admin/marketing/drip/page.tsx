@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { Trash2, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 type DripStep = {
@@ -226,13 +227,13 @@ export default function DripDashboard() {
     <div style={{ padding: '24px', maxWidth: '800px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>💧 Win-Back Drip</h1>
+          <h1 style={{ color: 'var(--text)', fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>Win-Back Drip</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', marginBottom: 0 }}>
             Automatische Email-Serie für inaktive Gäste
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowAi(true)} style={btnSecondary}>✨ Mit KI</button>
+          <button onClick={() => setShowAi(true)} style={btnSecondary}>Mit KI</button>
           <button onClick={() => setShowNewSeq(true)} style={btnPrimary}>+ Neue Sequenz</button>
         </div>
       </div>
@@ -258,7 +259,7 @@ export default function DripDashboard() {
                     <button onClick={() => toggleSequence(seq)} style={{ padding: '5px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: seq.enabled ? '#16a34a20' : 'transparent', color: seq.enabled ? '#16a34a' : 'var(--text-muted)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
                       {seq.enabled ? 'Aktiv' : 'Inaktiv'}
                     </button>
-                    <button onClick={() => deleteSequence(seq.id)} style={{ padding: '5px 10px', borderRadius: '8px', border: 'none', background: '#ef444415', color: '#ef4444', cursor: 'pointer' }}>🗑</button>
+                    <button onClick={() => deleteSequence(seq.id)} aria-label="Sequenz löschen" style={{ display: 'inline-flex', alignItems: 'center', padding: '6px', borderRadius: '8px', border: 'none', background: '#ef444415', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={15} /></button>
                   </div>
                 </div>
 
@@ -277,7 +278,7 @@ export default function DripDashboard() {
                       <div style={{ display: 'flex', gap: '4px' }}>
                         <button onClick={() => moveStep(step, 'up', sortedSteps)} disabled={idx === 0} style={iconBtn}>↑</button>
                         <button onClick={() => moveStep(step, 'down', sortedSteps)} disabled={idx === sortedSteps.length - 1} style={iconBtn}>↓</button>
-                        <button onClick={() => openEditStep(seq.id, step)} style={iconBtn}>✏️</button>
+                        <button onClick={() => openEditStep(seq.id, step)} aria-label="Schritt bearbeiten" style={iconBtn}><Pencil size={13} /></button>
                         <button onClick={() => deleteStep(step.id)} style={{ ...iconBtn, color: '#ef4444' }}>✕</button>
                       </div>
                     </div>
@@ -309,7 +310,7 @@ export default function DripDashboard() {
           <label style={labelStyle}>Delay (Tage nach vorherigem Step)</label>
           <input type="number" min={0} value={stepForm.delay_days} onChange={e => setStepForm(f => ({ ...f, delay_days: e.target.value }))} style={inputStyle} />
           <label style={labelStyle}>Betreff</label>
-          <input value={stepForm.subject} onChange={e => setStepForm(f => ({ ...f, subject: e.target.value }))} placeholder="Wir vermissen dich! 🍕" style={inputStyle} />
+          <input value={stepForm.subject} onChange={e => setStepForm(f => ({ ...f, subject: e.target.value }))} placeholder="Wir vermissen dich" style={inputStyle} />
           <label style={labelStyle}>Headline</label>
           <input value={stepForm.headline} onChange={e => setStepForm(f => ({ ...f, headline: e.target.value }))} placeholder="Schön, dich wiederzusehen" style={inputStyle} />
           <label style={labelStyle}>Text</label>
@@ -335,14 +336,14 @@ export default function DripDashboard() {
       )}
 
       {showAi && (
-        <Modal onClose={() => { setShowAi(false); setAiDesc(''); setAiError('') }} title="✨ Mit KI generieren">
+        <Modal onClose={() => { setShowAi(false); setAiDesc(''); setAiError('') }} title="Mit KI generieren">
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '12px' }}>
             Beschreibe dein Ziel — die KI erstellt alle Steps automatisch.
           </p>
           <textarea value={aiDesc} onChange={e => setAiDesc(e.target.value)} placeholder="z.B. 3-stufige Drip-Sequenz für Gäste die 2 Wochen nicht bestellt haben, mit kleinen Rabatten die größer werden" rows={4} style={{ ...inputStyle, resize: 'vertical' as const }} />
           {aiError && <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '8px' }}>{aiError}</p>}
           <button onClick={generateWithAi} disabled={aiLoading || !aiDesc.trim()} style={{ ...btnPrimary, width: '100%', marginTop: '14px' }}>
-            {aiLoading ? '✨ Generiert…' : '✨ Sequenz generieren'}
+            {aiLoading ? 'Generiert…' : 'Sequenz generieren'}
           </button>
         </Modal>
       )}
