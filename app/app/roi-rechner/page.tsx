@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-const accent = '#EA580C'
+const accent = '#0E7490'
+const accentFg = '#35C0DB'
 const bg = '#0A0A0F'
 const surface = '#111118'
 const border = 'rgba(255,255,255,0.08)'
@@ -31,7 +32,7 @@ function Slider({
         <div style={{
           position: 'absolute', left: 0, top: 0, height: '100%',
           width: `${pct}%`, borderRadius: '3px',
-          background: `linear-gradient(90deg, ${accent}, #F97316)`,
+          background: `${accent}`,
           pointerEvents: 'none',
         }} />
         <input
@@ -60,14 +61,14 @@ function ResultCard({ label, value, sub, highlight = false }: {
 }) {
   return (
     <div style={{
-      background: highlight ? 'rgba(234,88,12,0.1)' : 'rgba(255,255,255,0.03)',
-      border: `1px solid ${highlight ? 'rgba(234,88,12,0.35)' : border}`,
+      background: highlight ? 'rgba(14,116,144,0.12)' : 'rgba(255,255,255,0.03)',
+      border: `1px solid ${highlight ? 'rgba(14,116,144,0.4)' : border}`,
       borderRadius: '16px', padding: '20px 24px',
     }}>
       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
         {label}
       </div>
-      <div style={{ fontSize: highlight ? '2rem' : '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', color: highlight ? accent : text }}>
+      <div style={{ fontSize: highlight ? '2rem' : '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', color: highlight ? accentFg : text }}>
         {value}
       </div>
       {sub && <div style={{ fontSize: '0.78rem', color: muted, marginTop: '4px' }}>{sub}</div>}
@@ -112,7 +113,7 @@ export default function RoiRechner() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Link href="/" style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em', textDecoration: 'none', color: text }}>
-          Order<span style={{ color: accent }}>IQ</span>
+          Order<span style={{ color: accentFg }}>IQ</span>
         </Link>
         <Link href="/register" style={{
           background: accent, color: '#fff',
@@ -129,8 +130,8 @@ export default function RoiRechner() {
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
             display: 'inline-block',
-            background: 'rgba(234,88,12,0.12)', border: '1px solid rgba(234,88,12,0.25)',
-            color: accent, borderRadius: '20px', padding: '5px 16px',
+            background: 'rgba(14,116,144,0.12)', border: '1px solid rgba(14,116,144,0.28)',
+            color: accentFg, borderRadius: '20px', padding: '5px 16px',
             fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em',
             textTransform: 'uppercase', marginBottom: '20px',
           }}>
@@ -138,7 +139,7 @@ export default function RoiRechner() {
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '12px' }}>
             Was bringt OrderIQ<br />
-            <span style={{ color: accent }}>deinem Restaurant konkret?</span>
+            <span style={{ color: accentFg }}>deinem Restaurant konkret?</span>
           </h1>
           <p style={{ color: muted, fontSize: '1rem', maxWidth: '460px', margin: '0 auto' }}>
             Passe die Werte an dein Restaurant an — und sieh sofort deinen monatlichen Mehrwert.
@@ -252,10 +253,10 @@ export default function RoiRechner() {
 
             <Link href="/register" style={{
               display: 'block', textAlign: 'center',
-              background: `linear-gradient(135deg, ${accent}, #F97316)`,
+              background: `${accent}`,
               color: '#fff', borderRadius: '13px', padding: '16px',
               fontWeight: 800, fontSize: '1rem', textDecoration: 'none',
-              boxShadow: '0 8px 32px rgba(234,88,12,0.3)',
+              boxShadow: '0 8px 32px rgba(14,116,144,0.3)',
             }}>
               Jetzt 14 Tage kostenlos testen →
             </Link>

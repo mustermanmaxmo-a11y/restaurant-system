@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ShieldCheck, Zap, CreditCard, CalendarClock } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Preise — OrderIQ',
@@ -119,7 +120,7 @@ export default function PricingPage() {
       }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em' }}>
-            Order<span style={{ color: '#EA580C' }}>IQ</span>
+            Order<span style={{ color: '#35C0DB' }}>IQ</span>
           </span>
         </Link>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -130,7 +131,7 @@ export default function PricingPage() {
             Einloggen
           </Link>
           <Link href="/register" style={{
-            background: '#EA580C', color: '#fff', padding: '8px 16px',
+            background: '#0E7490', color: '#fff', padding: '8px 16px',
             borderRadius: '8px', fontSize: '0.875rem', fontWeight: 700,
             textDecoration: 'none',
           }}>
@@ -147,7 +148,7 @@ export default function PricingPage() {
             display: 'inline-block',
             background: 'rgba(234,88,12,0.15)',
             border: '1px solid rgba(234,88,12,0.3)',
-            color: '#EA580C',
+            color: '#35C0DB',
             borderRadius: '20px', padding: '6px 16px',
             fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em',
             textTransform: 'uppercase', marginBottom: '20px',
@@ -160,7 +161,7 @@ export default function PricingPage() {
             lineHeight: 1.1, marginBottom: '16px',
           }}>
             Kein Schnickschnack.<br />
-            <span style={{ color: '#EA580C' }}>Nur was du brauchst.</span>
+            <span style={{ color: '#35C0DB' }}>Nur was du brauchst.</span>
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto 12px' }}>
             14 Tage gratis testen — keine Kreditkarte, keine Verpflichtung.
@@ -189,7 +190,7 @@ export default function PricingPage() {
               {plan.badge && (
                 <div style={{
                   position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-50%)',
-                  background: 'linear-gradient(135deg, #EA580C, #F97316)',
+                  background: '#0E7490',
                   color: '#fff', borderRadius: '20px', padding: '4px 16px',
                   fontSize: '0.7rem', fontWeight: 800, whiteSpace: 'nowrap',
                   letterSpacing: '0.04em', textTransform: 'uppercase',
@@ -218,7 +219,7 @@ export default function PricingPage() {
                 style={{
                   display: 'block', textAlign: 'center',
                   background: plan.highlight
-                    ? 'linear-gradient(135deg, #EA580C, #F97316)'
+                    ? '#0E7490'
                     : 'rgba(255,255,255,0.08)',
                   color: '#fff',
                   borderRadius: '12px', padding: '13px',
@@ -269,17 +270,20 @@ export default function PricingPage() {
           marginBottom: '80px',
         }}>
           {[
-            { icon: '🔒', text: 'DSGVO-konform', sub: 'Daten bleiben in der EU' },
-            { icon: '⚡', text: 'Setup in 5 Minuten', sub: 'Keine IT nötig' },
-            { icon: '💳', text: 'Keine Kreditkarte', sub: 'Für die Testphase' },
-            { icon: '🎯', text: 'Kündigung jederzeit', sub: 'Monatlich, ohne Frist' },
-          ].map((item, i) => (
-            <div key={i}>
-              <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>{item.icon}</div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>{item.text}</div>
-              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>{item.sub}</div>
-            </div>
-          ))}
+            { icon: ShieldCheck, text: 'DSGVO-konform', sub: 'Daten bleiben in der EU' },
+            { icon: Zap, text: 'Schnell eingerichtet', sub: 'Keine IT nötig' },
+            { icon: CreditCard, text: 'Keine Kreditkarte', sub: 'Für die Testphase' },
+            { icon: CalendarClock, text: 'Monatlich kündbar', sub: 'Ohne Mindestlaufzeit' },
+          ].map((item, i) => {
+            const Icon = item.icon
+            return (
+              <div key={i}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: '#35C0DB' }}><Icon size={22} /></div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>{item.text}</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>{item.sub}</div>
+              </div>
+            )
+          })}
         </div>
 
         {/* FAQ */}
@@ -318,7 +322,7 @@ export default function PricingPage() {
           </p>
           <Link href="/register" style={{
             display: 'inline-block',
-            background: 'linear-gradient(135deg, #EA580C, #F97316)',
+            background: '#0E7490',
             color: '#fff', borderRadius: '14px',
             padding: '16px 36px', fontWeight: 800, fontSize: '1rem',
             textDecoration: 'none', letterSpacing: '-0.01em',

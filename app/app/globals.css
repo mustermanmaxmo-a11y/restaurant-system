@@ -499,6 +499,23 @@ body::after {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* ─── Homepage-Hero: 1 Spalte mobil, 2 Spalten ab 900px ─── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+  }
+}
+
+/* Details/Summary: eigenen Marker verstecken (FAQ-Akkordeon) */
+summary::-webkit-details-marker { display: none; }
+
 /* ─── Sichtbarer Tastatur-Fokus (A11y) ─── */
 :focus-visible {
   outline: 2px solid var(--accent);
