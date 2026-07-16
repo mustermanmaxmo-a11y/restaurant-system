@@ -14,7 +14,7 @@ type RestMetrics = {
 }
 
 const PLAN_COLOR: Record<string, string> = {
-  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#a78bfa', expired: '#f87171',
+  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#35c0db', expired: '#f87171',
 }
 
 const METRICS: { key: keyof RestMetrics; label: string; fmt: (v: number) => string; higher: boolean }[] = [
@@ -55,7 +55,7 @@ export function CompareClient({ restaurants }: { restaurants: RestMetrics[] }) {
 
   const selectedRests = useMemo(() => selected.map(id => restaurants.find(r => r.id === id)).filter(Boolean) as RestMetrics[], [selected, restaurants])
 
-  const colors = ['#c4b5fd', '#60a5fa', '#34d399', '#fbbf24']
+  const colors = ['#7dd3e8', '#60a5fa', '#34d399', '#fbbf24']
 
   function addRest(id: string) {
     if (selected.length >= 4 || selected.includes(id)) return

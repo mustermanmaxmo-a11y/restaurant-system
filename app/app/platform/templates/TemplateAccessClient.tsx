@@ -38,7 +38,7 @@ const PLAN_COLORS: Record<string, { bg: string; fg: string }> = {
 const TIER_COLORS: Record<string, { bg: string; fg: string }> = {
   basic:     { bg: '#1e3a5f', fg: '#7dd3fc' },
   pro:       { bg: '#3b2a0e', fg: '#fbbf24' },
-  premium:   { bg: '#2e1065', fg: '#c4b5fd' },
+  premium:   { bg: '#2e1065', fg: '#7dd3e8' },
 }
 
 // Which plan_tiers a plan gives access to automatically

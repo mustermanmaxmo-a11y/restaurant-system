@@ -2,6 +2,7 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { Zap, Rocket, AlertTriangle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -185,7 +186,7 @@ export default async function PlatformInsightsPage() {
           </div>
 
           {/* Priority Actions */}
-          <Section title="Prioritäten für heute" icon="⚡">
+          <Section title="Prioritäten für heute" icon={<Zap size={15} />}>
             {insights.priorities.map((p, i) => {
               const s = URGENCY_STYLE[p.urgency]
               return (
@@ -204,7 +205,7 @@ export default async function PlatformInsightsPage() {
           </Section>
 
           {/* Growth Opportunities */}
-          <Section title="Wachstums-Chancen" icon="🚀">
+          <Section title="Wachstums-Chancen" icon={<Rocket size={15} />}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
               {insights.opportunities.map((o, i) => (
                 <div key={i} style={{ padding: '14px 16px', borderRadius: '10px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)' }}>
@@ -226,7 +227,7 @@ export default async function PlatformInsightsPage() {
           </Section>
 
           {/* Risks */}
-          <Section title="Risiken im Fokus" icon="⚠">
+          <Section title="Risiken im Fokus" icon={<AlertTriangle size={15} />}>
             {insights.risks.map((r, i) => (
               <div key={i} style={{ display: 'flex', gap: '16px', padding: '14px 16px', borderRadius: '10px', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', marginBottom: '10px' }}>
                 <div style={{ flex: 1 }}>
@@ -246,11 +247,11 @@ export default async function PlatformInsightsPage() {
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <span style={{ fontSize: '0.9rem' }}>{icon}</span>
+        <span style={{ display: 'inline-flex', color: '#35c0db' }}>{icon}</span>
         <h2 style={{ color: '#f0f0f8', fontWeight: 700, fontSize: '0.95rem' }}>{title}</h2>
       </div>
       {children}

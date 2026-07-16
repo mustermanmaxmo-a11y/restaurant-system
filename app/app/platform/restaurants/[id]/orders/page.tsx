@@ -81,9 +81,9 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
         ].map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
-            background: n.active ? 'rgba(124,58,237,0.2)' : 'transparent',
-            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+            background: n.active ? 'rgba(14,116,144,0.2)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(14,116,144,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
           }}>{n.label}</Link>
         ))}
       </div>
@@ -99,7 +99,7 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Gesamt Orders', value: String(orders.length), color: '#c4b5fd' },
+          { label: 'Gesamt Orders', value: String(orders.length), color: '#7dd3e8' },
           { label: 'Serviert', value: String(served.length), color: '#34d399' },
           { label: 'Storniert', value: `${cancelled.length} (${orders.length > 0 ? Math.round(cancelled.length / orders.length * 100) : 0}%)`, color: '#f87171' },
           { label: 'GMV (served)', value: `€${gmv.toFixed(2)}`, color: '#fbbf24' },
@@ -120,7 +120,7 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', height: '70px' }}>
             {daily.map((d, i) => (
               <div key={i} title={`${d.label}: ${d.count} Orders · €${d.gmv.toFixed(0)}`} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <div style={{ width: '100%', height: `${Math.max(2, Math.round((d.count / maxDay) * 66))}px`, background: d.count > 0 ? 'rgba(124,58,237,0.55)' : 'rgba(255,255,255,0.04)', borderRadius: '2px 2px 0 0' }} />
+                <div style={{ width: '100%', height: `${Math.max(2, Math.round((d.count / maxDay) * 66))}px`, background: d.count > 0 ? 'rgba(14,116,144,0.55)' : 'rgba(255,255,255,0.04)', borderRadius: '2px 2px 0 0' }} />
               </div>
             ))}
           </div>
@@ -172,11 +172,11 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
           {topTables.map(([table, count], i) => (
             <div key={table} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', minWidth: '16px' }}>{i + 1}.</span>
-              <span style={{ background: 'rgba(124,58,237,0.15)', color: '#c4b5fd', padding: '2px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, minWidth: '60px', textAlign: 'center' }}>
+              <span style={{ background: 'rgba(14,116,144,0.15)', color: '#7dd3e8', padding: '2px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, minWidth: '60px', textAlign: 'center' }}>
                 Tisch {table}
               </span>
               <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                <div style={{ height: '100%', width: `${(count / (topTables[0]?.[1] ?? 1)) * 100}%`, background: 'rgba(124,58,237,0.5)', borderRadius: '2px' }} />
+                <div style={{ height: '100%', width: `${(count / (topTables[0]?.[1] ?? 1)) * 100}%`, background: 'rgba(14,116,144,0.5)', borderRadius: '2px' }} />
               </div>
               <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem', minWidth: '30px', textAlign: 'right' }}>{count}×</span>
             </div>
@@ -208,7 +208,7 @@ export default async function RestaurantOrdersPage({ params }: { params: Promise
                       {new Date(o.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td style={{ padding: '8px 14px' }}>
-                      <span style={{ background: 'rgba(124,58,237,0.12)', color: '#c4b5fd', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700 }}>
+                      <span style={{ background: 'rgba(14,116,144,0.12)', color: '#7dd3e8', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700 }}>
                         {o.table_number ?? '—'}
                       </span>
                     </td>

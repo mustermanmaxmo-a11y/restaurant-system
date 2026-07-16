@@ -38,7 +38,7 @@ const FLAG_GROUPS: { label: string; color: string; flags: { key: FlagKey; label:
   },
   {
     label: 'KI & System',
-    color: '#7c3aed',
+    color: '#0e7490',
     flags: [
       { key: 'auto_translate_enabled', label: 'Auto-Übersetzung', desc: 'Speisekarte automatisch übersetzen' },
       { key: 'benchmark_opt_in', label: 'Benchmark Opt-In', desc: 'Anonyme Daten für Plattform-Benchmarks' },
@@ -209,8 +209,8 @@ export function FeatureFlagsClient({ restaurants }: { restaurants: Restaurant[] 
         </div>
 
         {selected.size > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: '10px', padding: '6px 12px', flexWrap: 'wrap' }}>
-            <span style={{ color: '#c4b5fd', fontSize: '0.75rem', fontWeight: 700 }}>{selected.size} gewählt</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(14,116,144,0.08)', border: '1px solid rgba(14,116,144,0.2)', borderRadius: '10px', padding: '6px 12px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#7dd3e8', fontSize: '0.75rem', fontWeight: 700 }}>{selected.size} gewählt</span>
             <select value={bulkKey} onChange={e => setBulkKey(e.target.value as FlagKey)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'rgba(255,255,255,0.7)', fontSize: '0.73rem', padding: '3px 6px' }}>
               <option value="">Flag wählen...</option>
               {FLAG_GROUPS.flatMap(g => g.flags.map(f => <option key={f.key} value={f.key}>{f.label}</option>))}
@@ -219,7 +219,7 @@ export function FeatureFlagsClient({ restaurants }: { restaurants: Restaurant[] 
               <option value="true">AN</option>
               <option value="false">AUS</option>
             </select>
-            <button onClick={doBulk} disabled={!bulkKey} style={{ padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(124,58,237,0.4)', background: 'rgba(124,58,237,0.15)', color: '#c4b5fd', fontSize: '0.73rem', fontWeight: 700, cursor: !bulkKey ? 'not-allowed' : 'pointer' }}>
+            <button onClick={doBulk} disabled={!bulkKey} style={{ padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(14,116,144,0.4)', background: 'rgba(14,116,144,0.15)', color: '#7dd3e8', fontSize: '0.73rem', fontWeight: 700, cursor: !bulkKey ? 'not-allowed' : 'pointer' }}>
               Anwenden
             </button>
             {bulkStatus && <span style={{ color: '#34d399', fontSize: '0.72rem', fontWeight: 700 }}>{bulkStatus}</span>}
@@ -236,7 +236,7 @@ export function FeatureFlagsClient({ restaurants }: { restaurants: Restaurant[] 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* Select-all */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 14px', color: 'rgba(255,255,255,0.2)', fontSize: '0.68rem' }}>
-          <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(visible.map(r => r.id)))} style={{ cursor: 'pointer', accentColor: '#7c3aed' }} />
+          <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(visible.map(r => r.id)))} style={{ cursor: 'pointer', accentColor: '#0e7490' }} />
           <span>Alle {visible.length} auswählen</span>
         </div>
 
@@ -255,8 +255,8 @@ export function FeatureFlagsClient({ restaurants }: { restaurants: Restaurant[] 
 
           return (
             <div key={r.id} style={{
-              background: isSel ? 'rgba(124,58,237,0.05)' : 'rgba(255,255,255,0.02)',
-              border: `1px solid ${isSel ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)'}`,
+              background: isSel ? 'rgba(14,116,144,0.05)' : 'rgba(255,255,255,0.02)',
+              border: `1px solid ${isSel ? 'rgba(14,116,144,0.2)' : 'rgba(255,255,255,0.06)'}`,
               borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.1s',
             }}>
               {/* Header */}
@@ -270,7 +270,7 @@ export function FeatureFlagsClient({ restaurants }: { restaurants: Restaurant[] 
                     e.stopPropagation()
                     setSelected(prev => { const n = new Set(prev); e.target.checked ? n.add(r.id) : n.delete(r.id); return n })
                   }}
-                  style={{ cursor: 'pointer', accentColor: '#7c3aed' }}
+                  style={{ cursor: 'pointer', accentColor: '#0e7490' }}
                 />
                 <div style={{ flex: 1 }}>
                   <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 700, fontSize: '0.85rem' }}>{r.name}</span>

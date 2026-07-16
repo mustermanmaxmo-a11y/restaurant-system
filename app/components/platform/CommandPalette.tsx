@@ -12,7 +12,7 @@ import {
 type Restaurant = { id: string; name: string; slug: string; plan: string }
 
 const PLAN_DOT: Record<string, string> = {
-  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#a78bfa', expired: '#f87171',
+  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#35c0db', expired: '#f87171',
 }
 
 const PAGES = [
@@ -145,7 +145,7 @@ export function CommandPalette() {
           background: '#0a0a1c',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '16px',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(124,58,237,0.15), inset 0 1px 0 rgba(255,255,255,0.05)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(14,116,144,0.15), inset 0 1px 0 rgba(255,255,255,0.05)',
           overflow: 'hidden',
         }}
       >
@@ -194,7 +194,7 @@ export function CommandPalette() {
                         style={{
                           width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
                           padding: '9px 20px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                          background: active ? 'rgba(124,58,237,0.15)' : 'transparent',
+                          background: active ? 'rgba(14,116,144,0.15)' : 'transparent',
                           transition: 'background 0.08s',
                         }}>
                         {item.kind === 'restaurant' ? (
@@ -206,7 +206,7 @@ export function CommandPalette() {
                           </>
                         ) : (
                           <>
-                            <item.icon size={14} strokeWidth={1.8} color={active ? '#c4b5fd' : 'rgba(255,255,255,0.35)'} />
+                            <item.icon size={14} strokeWidth={1.8} color={active ? '#7dd3e8' : 'rgba(255,255,255,0.35)'} />
                             <span style={{ color: active ? '#e0d9ff' : 'rgba(255,255,255,0.65)', fontSize: '0.85rem', fontWeight: 500 }}>{item.label}</span>
                           </>
                         )}

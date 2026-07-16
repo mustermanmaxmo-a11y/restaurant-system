@@ -98,9 +98,9 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
         ].map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
-            background: n.active ? 'rgba(124,58,237,0.2)' : 'transparent',
-            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+            background: n.active ? 'rgba(14,116,144,0.2)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(14,116,144,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
           }}>{n.label}</Link>
         ))}
       </div>
@@ -116,7 +116,7 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Tische gesamt', value: String(tableNumbers.length), color: '#c4b5fd' },
+          { label: 'Tische gesamt', value: String(tableNumbers.length), color: '#7dd3e8' },
           { label: 'Aktivster Tisch', value: topTable ? `Tisch ${topTable.number}` : '—', color: '#fbbf24', sub: topTable ? `${topTable.orders90} Orders` : '' },
           { label: 'Kalt (7d inaktiv)', value: String(coldTables.length), color: '#f87171' },
           { label: 'Ohne QR', value: String(tableList.filter(t => !t.qr_code_url).length), color: '#60a5fa' },
@@ -156,7 +156,7 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
                 }}>
                 <div style={{ color: textColor, fontWeight: 800, fontSize: '0.72rem' }}>{t.number}</div>
                 {t.orders90 > 0 && <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.52rem' }}>{t.orders90}</div>}
-                {t.hasQr && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#a78bfa', marginTop: '2px' }} />}
+                {t.hasQr && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#35c0db', marginTop: '2px' }} />}
               </div>
             )
           })}
@@ -166,7 +166,7 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
             { color: 'rgba(52,211,153,0.5)', label: 'Aktiv (7d)' },
             { color: 'rgba(251,191,36,0.4)', label: 'Kalt (>7d)' },
             { color: 'rgba(255,255,255,0.08)', label: 'Nie bestellt' },
-            { color: '#a78bfa', label: '● QR vorhanden', dot: true },
+            { color: '#35c0db', label: '● QR vorhanden', dot: true },
           ].map(l => (
             <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <div style={{ width: l.dot ? '6px' : '10px', height: l.dot ? '6px' : '10px', borderRadius: l.dot ? '50%' : '3px', background: l.color, flexShrink: 0 }} />
@@ -197,8 +197,8 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
                 return (
                   <tr key={t.number} style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: i === 0 ? 'rgba(251,191,36,0.03)' : undefined }}>
                     <td style={{ padding: '9px 14px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.12)', color: '#c4b5fd', padding: '3px 10px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 700 }}>
-                        {i === 0 && <span>🔥</span>}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(14,116,144,0.12)', color: '#7dd3e8', padding: '3px 10px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 700 }}>
+                        
                         Tisch {t.number}
                       </span>
                     </td>
@@ -213,7 +213,7 @@ export default async function RestaurantTablesPage({ params }: { params: Promise
                     </td>
                     <td style={{ padding: '9px 14px' }}>
                       {t.hasQr
-                        ? <span style={{ color: '#a78bfa', fontWeight: 700, fontSize: '0.7rem' }}>✓</span>
+                        ? <span style={{ color: '#35c0db', fontWeight: 700, fontSize: '0.7rem' }}>✓</span>
                         : <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>—</span>}
                     </td>
                   </tr>

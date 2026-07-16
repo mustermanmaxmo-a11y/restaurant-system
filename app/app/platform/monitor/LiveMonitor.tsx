@@ -29,7 +29,7 @@ const STATUS_CONFIG: Record<string, { color: string; label: string; bg: string }
   cooking:         { color: '#fcd34d', label: 'Cooking',   bg: 'rgba(252,211,77,0.07)' },
   served:          { color: '#6ee7b7', label: 'Served',    bg: 'rgba(110,231,183,0.07)' },
   cancelled:       { color: '#fca5a5', label: 'Storniert', bg: 'rgba(252,165,165,0.06)' },
-  pending_payment: { color: '#c4b5fd', label: 'Zahlung',  bg: 'rgba(196,181,253,0.07)' },
+  pending_payment: { color: '#7dd3e8', label: 'Zahlung',  bg: 'rgba(196,181,253,0.07)' },
 }
 
 function timeAgo(iso: string): string {

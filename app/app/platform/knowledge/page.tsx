@@ -23,7 +23,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   'email-strategy': '#3b82f6',
   'seasonal': '#22c55e',
-  'psychology': '#a855f7',
+  'psychology': '#0e7490',
   'dsgvo': '#ef4444',
   'trends': '#f97316',
 }

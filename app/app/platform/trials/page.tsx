@@ -127,7 +127,7 @@ export default async function TrialsPage() {
           { label: 'Aktive Trials', value: String(rows.length), sub: 'gesamt', color: '#60a5fa' },
           { label: 'Läuft ab ≤7d', value: String(urgent.length + expired.length), sub: `davon ${expired.length} abgelaufen`, color: '#f87171' },
           { label: 'Conversion-Kandidaten', value: String(highProbCount), sub: 'Wahrsch. ≥60%', color: '#34d399' },
-          { label: 'Konversion (90d)', value: `${convRate90d}%`, sub: `${converted?.length ?? 0} zu Paid gewechselt`, color: '#a78bfa' },
+          { label: 'Konversion (90d)', value: `${convRate90d}%`, sub: `${converted?.length ?? 0} zu Paid gewechselt`, color: '#35c0db' },
         ].map(k => (
           <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '18px 20px' }}>
             <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>{k.label}</div>
@@ -159,15 +159,16 @@ export default async function TrialsPage() {
 
       {/* Pipeline sections */}
       {[
-        { title: 'Abgelaufen', emoji: '🔴', list: expired, hint: 'Trial abgelaufen — sofort upgraden oder verlieren' },
-        { title: 'Läuft ≤7 Tage ab', emoji: '🟡', list: urgent, hint: 'Kritisches Fenster — jetzt kontaktieren' },
-        { title: 'Läuft 8–14 Tage ab', emoji: '🔵', list: soon, hint: 'Ideal für proaktive Outreach-Kampagne' },
-        { title: 'Noch >14 Tage', emoji: '🟢', list: healthy, hint: 'Genug Zeit — auf Aktivierung fokussieren' },
+        { title: 'Abgelaufen', dot: '#ef4444', list: expired, hint: 'Trial abgelaufen — sofort upgraden oder verlieren' },
+        { title: 'Läuft ≤7 Tage ab', dot: '#fbbf24', list: urgent, hint: 'Kritisches Fenster — jetzt kontaktieren' },
+        { title: 'Läuft 8–14 Tage ab', dot: '#35c0db', list: soon, hint: 'Ideal für proaktive Outreach-Kampagne' },
+        { title: 'Noch >14 Tage', dot: '#34d399', list: healthy, hint: 'Genug Zeit — auf Aktivierung fokussieren' },
       ].filter(s => s.list.length > 0).map(section => (
         <div key={section.title} style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
-            <h2 style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.95rem' }}>
-              {section.emoji} {section.title} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400 }}>({section.list.length})</span>
+            <h2 style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: section.dot, flexShrink: 0 }} />
+              {section.title} <span style={{ color: 'rgba(255,255,255,0.25)', fontWeight: 400 }}>({section.list.length})</span>
             </h2>
             <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.7rem' }}>{section.hint}</span>
           </div>

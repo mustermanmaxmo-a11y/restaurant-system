@@ -219,7 +219,7 @@ export default async function StatusPage() {
         <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '20px' }}>
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>Platform Zahlen</div>
           {[
-            { label: 'Restaurants gesamt', value: totalRests, color: '#c4b5fd' },
+            { label: 'Restaurants gesamt', value: totalRests, color: '#7dd3e8' },
             { label: 'Aktiv', value: activeRests, color: '#34d399' },
             { label: 'Paid', value: paidRests, color: '#fbbf24' },
             { label: 'Stale Orders (>2h)', value: staleCount, color: staleCount > 0 ? '#fbbf24' : '#34d399' },

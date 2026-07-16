@@ -39,12 +39,12 @@ export default async function GrowthPage() {
   }).length
 
   const stages = [
-    { label: 'Signups', value: totalSignups, pctOf: null, color: '#c4b5fd', desc: 'Alle registrierten Restaurants' },
+    { label: 'Signups', value: totalSignups, pctOf: null, color: '#7dd3e8', desc: 'Alle registrierten Restaurants' },
     { label: 'Aktiviert', value: activated, pctOf: totalSignups, color: '#60a5fa', desc: 'Mind. 1 Bestellung je platziert' },
     { label: 'Aktiv (30d)', value: active30d, pctOf: activated, color: '#34d399', desc: 'Bestellung in letzten 30 Tagen' },
     { label: 'Aktiv (7d)', value: active7d, pctOf: active30d, color: '#34d399', desc: 'Bestellung in letzten 7 Tagen' },
     { label: 'Paid', value: paid, pctOf: activated, color: '#fbbf24', desc: 'Starter / Pro / Enterprise' },
-    { label: 'Retained (90d+)', value: retained90, pctOf: paid, color: '#a78bfa', desc: 'Paid & noch aktiv nach 90d' },
+    { label: 'Retained (90d+)', value: retained90, pctOf: paid, color: '#35c0db', desc: 'Paid & noch aktiv nach 90d' },
   ]
 
   // ── Weekly new signups last 24 weeks ──────────────────────────────────────
@@ -185,7 +185,7 @@ export default async function GrowthPage() {
                 style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', gap: '0' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: `${totalH}px` }}>
                   <div style={{ height: `${actH}px`, background: 'rgba(52,211,153,0.6)', borderRadius: '0' }} />
-                  <div style={{ height: `${totalH - actH}px`, background: 'rgba(124,58,237,0.35)', borderRadius: '2px 2px 0 0' }} />
+                  <div style={{ height: `${totalH - actH}px`, background: 'rgba(14,116,144,0.35)', borderRadius: '2px 2px 0 0' }} />
                 </div>
                 {i % 4 === 0 && <div style={{ fontSize: '0.48rem', color: 'rgba(255,255,255,0.15)', marginTop: '3px', textAlign: 'center' }}>{w.label}</div>}
               </div>
@@ -261,7 +261,7 @@ export default async function GrowthPage() {
             { plan: 'trial',      color: '#60a5fa', mrr: 0 },
             { plan: 'starter',    color: '#34d399', mrr: 29 },
             { plan: 'pro',        color: '#fbbf24', mrr: 79 },
-            { plan: 'enterprise', color: '#a78bfa', mrr: 199 },
+            { plan: 'enterprise', color: '#35c0db', mrr: 199 },
             { plan: 'expired',    color: '#f87171', mrr: 0 },
           ].map(p => {
             const cnt = planCounts[p.plan] ?? 0

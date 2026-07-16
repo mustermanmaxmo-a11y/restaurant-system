@@ -109,7 +109,7 @@ export default async function HeatmapPage() {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '28px' }}>
         {[
-          { label: 'Bestellungen (90d)', value: totalOrders.toLocaleString('de'), color: '#c4b5fd' },
+          { label: 'Bestellungen (90d)', value: totalOrders.toLocaleString('de'), color: '#7dd3e8' },
           { label: 'GMV (90d)', value: `€${(totalGmv / 1000).toFixed(1)}k`, color: '#34d399' },
           { label: 'Top Stunde', value: fmtHour(peakHour[0]?.hour ?? 12), color: '#fbbf24' },
           { label: 'Top Tag', value: peakDay[0]?.label ?? '—', color: '#60a5fa' },
@@ -191,7 +191,7 @@ export default async function HeatmapPage() {
                   style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <div style={{
                     width: '100%', height: `${Math.max(2, Math.round(pct * 76))}px`,
-                    background: isPeak ? 'rgba(251,191,36,0.8)' : 'rgba(124,58,237,0.45)',
+                    background: isPeak ? 'rgba(251,191,36,0.8)' : 'rgba(14,116,144,0.45)',
                     borderRadius: '2px 2px 0 0',
                   }} />
                 </div>
@@ -217,11 +217,11 @@ export default async function HeatmapPage() {
             return (
               <div key={d} style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                  <span style={{ color: isWeekend ? '#fbbf24' : 'rgba(255,255,255,0.55)', fontSize: '0.78rem', fontWeight: 600 }}>{d}{isWeekend ? ' 🔥' : ''}</span>
+                  <span style={{ color: isWeekend ? '#fbbf24' : 'rgba(255,255,255,0.55)', fontSize: '0.78rem', fontWeight: 600 }}>{d}</span>
                   <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.72rem' }}>{cnt} · €{(gmv/1000).toFixed(1)}k</span>
                 </div>
                 <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(cnt / maxDay) * 100}%`, background: isWeekend ? 'rgba(251,191,36,0.7)' : 'rgba(124,58,237,0.5)', borderRadius: '3px' }} />
+                  <div style={{ height: '100%', width: `${(cnt / maxDay) * 100}%`, background: isWeekend ? 'rgba(251,191,36,0.7)' : 'rgba(14,116,144,0.5)', borderRadius: '3px' }} />
                 </div>
               </div>
             )
@@ -237,7 +237,7 @@ export default async function HeatmapPage() {
           {topRests.slice(0, 5).map((r, ri) => {
             const hours = restHourGrid[r.id] ?? Array(24).fill(0)
             const maxH = Math.max(...hours, 1)
-            const colors = ['#c4b5fd', '#60a5fa', '#34d399', '#fbbf24', '#f87171']
+            const colors = ['#7dd3e8', '#60a5fa', '#34d399', '#fbbf24', '#f87171']
             return (
               <div key={r.id}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.72rem', marginBottom: '4px', fontWeight: 600 }}>

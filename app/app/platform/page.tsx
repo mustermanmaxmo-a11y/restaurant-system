@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 const PLAN_MRR: Record<string, number> = { starter: 29, pro: 79, enterprise: 199, trial: 0, expired: 0 }
 const PLAN_COLOR: Record<string, string> = {
-  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#a78bfa', expired: '#f87171',
+  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#35c0db', expired: '#f87171',
 }
 const DAY = 24 * 60 * 60 * 1000
 
@@ -251,7 +251,7 @@ export default async function PlatformDashboard() {
                 >
                   {d.rev > 0 && (
                     <div style={{
-                      color: isToday ? '#c4b5fd' : 'rgba(255,255,255,0.18)',
+                      color: isToday ? '#7dd3e8' : 'rgba(255,255,255,0.18)',
                       fontSize: '0.52rem', fontWeight: 700, lineHeight: 1,
                     }}>
                       {d.rev >= 1000 ? `${(d.rev / 1000).toFixed(1)}k` : d.rev.toFixed(0)}
@@ -262,13 +262,13 @@ export default async function PlatformDashboard() {
                     height: `${Math.max(h, d.rev > 0 ? 6 : 1.5)}%`,
                     borderRadius: '4px 4px 0 0',
                     background: isToday
-                      ? 'linear-gradient(to top, #7c3aed, #a855f7)'
+                      ? 'linear-gradient(to top, #0e7490, #0e7490)'
                       : isWeekend && d.rev > 0
                         ? 'rgba(196,181,253,0.35)'
                         : d.rev > 0
-                          ? 'rgba(124,58,237,0.45)'
+                          ? 'rgba(14,116,144,0.45)'
                           : 'rgba(255,255,255,0.04)',
-                    boxShadow: isToday ? '0 0 12px rgba(124,58,237,0.4)' : undefined,
+                    boxShadow: isToday ? '0 0 12px rgba(14,116,144,0.4)' : undefined,
                     transition: 'height 0.3s ease',
                   }} />
                 </div>
@@ -279,7 +279,7 @@ export default async function PlatformDashboard() {
             {days14.map((d) => (
               <div key={d.d} style={{
                 flex: 1, textAlign: 'center',
-                color: d.d === todayStr ? '#c4b5fd' : 'rgba(255,255,255,0.18)',
+                color: d.d === todayStr ? '#7dd3e8' : 'rgba(255,255,255,0.18)',
                 fontSize: '0.58rem', fontWeight: d.d === todayStr ? 700 : 400,
               }}>
                 {d.day}
@@ -290,7 +290,7 @@ export default async function PlatformDashboard() {
             <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '0.58rem' }}>
               {days14[0]?.label} {days14[0]?.day}.
             </span>
-            <span style={{ color: '#c4b5fd', fontSize: '0.6rem', fontWeight: 600 }}>Heute</span>
+            <span style={{ color: '#7dd3e8', fontSize: '0.6rem', fontWeight: 600 }}>Heute</span>
           </div>
         </Section>
 
@@ -426,7 +426,7 @@ export default async function PlatformDashboard() {
               { label: 'Revenue',         href: '/platform/revenue',     dot: '#34d399', sub: 'MRR & GMV Übersicht' },
               { label: 'Churn Risk',      href: '/platform/churn',       dot: '#f43f5e', sub: churnRisk.length > 0 ? `${churnRisk.length} gefährdet` : 'Alles grün' },
               { label: 'Trial Pipeline',  href: '/platform/trials',      dot: '#fbbf24', sub: `${trials.length} aktive Trials` },
-              { label: 'AI Insights',     href: '/platform/insights',    dot: '#a78bfa', sub: 'Optimierungsideen' },
+              { label: 'AI Insights',     href: '/platform/insights',    dot: '#35c0db', sub: 'Optimierungsideen' },
               { label: 'Outreach',        href: '/platform/outreach',    dot: '#60a5fa', sub: 'Campaigns & E-Mails' },
               { label: 'Audit Log',       href: '/platform/audit',       dot: 'rgba(255,255,255,0.2)', sub: 'Alle Aktionen' },
             ].map(a => (
@@ -470,7 +470,7 @@ function KPICard({
   delta?: string; deltaPositive?: boolean
 }) {
   const ACCENTS = {
-    violet: { border: 'rgba(124,58,237,0.25)', bg: 'rgba(124,58,237,0.07)', value: '#c4b5fd' },
+    violet: { border: 'rgba(14,116,144,0.25)', bg: 'rgba(14,116,144,0.07)', value: '#7dd3e8' },
     green:  { border: 'rgba(52,211,153,0.2)',  bg: 'rgba(52,211,153,0.06)',  value: '#6ee7b7' },
     blue:   { border: 'rgba(96,165,250,0.2)',  bg: 'rgba(96,165,250,0.06)',  value: '#93c5fd' },
     red:    { border: 'rgba(244,63,94,0.2)',   bg: 'rgba(244,63,94,0.06)',   value: '#fda4af' },
