@@ -98,7 +98,7 @@ export default function SettingsPage() {
   async function handleMfaEnroll() {
     setMfaEnrolling(true)
     setMfaError('')
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'RestaurantOS', friendlyName: 'RestaurantOS' })
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'OrderIQ', friendlyName: 'OrderIQ' })
     if (error || !data) {
       setMfaError('Fehler beim Aktivieren. Bitte versuche es erneut.')
       setMfaEnrolling(false)
@@ -157,7 +157,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `restaurantos-daten-${new Date().toISOString().slice(0, 10)}.json`
+      a.download = `orderiq-daten-${new Date().toISOString().slice(0, 10)}.json`
       a.click()
       URL.revokeObjectURL(url)
     } catch {

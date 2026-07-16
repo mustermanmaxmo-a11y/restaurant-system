@@ -293,7 +293,7 @@ export default function DashboardPage() {
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><ChefHat size={40} color="#ff6b35" /></div>
             <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700 }}>Staff Login</h1>
-            <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '6px' }}>RestaurantOS Dashboard</p>
+            <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '6px' }}>OrderIQ Dashboard</p>
           </div>
 
           {loginStep === 'slug' ? (

@@ -1,5 +1,60 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════════════════════════════
+   OrderIQ Design Tokens
+   Einzige Quelle für Typo-Skala, Radien, Schatten und Marken-Petrol.
+   Werte NUR hier ändern — Seiten/Komponenten referenzieren die Tokens.
+   Restaurant-Gastflächen sind ausgenommen (eigene Farben via resolveBrand).
+   ══════════════════════════════════════════════════════════════════ */
+@theme inline {
+  /* Semantische Farben (folgen automatisch Light/Dark via var-Indirection) */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-text: var(--accent-text);
+  --color-status-new: var(--status-new);
+  --color-status-cooking: var(--status-cooking);
+  --color-status-served: var(--status-served);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-success: var(--status-served);
+
+  /* Typo-Skala — die EINZIGEN erlaubten Größen */
+  --text-2xs: 0.6875rem;   /* 11px — Micro-Labels, Badges */
+  --text-xs: 0.75rem;      /* 12px — Meta, Tabellen-Sekundär */
+  --text-sm: 0.8125rem;    /* 13px — Sekundärtext */
+  --text-base: 0.875rem;   /* 14px — UI-Standard */
+  --text-md: 1rem;         /* 16px — Fließtext Gast */
+  --text-lg: 1.125rem;     /* 18px — Kartentitel */
+  --text-xl: 1.375rem;     /* 22px — Sektionstitel */
+  --text-2xl: 1.75rem;     /* 28px — Seitentitel */
+  --text-3xl: 2.5rem;      /* 40px — Hero klein */
+  --text-4xl: 3.5rem;      /* 56px — Hero groß */
+
+  /* Radien */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Schatten — 3 Stufen statt ad-hoc */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.16);
+
+  /* Schriften */
+  --font-heading: var(--font-syne);
+  --font-body: var(--font-dm-sans);
+}
+
 /* Light Mode (Default) */
 :root {
   --font-heading: var(--font-syne);
@@ -7,57 +62,75 @@
   --bg: #F7F6F3;
   --surface: #FFFFFF;
   --surface-2: #F2F1EE;
-  --accent: #FF6B2C;
-  --accent-hover: #E55A1A;
-  --accent-subtle: #FFF0E8;
+
+  /* Marken-Petrol (#0E7490) — identisch in Light & Dark als Füllung.
+     accent      = Füllfarbe (weißer Text darauf = 5.46:1, AA ✓)
+     accent-fg   = Akzent als Textfarbe auf hellem Grund
+     accent-text = Text-/Icon-Farbe AUF einer Akzent-Füllung */
+  --accent: #0E7490;
+  --accent-hover: #0B5E75;
+  --accent-fg: #0E7490;
+  --accent-subtle: #E4F3F7;
+  --accent-text: #FFFFFF;
+  --border-accent: #0E749033;
+
   --text: #111111;
-  --text-muted: #888888;
-  --border: #EEECE8;
-  --border-accent: #FF6B2C33;
+  --text-muted: #6B6B6B;
+  --border: #EAE8E3;
   --btn-bg: #111111;
   --btn-text: #FFFFFF;
   --header-bg: #111111;
   --header-text: #FFFFFF;
-  --sidebar-bg: #111827;
+  --sidebar-bg: #0F172A;
   --sidebar-text: rgba(255,255,255,0.55);
   --sidebar-active-bg: rgba(255,255,255,0.08);
   --sidebar-active-text: #FFFFFF;
-  --accent-text: #111111;
-  --status-new: #FF6B2C;
-  --status-new-bg: #FFF0E8;
-  --status-cooking: #F59E0B;
+
+  --danger: #DC2626;
+  --warn: #D97706;
+
+  --status-new: #0E7490;
+  --status-new-bg: #E4F3F7;
+  --status-cooking: #D97706;
   --status-cooking-bg: #FFFBEB;
-  --status-served: #10B981;
+  --status-served: #059669;
   --status-served-bg: #ECFDF5;
 }
 
 /* Dark Mode */
 .dark {
-  --bg: #0D0D0D;
-  --surface: #161616;
-  --surface-2: #1F1F1F;
-  --accent: #00C853;
-  --accent-hover: #00A843;
-  --accent-subtle: #00C85318;
+  --bg: #0C0C0E;
+  --surface: #161618;
+  --surface-2: #1F1F22;
+
+  --accent: #0E7490;
+  --accent-hover: #12869F;
+  --accent-fg: #35C0DB;
+  --accent-subtle: rgba(14,116,144,0.18);
+  --accent-text: #FFFFFF;
+  --border-accent: #35C0DB33;
+
   --text: #F2F2F2;
-  --text-muted: #606060;
-  --border: #262626;
-  --border-accent: #00C85333;
+  --text-muted: #8A8A8A;
+  --border: #2A2A2E;
   --btn-bg: #F2F2F2;
   --btn-text: #111111;
-  --header-bg: #0D0D0D;
+  --header-bg: #0C0C0E;
   --header-text: #F2F2F2;
-  --sidebar-bg: #0D0D0D;
-  --sidebar-text: rgba(255,255,255,0.4);
-  --sidebar-active-bg: rgba(255,255,255,0.06);
+  --sidebar-bg: #0C0C0E;
+  --sidebar-text: rgba(255,255,255,0.5);
+  --sidebar-active-bg: rgba(255,255,255,0.07);
   --sidebar-active-text: #F2F2F2;
-  --accent-text: #111111;
-  --status-new: #FF6B2C;
-  --status-new-bg: #2A1500;
-  --status-cooking: #F59E0B;
-  --status-cooking-bg: #1F1400;
-  --status-served: #10B981;
-  --status-served-bg: #061A0F;
+
+  --danger: #F87171;
+  --warn: #FBBF24;
+
+  --status-new: #35C0DB;
+  --status-new-bg: rgba(14,116,144,0.16);
+  --status-cooking: #FBBF24;
+  --status-cooking-bg: rgba(217,119,6,0.14);
+  --status-served: #34D399;
+  --status-served-bg: rgba(5,150,105,0.14);
 }
 
 html {
@@ -348,8 +421,8 @@ body::after {
   color: rgba(255, 255, 255, 0.22);
 }
 .p-input:focus {
-  border-color: rgba(124, 58, 237, 0.45);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  border-color: rgba(14, 116, 144, 0.55);
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.14);
 }
 
 /* Platform scrollbar for overflow areas */
@@ -402,9 +475,9 @@ body::after {
 .p-btn:hover { opacity: 0.88; }
 .p-btn:active { transform: scale(0.97); }
 .p-btn-primary {
-  background: rgba(124, 58, 237, 0.22);
-  color: #c4b5fd;
-  border: 1px solid rgba(124, 58, 237, 0.3);
+  background: rgba(14, 116, 144, 0.22);
+  color: #7dd3e8;
+  border: 1px solid rgba(14, 116, 144, 0.34);
 }
 .p-btn-ghost {
   background: rgba(255, 255, 255, 0.04);
@@ -424,4 +497,25 @@ body::after {
 .p-quick-link:hover > div {
   background: rgba(255, 255, 255, 0.045) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ─── Sichtbarer Tastatur-Fokus (A11y) ─── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+/* Maus-/Touch-Klicks lösen keinen Ring aus — nur Tastatur */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Reduzierte Bewegung respektieren ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

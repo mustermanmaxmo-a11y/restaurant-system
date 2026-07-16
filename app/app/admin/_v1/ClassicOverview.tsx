@@ -256,7 +256,7 @@ function AdminContent() {
               <PartyPopper size={20} color="#fff" />
             </div>
             <div>
-              <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px', fontSize: '0.92rem' }}>Willkommen bei RestaurantOS!</p>
+              <p style={{ color: 'var(--text)', fontWeight: 700, marginBottom: '2px', fontSize: '0.92rem' }}>Willkommen bei OrderIQ!</p>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>Dein Restaurant ist eingerichtet. Leg jetzt dein Menü an und generiere QR-Codes.</p>
             </div>
           </div>

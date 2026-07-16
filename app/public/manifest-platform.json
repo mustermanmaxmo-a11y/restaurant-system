@@ -1,12 +1,12 @@
 {
-  "name": "RestaurantOS Platform",
+  "name": "OrderIQ Platform",
   "short_name": "Platform",
-  "description": "RestaurantOS Platform-Administration",
+  "description": "OrderIQ Platform-Administration",
   "start_url": "/platform",
   "scope": "/platform",
   "display": "standalone",
-  "background_color": "#0A0A0F",
-  "theme_color": "#00C9A7",
+  "background_color": "#0C0C0E",
+  "theme_color": "#0E7490",
   "orientation": "any",
   "icons": [
     {

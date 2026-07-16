@@ -71,7 +71,7 @@ export default function TeamLoginPage() {
             Platform-Login
           </h1>
           <p style={{ color: '#666', fontSize: '0.875rem' }}>
-            Nur für das RestaurantOS-Team
+            Nur für das OrderIQ-Team
           </p>
         </div>
 

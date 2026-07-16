@@ -1,0 +1,15 @@
+// OrderIQ UI-Primitives — einzige Quelle für Buttons, Felder, Karten etc.
+// Import: `import { Button, Card, PageHeader } from '@/components/ui'`
+export { Button, IconButton, buttonVariants, type ButtonProps } from './button'
+export { Input, Textarea, Select, Label, Field } from './field'
+export { Card, CardHeader, CardTitle, CardDescription, CardFooter, type CardProps } from './card'
+export { Badge, StatusPill, type BadgeProps } from './badge'
+export { Modal } from './modal'
+export { PageHeader } from './page-header'
+export { EmptyState } from './empty-state'
+export { Skeleton, SkeletonText } from './skeleton'
+export { StatCard } from './stat-card'
+export { Table, THead, TBody, TR, TH, TD } from './table'
+export { Tabs, type TabItem } from './tabs'
+export { Spinner } from './spinner'
+export { ToastProvider, useToast } from './toast'

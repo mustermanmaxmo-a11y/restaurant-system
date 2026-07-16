@@ -23,10 +23,26 @@ const allFontVars = [
   merriweather, sourceSans3, notoSerifDisplay, notoSans, geist,
 ].map(f => f.variable).join(' ')
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://orderiq.app'
+
 export const metadata: Metadata = {
-  title: 'RestaurantOS',
-  description: 'Digitales Restaurant-System',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'OrderIQ — Digitales Bestellsystem für Restaurants',
+    template: '%s · OrderIQ',
+  },
+  description:
+    'QR-Bestellung am Tisch und online, Live-Küchenansicht und automatisiertes Marketing — ein System für dein Restaurant.',
+  applicationName: 'OrderIQ',
   manifest: '/manifest.json',
+  openGraph: {
+    type: 'website',
+    siteName: 'OrderIQ',
+    locale: 'de_DE',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 }
 
 export default function RootLayout({
@@ -43,7 +59,7 @@ export default function RootLayout({
           }}
         />
 
-        <meta name="theme-color" content="#00C9A7" />
+        <meta name="theme-color" content="#0E7490" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />

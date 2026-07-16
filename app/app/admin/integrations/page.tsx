@@ -434,7 +434,7 @@ function IntegrationsContent() {
                         { step: '1', text: 'Gehe zu', link: 'https://console.anthropic.com', linkText: 'console.anthropic.com' },
                         { step: '2', text: 'Erstelle einen Account (private E-Mail reicht aus, kein Gewerbe nötig)' },
                         { step: '3', text: 'Klicke oben rechts auf "API Keys"' },
-                        { step: '4', text: 'Klicke auf "+ Create Key", gib einen Namen ein (z.B. "RestaurantOS") und kopiere den Key — er wird nur einmal angezeigt!' },
+                        { step: '4', text: 'Klicke auf "+ Create Key", gib einen Namen ein (z.B. "OrderIQ") und kopiere den Key — er wird nur einmal angezeigt!' },
                         { step: '5', text: 'Lade dein Guthaben unter "Billing → Add Credits" auf — empfohlen: 5€ (reicht für ~5.000 Gäste-Chats)' },
                         { step: '6', text: 'Füge den Key oben ein und klicke auf "Speichern"' },
                       ].map(item => (
