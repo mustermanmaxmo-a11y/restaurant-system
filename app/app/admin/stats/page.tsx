@@ -19,7 +19,7 @@ interface Reservation { id: string }
 interface Bestseller { name: string; qty: number }
 
 // Use a fixed purple for recharts (can't use CSS vars in SVG fill)
-const CHART_ACCENT = '#7c3aed'
+const CHART_ACCENT = '#0E7490'
 const COLORS = [CHART_ACCENT, '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
 
 export default function StatsPage() {

@@ -45,7 +45,7 @@ const TYPE_BADGES: Record<string, { label: string; color: string }> = {
   discount: { label: 'Rabatt', color: '#f97316' },
   event: { label: 'Event', color: '#3b82f6' },
   seasonal: { label: 'Saisonal', color: '#22c55e' },
-  loyalty: { label: 'Loyalty', color: '#a855f7' },
+  loyalty: { label: 'Loyalty', color: '#0e7490' },
 }
 
 function TypeBadge({ type }: { type: string | null }) {

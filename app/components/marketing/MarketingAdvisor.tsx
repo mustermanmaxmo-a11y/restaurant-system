@@ -549,7 +549,7 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
         {emailTemplate && (
           <div style={{ margin: '0 20px 12px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '12px', padding: '14px 16px', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <p style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>
+              <p style={{ color: '#0e7490', fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>
                 📧 Email-Template bereit
               </p>
               <button onClick={() => setEmailTemplate(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #6b7280)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '2px' }}>✕</button>
@@ -562,7 +562,7 @@ export function MarketingAdvisor({ restaurantId, initialStats }: Props) {
               <button
                 onClick={saveEmailTemplate}
                 disabled={templateSaving || templateSaved}
-                style={{ background: templateSaved ? '#22c55e' : '#8b5cf6', border: 'none', borderRadius: '8px', padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: templateSaving || templateSaved ? 'default' : 'pointer', opacity: templateSaving ? 0.7 : 1 }}
+                style={{ background: templateSaved ? '#22c55e' : '#0e7490', border: 'none', borderRadius: '8px', padding: '8px 14px', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: templateSaving || templateSaved ? 'default' : 'pointer', opacity: templateSaving ? 0.7 : 1 }}
               >
                 {templateSaved ? '✓ Gespeichert' : templateSaving ? 'Speichern...' : '💾 Als Template speichern'}
               </button>

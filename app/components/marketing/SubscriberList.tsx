@@ -23,7 +23,7 @@ function classifySegment(s: Subscriber): { key: string; label: string; color: st
   if (lapsed) return { key: 'lapsed', label: 'Lapsed', color: '#dc2626' }
   if (count >= 4) return { key: 'loyal', label: 'Treu', color: '#22c55e' }
   if (count >= 1) return { key: 'occasional', label: 'Gelegentlich', color: '#3b82f6' }
-  return { key: 'new', label: 'Neu', color: '#a855f7' }
+  return { key: 'new', label: 'Neu', color: '#0e7490' }
 }
 
 interface Props {
@@ -284,7 +284,7 @@ function StatBox({ label, value, accent }: { label: string; value: string; accen
 const SOURCE_COLORS: Record<string, string> = {
   order: '#3b82f6',
   manual: '#6b7280',
-  import: '#a855f7',
+  import: '#0e7490',
   loyalty: '#f97316',
   qr: '#22c55e',
 }
