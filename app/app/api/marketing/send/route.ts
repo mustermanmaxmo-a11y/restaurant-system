@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Keine Abonnenten gefunden.' }, { status: 400 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.restaurantos.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.getorderiq.de'
   const primaryColor = restaurant.primary_color ?? '#ea580c'
   const style = resolveEmailStyle({
     designPackage: restaurant.design_package,

@@ -248,7 +248,7 @@ export default function BillingPage() {
                 </li>
               ))}
             </ul>
-            <a href="mailto:hello@restaurantos.de" style={{
+            <a href="mailto:hello@getorderiq.de" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '10px', borderRadius: '9px',
               border: '1.5px solid var(--border)', color: 'var(--text)',
@@ -263,7 +263,7 @@ export default function BillingPage() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 18px' }}>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Restaurant</p>
           <p style={{ color: 'var(--text)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '2px' }}>{restaurant?.name}</p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{restaurant?.slug}.restaurantos.de</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>www.getorderiq.de/{restaurant?.slug}</p>
         </div>
       </div>
     </div>

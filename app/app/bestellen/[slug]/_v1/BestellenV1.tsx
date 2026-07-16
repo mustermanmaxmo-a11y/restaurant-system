@@ -31,7 +31,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   ClipboardList, ChefHat, CheckCircle2, XCircle, Clock, User, Users,
   Link, Bike, PersonStanding, Sun, Moon, Search, PartyPopper, ShoppingCart,
-  Dices, Map, Shuffle, Bell, X, UtensilsCrossed,
+  Dices, Map, Shuffle, Bell, X, UtensilsCrossed, Star, AlertTriangle,
 } from 'lucide-react'
 
 type CartItem = { item: MenuItem; qty: number }
@@ -1192,8 +1192,9 @@ export default function BestellenV1() {
               </button>
             </div>
             {discountInfo && (
-              <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: '#16a34a15', border: '1px solid #16a34a40', color: '#16a34a', fontSize: '0.85rem', fontWeight: 600 }}>
-                🎉 {discountInfo.type === 'percent' ? `${discountInfo.value} % Rabatt` : `${discountInfo.value} € Rabatt`} aktiviert!
+              <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: '#16a34a15', border: '1px solid #16a34a40', color: '#16a34a', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <PartyPopper size={15} style={{ flexShrink: 0 }} />
+                {discountInfo.type === 'percent' ? `${discountInfo.value} % Rabatt` : `${discountInfo.value} € Rabatt`} aktiviert
               </div>
             )}
             {discountError && (
@@ -1784,16 +1785,18 @@ export default function BestellenV1() {
                         </div>
                       )}
                       {isFavorite && (
-                        <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, fontSize: '0.85rem', pointerEvents: 'none' }}>⭐</div>
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 10, pointerEvents: 'none', display: 'flex' }}>
+                          <Star size={16} fill="#f59e0b" color="#f59e0b" aria-label="Favorit" />
+                        </div>
                       )}
                       {allergenConflict && (
                         <div style={{
                           position: 'absolute', bottom: '8px', left: '8px', zIndex: 10,
                           background: '#f59e0b', color: '#fff', fontSize: '0.65rem',
                           padding: '2px 7px', borderRadius: '20px', fontWeight: 700,
-                          pointerEvents: 'none',
+                          pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '3px',
                         }}>
-                          ⚠ Allergen
+                          <AlertTriangle size={11} /> Allergen
                         </div>
                       )}
                       {getItemSuitability(item.id) === 'unsuitable' && getUnsuitableReason(item.id) && (

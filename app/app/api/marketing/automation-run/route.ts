@@ -161,7 +161,7 @@ export async function runMarketingAutomations(): Promise<{ processed: number; se
   let sent = 0
   let errors = 0
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://restaurantos.app'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.getorderiq.de'
 
   for (const automation of (automations ?? []) as AutomationRow[]) {
     const restaurant = automation.restaurants

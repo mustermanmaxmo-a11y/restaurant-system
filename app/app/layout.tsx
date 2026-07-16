@@ -23,7 +23,7 @@ const allFontVars = [
   merriweather, sourceSans3, notoSerifDisplay, notoSans, geist,
 ].map(f => f.variable).join(' ')
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://orderiq.app'
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.getorderiq.de'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
