@@ -12,13 +12,14 @@ export const metadata: Metadata = {
     'QR-Bestellung am Tisch und online, Live-Küchenansicht und automatisiertes Marketing. Ein System für dein Restaurant — ab 29 € im Monat.',
 }
 
-const accent = '#0E7490'
-const accentFg = '#35C0DB'
-const bg = '#0B0D0E'
-const surface = '#131618'
-const border = 'rgba(255,255,255,0.08)'
-const text = '#F4F5F6'
-const muted = 'rgba(255,255,255,0.52)'
+const accent = '#0E7490'          // Petrol-Füllung (weißer Text darauf)
+const accentFg = '#0E7490'        // Petrol als Textfarbe auf hellem Grund (5.46:1)
+const bg = '#F7F6F3'              // warmes Off-White
+const surface = '#FFFFFF'
+const surfaceSoft = '#F1EFEA'    // leicht getönte Fläche für Karten-Alternativen
+const border = 'rgba(0,0,0,0.09)'
+const text = '#161513'
+const muted = 'rgba(0,0,0,0.56)'
 
 const features = [
   { icon: QrCode, title: 'QR-Bestellung', desc: 'Gäste scannen, bestellen und zahlen ohne App — am Tisch und für zu Hause, in einem System.' },
@@ -65,7 +66,7 @@ function OrderBoardMock() {
       style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px',
         background: surface, border: `1px solid ${border}`, borderRadius: '16px', padding: '14px',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+        boxShadow: '0 20px 48px rgba(0,0,0,0.10)',
       }}
     >
       {cols.map(col => (
@@ -76,7 +77,7 @@ function OrderBoardMock() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {col.items.map(([t, d], i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${border}`, borderRadius: '10px', padding: '9px 10px' }}>
+              <div key={i} style={{ background: surfaceSoft, border: `1px solid ${border}`, borderRadius: '10px', padding: '9px 10px' }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: text }}>{t}</div>
                 <div style={{ fontSize: '0.64rem', color: muted, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d}</div>
               </div>
@@ -95,7 +96,7 @@ export default function HomePage() {
       {/* ── Nav ── */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(11,13,14,0.85)', backdropFilter: 'blur(12px)',
+        background: 'rgba(247,246,243,0.85)', backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${border}`,
         padding: '0 clamp(16px, 4vw, 32px)', height: '64px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -163,7 +164,7 @@ export default function HomePage() {
                 </Link>
               )}
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: '0.8rem', marginTop: '16px' }}>
+            <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: '0.8rem', marginTop: '16px' }}>
               Keine Kreditkarte · monatlich kündbar · DSGVO-konform
             </p>
           </div>
@@ -285,7 +286,7 @@ export default function HomePage() {
               { name: 'Enterprise', price: '99 €', note: 'Multi-Standort + Kassenanbindung', highlight: false },
             ].map(p => (
               <div key={p.name} style={{
-                background: p.highlight ? 'rgba(14,116,144,0.1)' : 'rgba(255,255,255,0.03)',
+                background: p.highlight ? 'rgba(14,116,144,0.08)' : surfaceSoft,
                 border: `1px solid ${p.highlight ? 'rgba(14,116,144,0.4)' : border}`,
                 borderRadius: '16px', padding: '24px',
               }}>

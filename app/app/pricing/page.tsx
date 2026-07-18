@@ -103,15 +103,15 @@ export default function PricingPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0A0A0F',
-      color: '#F5F5F7',
+      background: '#F7F6F3',
+      color: '#161513',
       fontFamily: 'var(--font-geist), system-ui, sans-serif',
     }}>
       {/* Nav */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50,
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(10,10,15,0.85)',
+        borderBottom: '1px solid rgba(0,0,0,0.06)',
+        background: 'rgba(247,246,243,0.85)',
         backdropFilter: 'blur(12px)',
         padding: '0 24px',
         height: '60px',
@@ -119,15 +119,15 @@ export default function PricingPage() {
         maxWidth: '1200px', margin: '0 auto',
       }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em' }}>
-            Order<span style={{ color: '#35C0DB' }}>IQ</span>
+          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#161513', letterSpacing: '-0.02em' }}>
+            Order<span style={{ color: '#0E7490' }}>IQ</span>
           </span>
         </Link>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Link href="/roi-rechner" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', textDecoration: 'none' }}>
+          <Link href="/roi-rechner" style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', textDecoration: 'none' }}>
             ROI-Rechner
           </Link>
-          <Link href="/login" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', textDecoration: 'none' }}>
+          <Link href="/login" style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', textDecoration: 'none' }}>
             Einloggen
           </Link>
           <Link href="/register" style={{
@@ -146,9 +146,9 @@ export default function PricingPage() {
         <div style={{ textAlign: 'center', padding: '80px 0 64px' }}>
           <div style={{
             display: 'inline-block',
-            background: 'rgba(234,88,12,0.15)',
-            border: '1px solid rgba(234,88,12,0.3)',
-            color: '#35C0DB',
+            background: 'rgba(14,116,144,0.12)',
+            border: '1px solid rgba(14,116,144,0.3)',
+            color: '#0E7490',
             borderRadius: '20px', padding: '6px 16px',
             fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em',
             textTransform: 'uppercase', marginBottom: '20px',
@@ -161,9 +161,9 @@ export default function PricingPage() {
             lineHeight: 1.1, marginBottom: '16px',
           }}>
             Kein Schnickschnack.<br />
-            <span style={{ color: '#35C0DB' }}>Nur was du brauchst.</span>
+            <span style={{ color: '#0E7490' }}>Nur was du brauchst.</span>
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto 12px' }}>
+          <p style={{ color: 'rgba(0,0,0,0.58)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto 12px' }}>
             14 Tage gratis testen — keine Kreditkarte, keine Verpflichtung.
           </p>
         </div>
@@ -179,8 +179,8 @@ export default function PricingPage() {
             <div
               key={plan.name}
               style={{
-                background: plan.highlight ? 'rgba(234,88,12,0.08)' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${plan.highlight ? 'rgba(234,88,12,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                background: plan.highlight ? 'rgba(14,116,144,0.08)' : 'rgba(0,0,0,0.03)',
+                border: `1px solid ${plan.highlight ? 'rgba(14,116,144,0.45)' : 'rgba(0,0,0,0.08)'}`,
                 borderRadius: '20px',
                 padding: '32px 28px',
                 position: 'relative',
@@ -200,16 +200,16 @@ export default function PricingPage() {
               )}
 
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                   {plan.name}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '3rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1 }}>
                     {plan.price}€
                   </span>
-                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', paddingBottom: '8px' }}>/Monat</span>
+                  <span style={{ color: 'rgba(0,0,0,0.5)', fontSize: '0.875rem', paddingBottom: '8px' }}>/Monat</span>
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+                <p style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', lineHeight: 1.5 }}>
                   {plan.description}
                 </p>
               </div>
@@ -218,14 +218,12 @@ export default function PricingPage() {
                 href={plan.ctaHref}
                 style={{
                   display: 'block', textAlign: 'center',
-                  background: plan.highlight
-                    ? '#0E7490'
-                    : 'rgba(255,255,255,0.08)',
-                  color: '#fff',
+                  background: plan.highlight ? '#0E7490' : '#FFFFFF',
+                  color: plan.highlight ? '#fff' : '#0E7490',
                   borderRadius: '12px', padding: '13px',
                   fontWeight: 700, fontSize: '0.9rem',
                   textDecoration: 'none', marginBottom: '28px',
-                  border: plan.highlight ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                  border: plan.highlight ? 'none' : '1.5px solid #0E7490',
                   transition: 'opacity 0.2s',
                 }}
               >
@@ -238,7 +236,7 @@ export default function PricingPage() {
                     <span style={{
                       flexShrink: 0, width: '18px', height: '18px',
                       borderRadius: '50%',
-                      background: f.included ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+                      background: f.included ? 'rgba(34,197,94,0.15)' : 'rgba(0,0,0,0.05)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '0.65rem', marginTop: '1px',
                     }}>
@@ -246,7 +244,7 @@ export default function PricingPage() {
                     </span>
                     <span style={{
                       fontSize: '0.85rem',
-                      color: f.included ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.25)',
+                      color: f.included ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.4)',
                     }}>
                       {f.text}
                     </span>
@@ -259,8 +257,8 @@ export default function PricingPage() {
 
         {/* Trust bar */}
         <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          background: 'rgba(0,0,0,0.03)',
+          border: '1px solid rgba(0,0,0,0.06)',
           borderRadius: '16px',
           padding: '28px',
           display: 'grid',
@@ -278,9 +276,9 @@ export default function PricingPage() {
             const Icon = item.icon
             return (
               <div key={i}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: '#35C0DB' }}><Icon size={22} /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: '#0E7490' }}><Icon size={22} /></div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>{item.text}</div>
-                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>{item.sub}</div>
+                <div style={{ color: 'rgba(0,0,0,0.5)', fontSize: '0.75rem' }}>{item.sub}</div>
               </div>
             )
           })}
@@ -294,12 +292,12 @@ export default function PricingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '720px', margin: '0 auto' }}>
             {faqs.map((faq, i) => (
               <div key={i} style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
+                background: 'rgba(0,0,0,0.03)',
+                border: '1px solid rgba(0,0,0,0.07)',
                 borderRadius: '14px', padding: '20px 24px',
               }}>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px' }}>{faq.q}</div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', lineHeight: 1.6 }}>{faq.a}</div>
+                <div style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', lineHeight: 1.6 }}>{faq.a}</div>
               </div>
             ))}
           </div>
@@ -308,8 +306,8 @@ export default function PricingPage() {
         {/* Bottom CTA */}
         <div style={{
           textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(234,88,12,0.15), rgba(249,115,22,0.08))',
-          border: '1px solid rgba(234,88,12,0.2)',
+          background: 'linear-gradient(135deg, rgba(14,116,144,0.12), rgba(249,115,22,0.08))',
+          border: '1px solid rgba(14,116,144,0.2)',
           borderRadius: '24px',
           padding: '60px 24px',
           marginBottom: '80px',
@@ -317,7 +315,7 @@ export default function PricingPage() {
           <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '12px' }}>
             Bereit loszulegen?
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '28px', fontSize: '1rem' }}>
+          <p style={{ color: 'rgba(0,0,0,0.58)', marginBottom: '28px', fontSize: '1rem' }}>
             14 Tage kostenlos — kein Risiko, keine Kreditkarte.
           </p>
           <Link href="/register" style={{
@@ -335,13 +333,13 @@ export default function PricingPage() {
 
       {/* Footer */}
       <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(0,0,0,0.06)',
         padding: '24px',
         textAlign: 'center',
-        color: 'rgba(255,255,255,0.3)',
+        color: 'rgba(0,0,0,0.45)',
         fontSize: '0.8rem',
       }}>
-        © 2026 OrderIQ · <Link href="/impressum" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>Impressum</Link> · <Link href="/datenschutz" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>Datenschutz</Link>
+        © 2026 OrderIQ · <Link href="/impressum" style={{ color: 'rgba(0,0,0,0.45)', textDecoration: 'none' }}>Impressum</Link> · <Link href="/datenschutz" style={{ color: 'rgba(0,0,0,0.45)', textDecoration: 'none' }}>Datenschutz</Link>
       </div>
     </div>
   )
