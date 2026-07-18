@@ -50,7 +50,7 @@ function FloatingPaths({ position }: { position: number }) {
 
 export function BackgroundPaths({ children }: { children?: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden" style={{ background: 'var(--bg)' }}>
+    <div className="theme-light relative min-h-screen w-full flex items-center justify-center overflow-hidden" style={{ background: 'var(--bg)' }}>
       <div className="absolute inset-0">
         <FloatingPaths position={1} />
         <FloatingPaths position={-1} />

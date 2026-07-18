@@ -127,7 +127,7 @@ export default function PricingPage() {
           <Link href="/roi-rechner" style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', textDecoration: 'none' }}>
             ROI-Rechner
           </Link>
-          <Link href="/login" style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', textDecoration: 'none' }}>
+          <Link href="/owner-login" style={{ color: 'rgba(0,0,0,0.58)', fontSize: '0.875rem', textDecoration: 'none' }}>
             Einloggen
           </Link>
           <Link href="/register" style={{

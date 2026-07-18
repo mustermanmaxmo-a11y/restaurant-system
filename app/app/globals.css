@@ -499,6 +499,24 @@ body::after {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* ─── Hell erzwingen (Außenseiten wie Login), auch wenn App im Dark-Mode ─── */
+.theme-light {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface-2: #F2F1EE;
+  --text: #111111;
+  --text-muted: #6B6B6B;
+  --border: #EAE8E3;
+  --accent: #0E7490;
+  --accent-hover: #0B5E75;
+  --accent-fg: #0E7490;
+  --accent-subtle: #E4F3F7;
+  --accent-text: #FFFFFF;
+  --border-accent: #0E749033;
+  --btn-bg: #111111;
+  --btn-text: #FFFFFF;
+}
+
 /* ─── Homepage-Hero: 1 Spalte mobil, 2 Spalten ab 900px ─── */
 .hero-grid {
   display: grid;
