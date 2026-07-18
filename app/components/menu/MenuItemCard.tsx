@@ -82,7 +82,7 @@ function CardsLayout(props: MenuItemCardProps) {
       }}
     >
       {item.image_url && (
-        <img src={item.image_url} alt={displayName} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+        <img loading="lazy" decoding="async" src={item.image_url} alt={displayName} style={{ width: '72px', height: '72px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
       )}
       <ItemTextBlock colors={colors} displayName={displayName} displayDesc={displayDesc} item={item} special={special} />
       <ItemActions colors={colors} qty={qty} onAdd={onAdd} onRemove={onRemove} isFavorite={isFavorite} onToggleFavorite={onToggleFavorite} />
@@ -115,7 +115,7 @@ function ListLayout(props: MenuItemCardProps) {
       }}
     >
       {item.image_url && (
-        <img src={item.image_url} alt={displayName} style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+        <img loading="lazy" decoding="async" src={item.image_url} alt={displayName} style={{ width: '44px', height: '44px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: displayDesc ? '2px' : 0 }}>
@@ -165,7 +165,7 @@ function LargeCardsLayout(props: MenuItemCardProps) {
     >
       {item.image_url ? (
         <div style={{ position: 'relative', width: '100%', height: '160px', overflow: 'hidden' }}>
-          <img src={item.image_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img loading="lazy" decoding="async" src={item.image_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {special && (
             <span style={{
               position: 'absolute', top: '10px', left: '10px',
@@ -240,7 +240,7 @@ function GridLayout(props: MenuItemCardProps) {
     >
       {item.image_url ? (
         <div style={{ position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden' }}>
-          <img src={item.image_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img loading="lazy" decoding="async" src={item.image_url} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           {special && (
             <span style={{
               position: 'absolute', top: '6px', left: '6px',

@@ -18,7 +18,7 @@ export function TeamSection({ brand, team }: Props) {
           {team.map((m, i) => (
             <div key={i} style={{ textAlign: 'center' }}>
               {m.photo_url ? (
-                <img src={m.photo_url} alt={m.name} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '14px', marginBottom: '10px' }} />
+                <img loading="lazy" decoding="async" src={m.photo_url} alt={m.name} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '14px', marginBottom: '10px' }} />
               ) : (
                 <div style={{ width: '100%', aspectRatio: '1', borderRadius: '14px', marginBottom: '10px', background: colors.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 700, color: colors.muted }}>
                   {m.name.charAt(0)}

@@ -13,7 +13,7 @@ export function StorySection({ brand, storyText, imageUrl, foundedYear }: Props)
     <section style={{ padding: '40px 24px', borderTop: `1px solid ${colors.border}` }}>
       <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: imageUrl ? 'minmax(0, 1fr) minmax(0, 1fr)' : '1fr', gap: '28px', alignItems: 'center' }}>
         {imageUrl && (
-          <img src={imageUrl} alt="" style={{ width: '100%', height: '100%', maxHeight: '360px', objectFit: 'cover', borderRadius: '16px' }} />
+          <img loading="lazy" decoding="async" src={imageUrl} alt="" style={{ width: '100%', height: '100%', maxHeight: '360px', objectFit: 'cover', borderRadius: '16px' }} />
         )}
         <div>
           <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: colors.accent, marginBottom: '12px', fontWeight: 700 }}>
