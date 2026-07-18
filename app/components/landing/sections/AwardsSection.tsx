@@ -18,7 +18,7 @@ export function AwardsSection({ brand, awards }: Props) {
           {awards.map((a, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: '12px', padding: '14px 16px' }}>
               {a.logo_url ? (
-                <img src={a.logo_url} alt="" style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
+                <img loading="lazy" decoding="async" src={a.logo_url} alt="" style={{ width: '48px', height: '48px', objectFit: 'contain', flexShrink: 0 }} />
               ) : (
                 <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>🏆</span>
               )}

@@ -91,7 +91,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
             <div style={sectionLabel}>Unsere Küche</div>
             <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
               {content.gallery!.map((url, i) => (
-                <img key={i} src={url} alt="" style={{
+                <img loading="lazy" decoding="async" key={i} src={url} alt="" style={{
                   flexShrink: 0, width: '160px', height: '120px',
                   objectFit: 'cover', borderRadius: '10px',
                 }} />
@@ -113,7 +113,7 @@ export function LandingPageSections({ brand, content, slug, featuredItems }: Pro
               {featuredItems.slice(0, 4).map(item => (
                 <a key={item.id} href={`/bestellen/${slug}`} style={{ textDecoration: 'none', background: colors.surface, borderRadius: '10px', border: `1px solid ${colors.border}`, overflow: 'hidden' }}>
                   {item.image_url
-                    ? <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
+                    ? <img loading="lazy" decoding="async" src={item.image_url} alt={item.name} style={{ width: '100%', height: '110px', objectFit: 'cover' }} />
                     : <div style={{ width: '100%', height: '110px', background: colors.surface }} />
                   }
                   <div style={{ padding: '10px 12px' }}>

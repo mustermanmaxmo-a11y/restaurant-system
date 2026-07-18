@@ -15,7 +15,7 @@ export function AmbianceSection({ brand, images }: Props) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           {images.map((url, i) => (
-            <img key={i} src={url} alt="" style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: '14px' }} />
+            <img loading="lazy" decoding="async" key={i} src={url} alt="" style={{ width: '100%', height: '220px', objectFit: 'cover', borderRadius: '14px' }} />
           ))}
         </div>
       </div>

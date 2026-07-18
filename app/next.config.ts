@@ -43,6 +43,12 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.178.68'],
+  images: {
+    // Restaurant-Bilder liegen im Supabase-Storage (siehe CSP img-src)
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/**' },
+    ],
+  },
   async headers() {
     return [
       {
