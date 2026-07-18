@@ -1,5 +1,6 @@
 'use client'
 
+import { Eye, EyeOff } from 'lucide-react'
 import { useEditorDraft } from './useEditorDraft'
 import type { SectionKey } from '@/lib/landing-content'
 
@@ -88,9 +89,9 @@ export function EditorNav({
                     style={{ flex: 1, background: 'transparent', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
                     {s.label}
                   </button>
-                  <button onClick={() => toggle(s.key)} title={isVis(s.key) ? 'Sichtbar' : 'Aus'}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.85rem', opacity: isVis(s.key) ? 1 : 0.4 }}>
-                    {isVis(s.key) ? '👁' : '🚫'}
+                  <button onClick={() => toggle(s.key)} title={isVis(s.key) ? 'Sichtbar' : 'Aus'} aria-label={isVis(s.key) ? 'Sektion ausblenden' : 'Sektion einblenden'}
+                    style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', opacity: isVis(s.key) ? 1 : 0.4 }}>
+                    {isVis(s.key) ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 </div>
               )

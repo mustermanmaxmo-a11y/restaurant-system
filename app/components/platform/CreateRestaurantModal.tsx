@@ -155,7 +155,7 @@ export default function CreateRestaurantModal({ role }: Props) {
                       style={inputStyle}
                     />
                     <span style={{ fontSize: '0.7rem', color: '#555', marginTop: '4px', display: 'block' }}>
-                      restaurantos.de/{slug || '…'}
+                      www.getorderiq.de/{slug || '…'}
                     </span>
                   </Field>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Smartphone, Monitor, Maximize2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useEditorDraft } from './useEditorDraft'
 import type { PreviewPage, PreviewDevice } from './PreviewPane'
@@ -76,9 +77,9 @@ export function EditorTopBar({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '2px' }}>
-          <button style={pill(device === 'mobile')} onClick={() => onDeviceChange('mobile')} title="Mobil">📱</button>
-          <button style={pill(device === 'desktop')} onClick={() => onDeviceChange('desktop')} title="Desktop">🖥</button>
-          <button style={pill(fullscreen)} onClick={onToggleFullscreen} title={fullscreen ? 'Vollbild beenden (Esc)' : 'Vollbild-Vorschau'}>⛶</button>
+          <button style={pill(device === 'mobile')} onClick={() => onDeviceChange('mobile')} title="Mobil" aria-label="Mobil-Vorschau"><Smartphone size={15} /></button>
+          <button style={pill(device === 'desktop')} onClick={() => onDeviceChange('desktop')} title="Desktop" aria-label="Desktop-Vorschau"><Monitor size={15} /></button>
+          <button style={pill(fullscreen)} onClick={onToggleFullscreen} title={fullscreen ? 'Vollbild beenden (Esc)' : 'Vollbild-Vorschau'} aria-label="Vollbild"><Maximize2 size={15} /></button>
         </div>
 
         <span style={{ fontSize: '0.74rem', fontWeight: 600, color: hasUnpublishedChanges ? 'var(--accent)' : 'var(--text-muted)' }}>{statusText}</span>

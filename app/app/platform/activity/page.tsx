@@ -21,8 +21,8 @@ const EVENT_CONFIG = {
   trial_expiring: { label: 'Trial läuft ab',      dot: '#f59e0b', bg: 'rgba(245,158,11,0.06)',  border: 'rgba(245,158,11,0.2)',  icon: '⏳' },
   trial_expired:  { label: 'Trial abgelaufen',    dot: '#ef4444', bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',  icon: '✕' },
   churn_risk:     { label: 'Churn-Risiko',        dot: '#ef4444', bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',  icon: '⚠' },
-  hot_today:      { label: 'Starker Tag',         dot: '#10b981', bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.2)',  icon: '🔥' },
-  upgrade_ready:  { label: 'Upgrade-Kandidat',   dot: '#6366f1', bg: 'rgba(99,102,241,0.08)',  border: 'rgba(99,102,241,0.2)',  icon: '🚀' },
+  hot_today:      { label: 'Starker Tag',         dot: '#10b981', bg: 'rgba(16,185,129,0.06)',  border: 'rgba(16,185,129,0.2)',  icon: '✦' },
+  upgrade_ready:  { label: 'Upgrade-Kandidat',   dot: '#6366f1', bg: 'rgba(99,102,241,0.08)',  border: 'rgba(99,102,241,0.2)',  icon: '✦' },
 } as const
 
 export default async function PlatformActivityPage() {

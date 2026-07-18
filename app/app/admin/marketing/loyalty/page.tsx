@@ -106,7 +106,7 @@ export default function LoyaltyAdminPage() {
   return (
     <div style={{ maxWidth: '880px', margin: '0 auto', padding: '24px' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '24px' }}>
-        ⭐ Loyalty-Programm
+        Loyalty-Programm
       </h1>
 
       {/* Konfiguration */}

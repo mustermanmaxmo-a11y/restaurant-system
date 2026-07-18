@@ -589,7 +589,7 @@ export default function SetupPage() {
                 />
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '6px' }}>
-                Dein Bestelllink: restaurantos.de/bestellen/{slug || 'dein-name'}
+                Dein Bestelllink: www.getorderiq.de/bestellen/{slug || 'dein-name'}
               </p>
             </div>
 

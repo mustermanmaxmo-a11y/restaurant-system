@@ -1,12 +1,12 @@
 {
   "name": "Staff Dashboard",
   "short_name": "Staff",
-  "description": "RestaurantOS Personal-Dashboard",
+  "description": "OrderIQ Personal-Dashboard",
   "start_url": "/dashboard",
   "scope": "/dashboard",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#00C9A7",
+  "background_color": "#0C0C0E",
+  "theme_color": "#0E7490",
   "orientation": "portrait",
   "icons": [
     {

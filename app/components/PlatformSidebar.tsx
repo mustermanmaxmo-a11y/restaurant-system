@@ -93,7 +93,7 @@ function buildGroups(role: PlatformRole, legal: number, team: number, design: nu
 const ROLE_META: Record<PlatformRole, { label: string; color: string; bg: string }> = {
   owner:      { label: 'Owner',      color: '#f9a8d4', bg: 'rgba(236,72,153,0.14)' },
   co_founder: { label: 'Co-Founder', color: '#fde68a', bg: 'rgba(245,158,11,0.14)' },
-  developer:  { label: 'Developer',  color: '#c4b5fd', bg: 'rgba(124,58,237,0.18)' },
+  developer:  { label: 'Developer',  color: '#7dd3e8', bg: 'rgba(14,116,144,0.18)' },
   billing:    { label: 'Billing',    color: '#6ee7b7', bg: 'rgba(16,185,129,0.14)' },
   support:    { label: 'Support',    color: '#93c5fd', bg: 'rgba(59,130,246,0.14)' },
 }
@@ -131,10 +131,10 @@ function NavButton({
         fontSize: '0.81rem',
         fontWeight: active ? 600 : 500,
         background: active
-          ? 'rgba(124,58,237,0.13)'
+          ? 'rgba(14,116,144,0.13)'
           : hov ? 'rgba(255,255,255,0.04)' : 'transparent',
-        color: active ? '#c4b5fd' : hov ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.38)',
-        boxShadow: active && !collapsed ? 'inset 2px 0 0 rgba(124,58,237,0.7)' : undefined,
+        color: active ? '#7dd3e8' : hov ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.38)',
+        boxShadow: active && !collapsed ? 'inset 2px 0 0 rgba(14,116,144,0.7)' : undefined,
         marginBottom: '1px',
         transition: 'background 0.1s, color 0.1s, box-shadow 0.1s',
         position: 'relative',
@@ -152,7 +152,7 @@ function NavButton({
           {(item.badge ?? 0) > 0 && (
             <span style={{
               minWidth: '17px', height: '17px', borderRadius: '9px',
-              background: 'rgba(124,58,237,0.28)', color: '#c4b5fd',
+              background: 'rgba(14,116,144,0.28)', color: '#7dd3e8',
               fontSize: '0.6rem', fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
               flexShrink: 0,
@@ -223,9 +223,9 @@ function SidebarContent({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '28px', height: '28px', borderRadius: '7px', flexShrink: 0,
-            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+            background: 'linear-gradient(135deg, #0e7490 0%, #4f46e5 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 14px rgba(124,58,237,0.4)',
+            boxShadow: '0 0 14px rgba(14,116,144,0.4)',
           }}>
             <Shield size={13} color="#fff" strokeWidth={2.5} />
           </div>
@@ -381,10 +381,10 @@ function SidebarContent({
             title={collapsed ? `${userEmail} · ${rm.label}` : undefined}
             style={{
               width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-              background: 'linear-gradient(135deg, rgba(124,58,237,0.45), rgba(79,70,229,0.45))',
-              border: '1px solid rgba(124,58,237,0.28)',
+              background: 'linear-gradient(135deg, rgba(14,116,144,0.45), rgba(79,70,229,0.45))',
+              border: '1px solid rgba(14,116,144,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#c4b5fd', fontSize: '0.65rem', fontWeight: 700,
+              color: '#7dd3e8', fontSize: '0.65rem', fontWeight: 700,
               cursor: collapsed ? 'default' : undefined,
             }}
           >
@@ -512,7 +512,7 @@ export function PlatformSidebar({
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(124,58,237,0.4)' }}>
+          <div style={{ width: '26px', height: '26px', borderRadius: '6px', background: 'linear-gradient(135deg,#0e7490,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(14,116,144,0.4)' }}>
             <Shield size={12} color="#fff" strokeWidth={2.5} />
           </div>
           <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontSize: '0.86rem', letterSpacing: '-0.01em' }}>Platform</span>

@@ -73,9 +73,9 @@ export default async function RestaurantMenuPage({ params }: { params: Promise<{
         ].map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
-            background: n.active ? 'rgba(124,58,237,0.2)' : 'transparent',
-            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+            background: n.active ? 'rgba(14,116,144,0.2)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(14,116,144,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
           }}>{n.label}</Link>
         ))}
       </div>
@@ -93,7 +93,7 @@ export default async function RestaurantMenuPage({ params }: { params: Promise<{
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Artikel gesamt', value: String(items.length), color: '#c4b5fd' },
+          { label: 'Artikel gesamt', value: String(items.length), color: '#7dd3e8' },
           { label: 'Verfügbar', value: String(available.length), color: '#34d399' },
           { label: 'Deaktiviert', value: String(unavailable.length), color: '#f87171' },
           { label: 'Kategorien', value: String(cats.length), color: '#60a5fa' },
@@ -121,7 +121,7 @@ export default async function RestaurantMenuPage({ params }: { params: Promise<{
                   <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.72rem' }}>{cnt} Artikel</span>
                 </div>
                 <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(cnt / maxCnt) * 100}%`, background: 'rgba(124,58,237,0.6)', borderRadius: '3px' }} />
+                  <div style={{ height: '100%', width: `${(cnt / maxCnt) * 100}%`, background: 'rgba(14,116,144,0.6)', borderRadius: '3px' }} />
                 </div>
               </div>
             )

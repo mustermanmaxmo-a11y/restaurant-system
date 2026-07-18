@@ -791,11 +791,11 @@ export default function InventoryPage() {
 
         {/* ── TAB: VERLUSTE ─────────────────────────────────────────────────── */}
         {tab === 'verluste' && (() => {
-          const REASON_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-            spoiled:    { label: 'Verdorben',       emoji: '🤢', color: '#f87171' },
-            overcooked: { label: 'Verkocht',         emoji: '🔥', color: '#fb923c' },
-            dropped:    { label: 'Heruntergefallen', emoji: '💥', color: '#facc15' },
-            other:      { label: 'Sonstiges',        emoji: '📦', color: '#94a3b8' },
+          const REASON_LABELS: Record<string, { label: string; color: string }> = {
+            spoiled:    { label: 'Verdorben',       color: '#f87171' },
+            overcooked: { label: 'Verkocht',         color: '#fb923c' },
+            dropped:    { label: 'Heruntergefallen', color: '#facc15' },
+            other:      { label: 'Sonstiges',        color: '#94a3b8' },
           }
           const totalLossCost = wasteLogs.reduce((s, l) => s + (l.purchase_price != null ? l.quantity * l.purchase_price : 0), 0)
           return (
@@ -820,7 +820,7 @@ export default function InventoryPage() {
                       const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
                       const info = top ? REASON_LABELS[top[0]] : null
                       return info
-                        ? <><p style={{ color: info.color, fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>{info.emoji} {info.label}</p><p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>{top[1]}× erfasst</p></>
+                        ? <><p style={{ color: info.color, fontWeight: 800, fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '7px' }}><span style={{ width: '9px', height: '9px', borderRadius: '50%', background: info.color, flexShrink: 0 }} />{info.label}</p><p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>{top[1]}× erfasst</p></>
                         : <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>–</p>
                     })()}
                   </div>
@@ -852,10 +852,10 @@ export default function InventoryPage() {
                   <div style={{ marginBottom: '12px' }}>
                     <label style={labelStyle}>Grund</label>
                     <select value={wasteReason} onChange={e => setWasteReason(e.target.value as WasteReason)} style={inputStyle}>
-                      <option value="spoiled">🤢 Verdorben</option>
-                      <option value="overcooked">🔥 Verkocht</option>
-                      <option value="dropped">💥 Heruntergefallen</option>
-                      <option value="other">📦 Sonstiges</option>
+                      <option value="spoiled">Verdorben</option>
+                      <option value="overcooked">Verkocht</option>
+                      <option value="dropped">Heruntergefallen</option>
+                      <option value="other">Sonstiges</option>
                     </select>
                   </div>
                   <div style={{ marginBottom: '12px' }}>
@@ -925,7 +925,7 @@ export default function InventoryPage() {
                               <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '6px 0', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
                                 <span style={{ color: 'var(--text)', fontSize: '0.82rem', fontWeight: 500 }}>{l.ingredient_name}</span>
                                 <span style={{ color: '#f87171', fontSize: '0.82rem', fontWeight: 600 }}>{l.quantity} {l.unit}</span>
-                                <span style={{ color: reasonInfo.color, fontSize: '0.8rem' }}>{reasonInfo.emoji} {reasonInfo.label}</span>
+                                <span style={{ color: reasonInfo.color, fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: reasonInfo.color, flexShrink: 0 }} />{reasonInfo.label}</span>
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{new Date(l.logged_at).toLocaleDateString('de')}</span>
                               </div>
                             )

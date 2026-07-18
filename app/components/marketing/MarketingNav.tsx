@@ -2,25 +2,39 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  Bot, Mail, Cake, Droplets, Gift, Zap, LayoutTemplate,
+  Share2, BarChart3, Users, type LucideIcon,
+} from 'lucide-react'
 
 interface NavItem {
   href: string
-  icon: string
+  icon: LucideIcon
   label: string
-  badge: string | null
+  badge?: string | null
 }
 
-interface MarketingNavProps {
-  items: NavItem[]
-}
+const NAV_ITEMS: NavItem[] = [
+  { href: '/admin/marketing/advisor', icon: Bot, label: 'KI-Berater' },
+  { href: '/admin/marketing/campaigns', icon: Mail, label: 'Kampagnen' },
+  { href: '/admin/marketing/birthday', icon: Cake, label: 'Geburtstag' },
+  { href: '/admin/marketing/drip', icon: Droplets, label: 'Win-Back Drip' },
+  { href: '/admin/marketing/referral', icon: Gift, label: 'Referral' },
+  { href: '/admin/marketing/automations', icon: Zap, label: 'Automationen' },
+  { href: '/admin/marketing/templates', icon: LayoutTemplate, label: 'Templates' },
+  { href: '/admin/marketing/social', icon: Share2, label: 'Social Media' },
+  { href: '/admin/marketing/analytics', icon: BarChart3, label: 'Analytics' },
+  { href: '/admin/marketing/subscribers', icon: Users, label: 'Abonnenten' },
+]
 
-export default function MarketingNav({ items }: MarketingNavProps) {
+export default function MarketingNav() {
   const pathname = usePathname()
 
   return (
     <nav style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      {items.map(item => {
+      {NAV_ITEMS.map(item => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const Icon = item.icon
         return (
           <Link
             key={item.href}
@@ -32,22 +46,22 @@ export default function MarketingNav({ items }: MarketingNavProps) {
               padding: '9px 12px',
               borderRadius: '8px',
               textDecoration: 'none',
-              background: isActive ? 'rgba(232, 93, 38, 0.12)' : 'transparent',
-              color: isActive ? '#e85d26' : 'var(--sidebar-text, #9ca3af)',
+              background: isActive ? 'var(--accent-subtle)' : 'transparent',
+              color: isActive ? 'var(--accent-fg)' : 'var(--sidebar-text, #9ca3af)',
               fontWeight: isActive ? 700 : 500,
               fontSize: '0.85rem',
-              borderLeft: isActive ? '3px solid #e85d26' : '3px solid transparent',
+              borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
               transition: 'background 0.15s, color 0.15s',
             }}
           >
-            <span style={{ fontSize: '1rem', lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+            <Icon size={17} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {item.label}
             </span>
             {item.badge && (
               <span style={{
-                background: '#e85d26',
-                color: '#fff',
+                background: 'var(--accent)',
+                color: 'var(--accent-text)',
                 fontSize: '0.65rem',
                 fontWeight: 700,
                 padding: '1px 6px',

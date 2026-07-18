@@ -65,7 +65,7 @@ export default function LoginPage() {
       <div className="w-full max-w-xs">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="mb-3 flex justify-center"><UtensilsCrossed size={48} color="#ff6b35" /></div>
+          <div className="mb-3 flex justify-center"><UtensilsCrossed size={48} color="#0E7490" /></div>
           <h1 className="text-white text-2xl font-bold">{t('auth.staffLogin')}</h1>
           <p className="text-zinc-400 text-sm mt-1">{t('auth.pin')}</p>
         </div>

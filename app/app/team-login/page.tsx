@@ -71,7 +71,7 @@ export default function TeamLoginPage() {
             Platform-Login
           </h1>
           <p style={{ color: '#666', fontSize: '0.875rem' }}>
-            Nur für das RestaurantOS-Team
+            Nur für das OrderIQ-Team
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export default function TeamLoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              placeholder="team@restaurantos.de"
+              placeholder="team@getorderiq.de"
               style={{
                 width: '100%', padding: '12px 16px', borderRadius: '10px',
                 border: '1px solid #2a2a3e', background: '#1a1a2e',

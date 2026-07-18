@@ -112,9 +112,9 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
         {SUB_NAV.map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
-            background: n.active ? 'rgba(124,58,237,0.18)' : 'transparent',
-            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+            background: n.active ? 'rgba(14,116,144,0.18)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(14,116,144,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
           }}>{n.label}</Link>
         ))}
       </div>
@@ -130,7 +130,7 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px,1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: 'Bestellungen 90d', value: String(nonCancelled.length), color: '#c4b5fd' },
+          { label: 'Bestellungen 90d', value: String(nonCancelled.length), color: '#7dd3e8' },
           { label: 'Umsatz 90d',       value: `€${totalRevenue.toFixed(0)}`, color: '#6ee7b7' },
           { label: 'Ø Bestellwert',    value: `€${avgOrderValue.toFixed(2)}`, color: '#fbbf24' },
           { label: 'Bestellungen 30d', value: String(last30.length), color: '#93c5fd', sub: growthPct !== null ? `${growthPct >= 0 ? '+' : ''}${growthPct}% vs. Vormonat` : undefined, subColor: growthPct !== null ? (growthPct >= 0 ? '#34d399' : '#f87171') : undefined },
@@ -155,10 +155,10 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
               <div key={d.date} title={`${d.date}: €${d.revenue.toFixed(2)} · ${d.count} Bestellungen`}
                 style={{
                   flex: 1, minWidth: '2px',
-                  background: isToday ? '#7c3aed' : d.revenue > 0 ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.04)',
+                  background: isToday ? '#0e7490' : d.revenue > 0 ? 'rgba(14,116,144,0.5)' : 'rgba(255,255,255,0.04)',
                   height: `${Math.max(h, d.revenue > 0 ? 3 : 1)}%`,
                   borderRadius: '2px 2px 0 0',
-                  boxShadow: isToday ? '0 0 8px rgba(124,58,237,0.5)' : undefined,
+                  boxShadow: isToday ? '0 0 8px rgba(14,116,144,0.5)' : undefined,
                   cursor: 'pointer',
                 }} />
             )
@@ -166,7 +166,7 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
           <span style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.62rem' }}>{days90[0].date}</span>
-          <span style={{ color: '#c4b5fd', fontSize: '0.62rem', fontWeight: 600 }}>Heute</span>
+          <span style={{ color: '#7dd3e8', fontSize: '0.62rem', fontWeight: 600 }}>Heute</span>
         </div>
       </Card>
 
@@ -182,7 +182,7 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
                 <div key={h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div title={`${h}:00 — ${cnt} Bestellungen`} style={{
                     width: '100%',
-                    background: isPeak ? '#f59e0b' : cnt > 0 ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.04)',
+                    background: isPeak ? '#f59e0b' : cnt > 0 ? 'rgba(14,116,144,0.5)' : 'rgba(255,255,255,0.04)',
                     height: `${Math.max(pct, cnt > 0 ? 5 : 1)}%`,
                     borderRadius: '2px 2px 0 0',
                   }} />
@@ -208,7 +208,7 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ color: isWeekend ? '#fbbf24' : 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700, width: '20px', textAlign: 'right' }}>{WEEKDAYS[i]}</span>
                   <div style={{ flex: 1, height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct}%`, background: isWeekend ? 'rgba(251,191,36,0.5)' : 'rgba(124,58,237,0.5)', borderRadius: '5px' }} />
+                    <div style={{ height: '100%', width: `${pct}%`, background: isWeekend ? 'rgba(251,191,36,0.5)' : 'rgba(14,116,144,0.5)', borderRadius: '5px' }} />
                   </div>
                   <span style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.62rem', width: '28px', textAlign: 'right' }}>{d.count}</span>
                 </div>
@@ -226,7 +226,7 @@ export default async function RestaurantAnalyticsPage({ params }: { params: Prom
               const pct = Math.round((v.revenue / maxWeekRev) * 100)
               return (
                 <div key={week} title={`KW ${week}: €${v.revenue.toFixed(0)} · ${v.count} Bestellungen`}
-                  style={{ flex: 1, background: 'rgba(124,58,237,0.5)', height: `${Math.max(pct, 3)}%`, borderRadius: '2px 2px 0 0' }} />
+                  style={{ flex: 1, background: 'rgba(14,116,144,0.5)', height: `${Math.max(pct, 3)}%`, borderRadius: '2px 2px 0 0' }} />
               )
             })}
           </div>

@@ -16,7 +16,7 @@ const PLAN_COLOR: Record<string, { bg: string; text: string; border: string }> =
   trial:      { bg: 'rgba(96,165,250,0.12)',   text: '#60a5fa', border: 'rgba(96,165,250,0.25)' },
   starter:    { bg: 'rgba(52,211,153,0.1)',    text: '#34d399', border: 'rgba(52,211,153,0.25)' },
   pro:        { bg: 'rgba(251,191,36,0.1)',    text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
-  enterprise: { bg: 'rgba(167,139,250,0.12)', text: '#a78bfa', border: 'rgba(167,139,250,0.25)' },
+  enterprise: { bg: 'rgba(53,192,219,0.12)', text: '#35c0db', border: 'rgba(53,192,219,0.25)' },
   expired:    { bg: 'rgba(248,113,113,0.08)', text: '#f87171', border: 'rgba(248,113,113,0.2)' },
 }
 
@@ -108,7 +108,7 @@ export function RestaurantTable({ rows, canBulkAction }: { rows: TableRow[]; can
 
   function SortIcon({ k }: { k: SortKey }) {
     if (sort.key !== k) return <ArrowUpDown size={11} style={{ opacity: 0.25 }} />
-    return sort.dir === 'asc' ? <ArrowUp size={11} color="#c4b5fd" /> : <ArrowDown size={11} color="#c4b5fd" />
+    return sort.dir === 'asc' ? <ArrowUp size={11} color="#7dd3e8" /> : <ArrowDown size={11} color="#7dd3e8" />
   }
 
   const counts: Record<string, number> = {}
@@ -136,9 +136,9 @@ export function RestaurantTable({ rows, canBulkAction }: { rows: TableRow[]; can
             const cnt = f === 'Alle' ? rows.length : f === 'Active' ? (counts['active'] ?? 0) : (counts[f.toLowerCase()] ?? 0)
             return (
               <button key={f} onClick={() => setFilter(f)} style={{
-                padding: '5px 12px', borderRadius: '20px', border: `1px solid ${active ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.07)'}`,
-                background: active ? 'rgba(124,58,237,0.15)' : 'transparent',
-                color: active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+                padding: '5px 12px', borderRadius: '20px', border: `1px solid ${active ? 'rgba(14,116,144,0.5)' : 'rgba(255,255,255,0.07)'}`,
+                background: active ? 'rgba(14,116,144,0.15)' : 'transparent',
+                color: active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
                 fontSize: '0.72rem', fontWeight: active ? 700 : 400, cursor: 'pointer',
                 transition: 'all 0.12s',
               }}>
@@ -155,12 +155,12 @@ export function RestaurantTable({ rows, canBulkAction }: { rows: TableRow[]; can
       {/* Bulk toolbar */}
       {selected.size > 0 && canBulkAction && (
         <div style={{
-          background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)',
+          background: 'rgba(14,116,144,0.08)', border: '1px solid rgba(14,116,144,0.2)',
           borderRadius: '10px', padding: '10px 16px',
           display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '12px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
         }}>
-          <span style={{ color: '#c4b5fd', fontSize: '0.78rem', fontWeight: 700, minWidth: '80px' }}>
+          <span style={{ color: '#7dd3e8', fontSize: '0.78rem', fontWeight: 700, minWidth: '80px' }}>
             {selected.size} gewählt
           </span>
           <Sep />
@@ -201,7 +201,7 @@ export function RestaurantTable({ rows, canBulkAction }: { rows: TableRow[]; can
               <tr style={{ background: 'rgba(255,255,255,0.03)', textAlign: 'left' }}>
                 {canBulkAction && (
                   <th style={{ padding: '11px 14px', width: '36px' }}>
-                    <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: 'pointer', accentColor: '#7c3aed' }} />
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: 'pointer', accentColor: '#0e7490' }} />
                   </th>
                 )}
                 <Th onClick={() => toggleSort('name')} sort={<SortIcon k="name" />}>Restaurant</Th>
@@ -230,12 +230,12 @@ export function RestaurantTable({ rows, canBulkAction }: { rows: TableRow[]; can
                 return (
                   <tr key={r.id} style={{
                     borderTop: '1px solid rgba(255,255,255,0.04)',
-                    background: isSel ? 'rgba(124,58,237,0.05)' : undefined,
+                    background: isSel ? 'rgba(14,116,144,0.05)' : undefined,
                     transition: 'background 0.1s',
                   }}>
                     {canBulkAction && (
                       <td style={{ padding: '11px 14px' }}>
-                        <input type="checkbox" checked={isSel} onChange={() => toggleOne(r.id)} style={{ cursor: 'pointer', accentColor: '#7c3aed' }} />
+                        <input type="checkbox" checked={isSel} onChange={() => toggleOne(r.id)} style={{ cursor: 'pointer', accentColor: '#0e7490' }} />
                       </td>
                     )}
                     <Td>

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 const PLAN_MRR: Record<string, number> = { starter: 29, pro: 79, enterprise: 199, trial: 0, expired: 0 }
 const PLAN_COLOR: Record<string, string> = {
-  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#a78bfa', expired: '#f87171',
+  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#35c0db', expired: '#f87171',
 }
 
 function fmt(n: number) { return n >= 1000 ? `€${(n / 1000).toFixed(1)}k` : `€${n.toFixed(0)}` }
@@ -114,7 +114,7 @@ export default async function RevenuePage() {
           { label: 'MRR', value: `€${totalMrr}`, sub: `€${totalMrr * 12} ARR`, color: '#34d399' },
           { label: 'GMV (30d)', value: fmt(gmv30), sub: `${gmvGrowth >= 0 ? '+' : ''}${gmvGrowth.toFixed(0)}% vs. Vormonat`, color: gmvGrowth >= 0 ? '#34d399' : '#f87171' },
           { label: 'GMV (7d)', value: fmt(gmv7), sub: 'letzte 7 Tage', color: '#60a5fa' },
-          { label: 'GMV (1 Jahr)', value: fmt(gmv365), sub: `Ø ${fmt(gmv365 / 12)}/mo`, color: '#a78bfa' },
+          { label: 'GMV (1 Jahr)', value: fmt(gmv365), sub: `Ø ${fmt(gmv365 / 12)}/mo`, color: '#35c0db' },
           { label: 'Ø Bestellwert', value: `€${avgOrderSize.toFixed(2)}`, sub: `${orders.length} Orders gesamt`, color: '#fbbf24' },
         ].map(k => (
           <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '16px 18px' }}>
@@ -168,7 +168,7 @@ export default async function RevenuePage() {
               return (
                 <div key={m.key} title={`${m.label}: ${fmt(m.gmv)} · ${m.orders} Orders`} style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', height: '100%', gap: '4px' }}>
                   {m.gmv > 0 && <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.2)' }}>{fmt(m.gmv)}</div>}
-                  <div style={{ width: '100%', height: `${h}px`, background: isLast ? 'rgba(52,211,153,0.7)' : 'rgba(124,58,237,0.45)', borderRadius: '3px 3px 0 0' }} />
+                  <div style={{ width: '100%', height: `${h}px`, background: isLast ? 'rgba(52,211,153,0.7)' : 'rgba(14,116,144,0.45)', borderRadius: '3px 3px 0 0' }} />
                   <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.18)', whiteSpace: 'nowrap' }}>{m.label}</div>
                 </div>
               )

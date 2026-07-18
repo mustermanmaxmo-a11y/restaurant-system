@@ -166,7 +166,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
         </div>
         <button
           onClick={() => router.push('/admin/marketing/advisor')}
-          style={{ background: '#8b5cf6', border: 'none', borderRadius: '10px', padding: '10px 18px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+          style={{ background: '#0e7490', border: 'none', borderRadius: '10px', padding: '10px 18px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
         >
           + KI-Berater öffnen
         </button>
@@ -183,7 +183,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
               border: `1px solid ${filter === opt.value ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
               borderRadius: '8px',
               padding: '6px 14px',
-              color: filter === opt.value ? '#8b5cf6' : '#9ca3af',
+              color: filter === opt.value ? '#0e7490' : '#9ca3af',
               fontWeight: filter === opt.value ? 700 : 500,
               fontSize: '0.8rem',
               cursor: 'pointer',
@@ -203,7 +203,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
               <div>
                 <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>KI-Vorschläge</p>
                 <p style={{ color: '#9ca3af', fontSize: '0.75rem', margin: '2px 0 0' }}>
-                  Auf deinen Brand-Stil <strong style={{ color: '#c4b5fd' }}>{resolvedStyleLabel}</strong> abgestimmt — ein Klick erstellt das Template.
+                  Auf deinen Brand-Stil <strong style={{ color: '#7dd3e8' }}>{resolvedStyleLabel}</strong> abgestimmt — ein Klick erstellt das Template.
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
                     <span style={{ color: '#f3f4f6', fontWeight: 700, fontSize: '0.82rem' }}>{s.title}</span>
                   </div>
                   <p style={{ color: '#9ca3af', fontSize: '0.72rem', margin: '0 0 8px', lineHeight: 1.4 }}>{s.description}</p>
-                  <span style={{ display: 'inline-block', background: isGen ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.12)', color: '#c4b5fd', fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px' }}>
+                  <span style={{ display: 'inline-block', background: isGen ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.12)', color: '#7dd3e8', fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px' }}>
                     {isGen ? '✨ generiert…' : '+ Erstellen'}
                   </span>
                 </button>
@@ -257,7 +257,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
           <p style={{ color: '#4b5563', fontSize: '0.95rem', margin: '0 0 16px' }}>Noch keine Templates. Lass die KI eines erstellen.</p>
           <button
             onClick={() => router.push('/admin/marketing/advisor')}
-            style={{ background: '#8b5cf6', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
+            style={{ background: '#0e7490', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}
           >
             KI-Berater öffnen →
           </button>
@@ -325,7 +325,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
                     <p style={{ color: '#6b7280', fontSize: '0.72rem', margin: 0, fontStyle: 'italic' }}>Eigenes HTML — Style wird ignoriert.</p>
                   )}
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    <button onClick={() => saveEdit(tpl.id)} disabled={saving} style={{ background: '#8b5cf6', border: 'none', borderRadius: '6px', padding: '5px 12px', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                    <button onClick={() => saveEdit(tpl.id)} disabled={saving} style={{ background: '#0e7490', border: 'none', borderRadius: '6px', padding: '5px 12px', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
                       {saving ? '...' : 'Speichern'}
                     </button>
                     <button onClick={() => setEditingId(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '5px 12px', color: '#9ca3af', fontSize: '0.78rem', cursor: 'pointer' }}>
@@ -338,7 +338,7 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '4px' }}>
                     <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{tpl.name}</p>
                     {tpl.created_by_ai && (
-                      <span style={{ background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>✨ KI</span>
+                      <span style={{ background: 'rgba(139,92,246,0.15)', color: '#0e7490', fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, flexShrink: 0, marginLeft: '8px' }}>✨ KI</span>
                     )}
                   </div>
                   {tpl.trigger_type && (
@@ -388,8 +388,8 @@ export function TemplateLibrary({ initialTemplates, restaurantId: _restaurantId,
             <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', margin: 0, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{previewTemplate.name}</p>
               <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '3px' }}>
-                <button onClick={() => setPreviewMobile(false)} style={{ background: !previewMobile ? '#8b5cf6' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: !previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Desktop</button>
-                <button onClick={() => setPreviewMobile(true)} style={{ background: previewMobile ? '#8b5cf6' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Mobile</button>
+                <button onClick={() => setPreviewMobile(false)} style={{ background: !previewMobile ? '#0e7490' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: !previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Desktop</button>
+                <button onClick={() => setPreviewMobile(true)} style={{ background: previewMobile ? '#0e7490' : 'transparent', border: 'none', borderRadius: '5px', padding: '4px 10px', color: previewMobile ? '#fff' : '#9ca3af', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}>Mobile</button>
               </div>
               <button onClick={() => { setPreviewTemplate(null); setPreviewMobile(false) }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>

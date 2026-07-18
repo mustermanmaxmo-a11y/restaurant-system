@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { UtensilsCrossed } from 'lucide-react'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { requirePlatformAccess } from '@/lib/platform-auth'
 import { PlanManager } from './PlanManager'
@@ -12,7 +13,7 @@ const PLAN_COLORS: Record<string, { bg: string; fg: string; border: string }> = 
   trial:      { bg: 'rgba(96,165,250,0.1)',   fg: '#93c5fd', border: 'rgba(96,165,250,0.25)' },
   starter:    { bg: 'rgba(52,211,153,0.1)',   fg: '#6ee7b7', border: 'rgba(52,211,153,0.25)' },
   pro:        { bg: 'rgba(251,191,36,0.1)',   fg: '#fcd34d', border: 'rgba(251,191,36,0.25)' },
-  enterprise: { bg: 'rgba(167,139,250,0.1)',  fg: '#c4b5fd', border: 'rgba(167,139,250,0.25)' },
+  enterprise: { bg: 'rgba(53,192,219,0.1)',  fg: '#7dd3e8', border: 'rgba(53,192,219,0.25)' },
   expired:    { bg: 'rgba(248,113,113,0.1)',  fg: '#fca5a5', border: 'rgba(248,113,113,0.25)' },
 }
 
@@ -120,7 +121,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
           {restaurant.logo_url ? (
             <img src={restaurant.logo_url} alt="" style={{ width: '52px', height: '52px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.08)' }} />
           ) : (
-            <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🍽️</div>
+            <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7dd3e8' }}><UtensilsCrossed size={22} /></div>
           )}
           <div>
             <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.02em', marginBottom: '4px' }}>{restaurant.name}</h1>
@@ -148,9 +149,9 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
         ].map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '5px 14px', borderRadius: '20px', textDecoration: 'none', fontSize: '0.78rem', fontWeight: 600,
-            background: n.active ? 'rgba(124,58,237,0.2)' : 'transparent',
-            border: `1px solid ${n.active ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: n.active ? '#c4b5fd' : 'rgba(255,255,255,0.35)',
+            background: n.active ? 'rgba(14,116,144,0.2)' : 'transparent',
+            border: `1px solid ${n.active ? 'rgba(14,116,144,0.4)' : 'rgba(255,255,255,0.08)'}`,
+            color: n.active ? '#7dd3e8' : 'rgba(255,255,255,0.35)',
           }}>{n.label}</Link>
         ))}
       </div>
@@ -183,7 +184,7 @@ export default async function RestaurantDetailPage({ params }: { params: Promise
         {/* Onboarding */}
         <Section title={`Onboarding · ${pct}%`}>
           <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', marginBottom: '14px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#34d399' : 'rgba(124,58,237,0.7)', borderRadius: '4px', transition: 'width 0.4s' }} />
+            <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#34d399' : 'rgba(14,116,144,0.7)', borderRadius: '4px', transition: 'width 0.4s' }} />
           </div>
           {onboarding.map(item => (
             <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -297,7 +298,7 @@ function BenchmarkGauge({ label, value, platformAvg, percentile, format }: {
         <span style={{ color, fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px', background: `${color}18` }}>{label2}</span>
       </div>
       <div style={{ position: 'relative', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'visible', marginBottom: '8px' }}>
-        <div style={{ height: '100%', width: `${percentile}%`, background: `linear-gradient(to right, rgba(124,58,237,0.3), ${color})`, borderRadius: '4px', transition: 'width 0.5s' }} />
+        <div style={{ height: '100%', width: `${percentile}%`, background: `linear-gradient(to right, rgba(14,116,144,0.3), ${color})`, borderRadius: '4px', transition: 'width 0.5s' }} />
         <div style={{ position: 'absolute', top: '-3px', left: `${percentile}%`, transform: 'translateX(-50%)', width: '12px', height: '12px', borderRadius: '50%', background: color, border: '2px solid #03030c' }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>

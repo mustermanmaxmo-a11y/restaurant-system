@@ -189,7 +189,7 @@ export default function TagesabschlussPage() {
             ))}
           </div>
           <div style={{ marginTop: '16px', fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-            Erstellt am {today.toLocaleString('de-DE')} · RestaurantOS
+            Erstellt am {today.toLocaleString('de-DE')} · OrderIQ
           </div>
         </div>
       </div>

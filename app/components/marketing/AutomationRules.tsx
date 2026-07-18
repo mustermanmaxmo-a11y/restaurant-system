@@ -461,7 +461,7 @@ export function AutomationRules({ automations, restaurantId, templates = [] }: P
                         background: 'rgba(255,255,255,0.07)',
                         border: `1px solid ${s.templateId ? 'rgba(139,92,246,0.35)' : 'rgba(255,255,255,0.14)'}`,
                         borderRadius: '8px',
-                        color: s.templateId ? '#c4b5fd' : '#6b7280',
+                        color: s.templateId ? '#7dd3e8' : '#6b7280',
                         fontSize: '0.83rem',
                         padding: '7px 10px',
                         outline: 'none',

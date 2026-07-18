@@ -172,7 +172,7 @@ export default async function ChurnPage() {
                   {/* Plan + MRR */}
                   <div style={{ textAlign: 'center', minWidth: '60px' }}>
                     <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Plan</div>
-                    <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: '0.78rem' }}>{r.plan}</div>
+                    <div style={{ color: '#35c0db', fontWeight: 700, fontSize: '0.78rem' }}>{r.plan}</div>
                     {r.mrr > 0 && <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.65rem' }}>€{r.mrr}/mo</div>}
                   </div>
 

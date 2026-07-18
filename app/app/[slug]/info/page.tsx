@@ -51,16 +51,44 @@ export async function generateMetadata({
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('name, description')
+    .select('id, name, description, logo_url')
     .eq('slug', slug)
     .maybeSingle()
 
   if (!restaurant) return {}
 
-  const r = restaurant as Pick<RestaurantRow, 'name' | 'description'>
+  const r = restaurant as Pick<RestaurantRow, 'id' | 'name' | 'description' | 'logo_url'>
+
+  // Hero-Bild aus dem Landing-Content für die Vorschaukarte (Fallback: Logo).
+  const { data: lp } = await admin
+    .from('landing_pages')
+    .select('content')
+    .eq('restaurant_id', r.id)
+    .maybeSingle()
+  const heroImage =
+    (lp as { content?: LandingPageContent } | null)?.content?.hero_image_url ?? r.logo_url ?? undefined
+
+  const title = r.name
+  const description = r.description ?? `${r.name} — Speisekarte ansehen und direkt online bestellen.`
+  const canonical = `/${slug}/info`
+
   return {
-    title: r.name,
-    description: r.description ?? `${r.name} — Online bestellen`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: 'website',
+      images: heroImage ? [{ url: heroImage }] : undefined,
+    },
+    twitter: {
+      card: heroImage ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      images: heroImage ? [heroImage] : undefined,
+    },
   }
 }
 

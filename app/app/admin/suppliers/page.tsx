@@ -15,12 +15,12 @@ interface SupplierProduct {
 }
 
 const CATEGORIES = [
-  { key: 'meat',       label: '🥩 Fleisch' },
-  { key: 'vegetables', label: '🥦 Gemüse' },
-  { key: 'drinks',     label: '🍺 Getränke' },
-  { key: 'dairy',      label: '🥛 Milchprodukte' },
-  { key: 'dry',        label: '🌾 Trockenware' },
-  { key: 'other',      label: '📦 Sonstiges' },
+  { key: 'meat',       label: 'Fleisch' },
+  { key: 'vegetables', label: 'Gemüse' },
+  { key: 'drinks',     label: 'Getränke' },
+  { key: 'dairy',      label: 'Milchprodukte' },
+  { key: 'dry',        label: 'Trockenware' },
+  { key: 'other',      label: 'Sonstiges' },
 ]
 
 const inputStyle = {

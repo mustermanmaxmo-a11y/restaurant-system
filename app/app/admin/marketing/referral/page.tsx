@@ -208,7 +208,7 @@ export default function ReferralAdminPage() {
                   fontWeight: 700, fontSize: '0.8rem',
                 }}
               >
-                {type === 'points' ? '⭐ Punkte' : type === 'discount' ? '🎟 Rabatt' : '✨ Beides'}
+                {type === 'points' ? 'Punkte' : type === 'discount' ? 'Rabatt' : 'Beides'}
               </button>
             ))}
           </div>

@@ -697,7 +697,7 @@ export default function SocialMediaHub({ restaurantId, plan }: Props) {
             /* Pro upgrade teaser */
             <div style={{
               ...s.panel,
-              background: 'linear-gradient(135deg, rgba(234,88,12,0.08), rgba(124,58,237,0.08))',
+              background: 'linear-gradient(135deg, rgba(234,88,12,0.08), rgba(14,116,144,0.08))',
               border: '1px solid rgba(234,88,12,0.2)',
               alignItems: 'center',
               textAlign: 'center',

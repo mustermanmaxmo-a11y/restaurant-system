@@ -16,7 +16,7 @@ type AuditEntry = {
 }
 
 const ACTION_STYLES: Record<string, { color: string; bg: string; label: string }> = {
-  plan_change:       { color: '#a78bfa', bg: 'rgba(167,139,250,0.08)', label: 'Plan' },
+  plan_change:       { color: '#35c0db', bg: 'rgba(53,192,219,0.08)', label: 'Plan' },
   bulk_action:       { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  label: 'Bulk' },
   note_created:      { color: '#6ee7b7', bg: 'rgba(110,231,183,0.07)', label: 'Notiz' },
   note_deleted:      { color: '#fca5a5', bg: 'rgba(252,165,165,0.07)', label: 'Notiz' },
@@ -93,7 +93,7 @@ export default async function PlatformAuditPage() {
           ) : topActors.map(([email, cnt]) => (
             <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #0e0e18' }}>
               <span style={{ color: '#8888a8', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>{email}</span>
-              <span style={{ color: '#a78bfa', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>{cnt}</span>
+              <span style={{ color: '#35c0db', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>{cnt}</span>
             </div>
           ))}
         </div>

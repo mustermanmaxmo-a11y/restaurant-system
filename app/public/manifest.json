@@ -1,11 +1,11 @@
 {
-  "name": "RestaurantOS",
-  "short_name": "RestaurantOS",
-  "description": "Restaurant Management Dashboard",
+  "name": "OrderIQ",
+  "short_name": "OrderIQ",
+  "description": "Restaurant-Dashboard von OrderIQ",
   "start_url": "/admin",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#00C9A7",
+  "background_color": "#0C0C0E",
+  "theme_color": "#0E7490",
   "orientation": "any",
   "icons": [
     {

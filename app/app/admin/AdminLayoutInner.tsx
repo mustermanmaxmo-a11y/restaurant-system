@@ -174,7 +174,7 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
               {!isCollapsed && (
                 <div style={{ overflow: 'hidden' }}>
                   <div style={{ color: '#fff', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
-                    RestaurantOS
+                    OrderIQ
                   </div>
                   {restaurantName && (
                     <div style={{ color: 'var(--sidebar-text)', fontSize: '0.68rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px' }}>
@@ -403,7 +403,7 @@ export default function AdminLayoutInner({ children }: { children: React.ReactNo
           <div style={{ width: '26px', height: '26px', borderRadius: '7px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Utensils size={13} color="#fff" />
           </div>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.85rem' }}>RestaurantOS</span>
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.85rem' }}>OrderIQ</span>
         </div>
         <button onClick={() => setMobileOpen(o => !o)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: '4px', display: 'flex' }}>
           {mobileOpen ? <X size={18} /> : <MenuIcon size={18} />}

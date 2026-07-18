@@ -19,7 +19,7 @@ interface Reservation { id: string }
 interface Bestseller { name: string; qty: number }
 
 // Use a fixed purple for recharts (can't use CSS vars in SVG fill)
-const CHART_ACCENT = '#7c3aed'
+const CHART_ACCENT = '#0E7490'
 const COLORS = [CHART_ACCENT, '#10b981', '#f59e0b', '#ef4444', '#3b82f6']
 
 export default function StatsPage() {
@@ -263,7 +263,7 @@ export default function StatsPage() {
               <StatCard label="Reservierungen" value={String(reservationCount)} />
               <StatCard
                 label="Ø Bewertung"
-                value={avgStars != null ? `${avgStars.toFixed(1)} ⭐` : '—'}
+                value={avgStars != null ? `${avgStars.toFixed(1)} ★` : '—'}
                 accent={avgStars != null && avgStars >= 4}
                 warn={avgStars != null && avgStars < 3}
               />
@@ -392,7 +392,7 @@ export default function StatsPage() {
                   color: avgStars >= 4 ? '#10b981' : '#f87171',
                   borderRadius: '6px', padding: '3px 10px', fontSize: '0.8rem', fontWeight: 700,
                 }}>
-                  {avgStars.toFixed(1)} ⭐ Ø
+                  {avgStars.toFixed(1)} ★ Ø
                 </span>
               )}
             </div>
@@ -402,7 +402,7 @@ export default function StatsPage() {
                 const pct = ratings.length > 0 ? (count / ratings.length) * 100 : 0
                 return (
                   <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', width: '32px' }}>{star} ⭐</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', width: '32px' }}>{star} ★</span>
                     <div style={{ flex: 1, background: 'var(--border)', borderRadius: '3px', height: '8px' }}>
                       <div style={{
                         background: star >= 4 ? '#22c55e' : star === 3 ? '#f59e0b' : '#ef4444',
@@ -417,13 +417,13 @@ export default function StatsPage() {
             {negativeFeedback.length > 0 && (
               <>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>
-                  Internes Feedback (1–3 ⭐)
+                  Internes Feedback (1–3 ★)
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {negativeFeedback.slice(0, 5).map((r, i) => (
                     <div key={i} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                        <span style={{ color: '#f87171', fontWeight: 700, fontSize: '0.8rem' }}>{'⭐'.repeat(r.stars)}</span>
+                        <span style={{ color: '#f87171', fontWeight: 700, fontSize: '0.8rem' }}>{'★'.repeat(r.stars)}</span>
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
                           {new Date(r.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                         </span>
@@ -441,7 +441,7 @@ export default function StatsPage() {
         {benchmark && !benchmark.opted_out && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-              <p style={{ color: 'var(--text)', fontWeight: 700 }}>📊 Branchenvergleich (letzte 7 Tage)</p>
+              <p style={{ color: 'var(--text)', fontWeight: 700 }}>Branchenvergleich (letzte 7 Tage)</p>
               {benchmark.peer && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{benchmark.peer.poolSize} Restaurants im Pool</span>
               )}
@@ -487,7 +487,7 @@ export default function StatsPage() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <p style={{ color: 'var(--text)', fontWeight: 700 }}>🍳 Vorbereitungsplan — Heute</p>
+              <p style={{ color: 'var(--text)', fontWeight: 700 }}>Vorbereitungsplan — Heute</p>
               {!prepPlan && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px' }}>Noch kein Plan für heute generiert.</p>}
             </div>
             <button
@@ -495,14 +495,14 @@ export default function StatsPage() {
               disabled={prepLoading}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: prepGenerated ? '#10b98118' : 'var(--bg)', color: prepGenerated ? '#10b981' : 'var(--text)', fontWeight: 600, fontSize: '0.8rem', cursor: prepLoading ? 'wait' : 'pointer' }}
             >
-              {prepLoading ? '⏳ Generiere…' : prepGenerated ? '✓ Aktualisiert' : prepPlan ? '↻ Neu generieren' : '✨ Plan erstellen'}
+              {prepLoading ? 'Generiere…' : prepGenerated ? '✓ Aktualisiert' : prepPlan ? '↻ Neu generieren' : 'Plan erstellen'}
             </button>
           </div>
           {prepPlan && (
             <>
               {prepPlan.insight && (
                 <div style={{ background: 'var(--accent-subtle)', border: '1px solid var(--border-accent)', borderRadius: '10px', padding: '10px 14px', marginBottom: '14px', fontSize: '0.85rem', color: 'var(--text)' }}>
-                  💡 {prepPlan.insight}
+                  {prepPlan.insight}
                 </div>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '12px' }}>

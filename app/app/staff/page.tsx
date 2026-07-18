@@ -293,7 +293,7 @@ export default function DashboardPage() {
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}><ChefHat size={40} color="#ff6b35" /></div>
             <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700 }}>Staff Login</h1>
-            <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '6px' }}>RestaurantOS Dashboard</p>
+            <p style={{ color: '#666', fontSize: '0.875rem', marginTop: '6px' }}>OrderIQ Dashboard</p>
           </div>
 
           {loginStep === 'slug' ? (
@@ -579,7 +579,7 @@ export default function DashboardPage() {
             { key: 'calls', label: 'Service', badge: unresolvedCalls.length },
             { key: 'tables', label: 'Tische', badge: 0 },
             { key: 'reservations', label: 'Reservierungen', badge: reservations.filter(r => r.status === 'pending').length },
-            ...(session.restaurant.prep_show_in_kds ? [{ key: 'prep', label: '🍳 Prep', badge: 0 }] : []),
+            ...(session.restaurant.prep_show_in_kds ? [{ key: 'prep', label: 'Prep', badge: 0 }] : []),
           ].map(tab => (
             <button
               key={tab.key}
@@ -1018,15 +1018,15 @@ export default function DashboardPage() {
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', maxWidth: '700px', width: '100%', margin: '0 auto' }}>
           {!prepPlan ? (
             <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <p style={{ fontSize: '2rem', marginBottom: '12px' }}>🍳</p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: '#555' }}><ChefHat size={32} /></div>
               <p style={{ color: '#555' }}>Noch kein Vorbereitungsplan für heute.</p>
               <p style={{ color: '#444', fontSize: '0.8rem', marginTop: '6px' }}>Der Plan wird täglich um 08:00 generiert oder kann im Admin-Dashboard erstellt werden.</p>
             </div>
           ) : (
             <>
               {prepPlan.insight && (
-                <div style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '0.875rem', color: '#aaa' }}>
-                  💡 {prepPlan.insight}
+                <div style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.2)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '0.875rem', color: '#aaa', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <Sparkles size={15} style={{ flexShrink: 0, marginTop: '2px' }} /> {prepPlan.insight}
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

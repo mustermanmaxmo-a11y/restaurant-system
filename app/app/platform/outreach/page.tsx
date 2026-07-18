@@ -81,7 +81,7 @@ export default async function PlatformOutreachPage() {
   const segments = [
     {
       id: 'hot-leads',
-      title: '🚀 Hot Leads — Trials mit starker Aktivität',
+      title: 'Hot Leads — Trials mit starker Aktivität',
       desc: 'Restaurants im Trial mit ≥5 Bestellungen. Höchste Conversion-Wahrscheinlichkeit.',
       color: '#6366f1',
       border: 'rgba(99,102,241,0.3)',
@@ -95,7 +95,7 @@ export default async function PlatformOutreachPage() {
     },
     {
       id: 'expiring',
-      title: '⚠️ Trial-Ablauf in 7 Tagen',
+      title: 'Trial-Ablauf in 7 Tagen',
       desc: 'Trials, die bald ablaufen. Jetzt aktiv werden, um Churn zu verhindern.',
       color: '#f59e0b',
       border: 'rgba(245,158,11,0.3)',
@@ -109,7 +109,7 @@ export default async function PlatformOutreachPage() {
     },
     {
       id: 'stale',
-      title: '😴 Stale Trials — keine Aktivität',
+      title: 'Stale Trials — keine Aktivität',
       desc: 'Über 14 Tage im Trial, aber 0 Bestellungen. Möglicherweise Onboarding-Blockade.',
       color: '#888',
       border: '#2a2a3e',
@@ -123,7 +123,7 @@ export default async function PlatformOutreachPage() {
     },
     {
       id: 'churn',
-      title: '🔴 Churn-Risiko — aktive Abos ohne Aktivität',
+      title: 'Churn-Risiko — aktive Abos ohne Aktivität',
       desc: 'Bezahlende Kunden mit 0 Bestellungen in 14 Tagen. Sofort nachfassen.',
       color: '#ef4444',
       border: 'rgba(239,68,68,0.3)',
@@ -139,7 +139,7 @@ export default async function PlatformOutreachPage() {
     },
     {
       id: 'winback',
-      title: '🔄 Win-Back — kürzlich abgelaufen mit Aktivität',
+      title: 'Win-Back — kürzlich abgelaufen mit Aktivität',
       desc: 'Abgelaufene Accounts, die vorher aktiv waren. Gute Reaktivierungs-Chancen.',
       color: '#10b981',
       border: 'rgba(16,185,129,0.25)',

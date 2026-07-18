@@ -35,7 +35,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       background: '#03030c',
       color: 'rgba(255,255,255,0.88)',
       backgroundImage: [
-        'radial-gradient(ellipse 80% 40% at 10% -5%, rgba(124,58,237,0.08) 0%, transparent 60%)',
+        'radial-gradient(ellipse 80% 40% at 10% -5%, rgba(14,116,144,0.08) 0%, transparent 60%)',
         'radial-gradient(ellipse 60% 30% at 90% 105%, rgba(6,182,212,0.04) 0%, transparent 50%)',
       ].join(', '),
     }}>

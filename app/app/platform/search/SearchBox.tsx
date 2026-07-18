@@ -15,7 +15,7 @@ const PLAN_COLOR: Record<string, { bg: string; text: string; border: string }> =
   trial:      { bg: 'rgba(96,165,250,0.12)',   text: '#60a5fa', border: 'rgba(96,165,250,0.25)' },
   starter:    { bg: 'rgba(52,211,153,0.1)',    text: '#34d399', border: 'rgba(52,211,153,0.25)' },
   pro:        { bg: 'rgba(251,191,36,0.1)',    text: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
-  enterprise: { bg: 'rgba(167,139,250,0.12)', text: '#a78bfa', border: 'rgba(167,139,250,0.25)' },
+  enterprise: { bg: 'rgba(53,192,219,0.12)', text: '#35c0db', border: 'rgba(53,192,219,0.25)' },
   expired:    { bg: 'rgba(248,113,113,0.08)', text: '#f87171', border: 'rgba(248,113,113,0.2)' },
 }
 
@@ -116,9 +116,9 @@ export function SearchBox({ initialQ, initialPlan }: { initialQ: string; initial
             return (
               <button key={p} onClick={() => setPlan(p === 'all' ? '' : p)} style={{
                 padding: '5px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700,
-                border: `1px solid ${active ? (pc?.border ?? 'rgba(124,58,237,0.5)') : 'rgba(255,255,255,0.07)'}`,
-                background: active ? (pc?.bg ?? 'rgba(124,58,237,0.12)') : 'transparent',
-                color: active ? (pc?.text ?? '#c4b5fd') : 'rgba(255,255,255,0.3)',
+                border: `1px solid ${active ? (pc?.border ?? 'rgba(14,116,144,0.5)') : 'rgba(255,255,255,0.07)'}`,
+                background: active ? (pc?.bg ?? 'rgba(14,116,144,0.12)') : 'transparent',
+                color: active ? (pc?.text ?? '#7dd3e8') : 'rgba(255,255,255,0.3)',
               }}>
                 {p === 'all' ? 'Alle' : p}
               </button>
@@ -174,8 +174,8 @@ export function SearchBox({ initialQ, initialPlan }: { initialQ: string; initial
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
                   padding: '13px 18px', borderRadius: '12px',
-                  background: isActive ? 'rgba(124,58,237,0.1)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isActive ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                  background: isActive ? 'rgba(14,116,144,0.1)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isActive ? 'rgba(14,116,144,0.3)' : 'rgba(255,255,255,0.06)'}`,
                   transition: 'all 0.08s',
                 }}>
                   {/* Active dot */}

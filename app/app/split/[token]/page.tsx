@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { Unlink, Receipt, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface Person { name: string; color: string }
@@ -182,7 +183,7 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
   if (!split) return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
       <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: '2rem', marginBottom: '12px' }}>🔗</p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px', color: '#666' }}><Unlink size={32} /></div>
         <p style={{ color: '#fff', fontWeight: 700, marginBottom: '8px' }}>Split nicht gefunden</p>
         <p style={{ color: '#666', fontSize: '0.875rem' }}>Dieser Link ist ungültig oder abgelaufen.</p>
       </div>
@@ -199,7 +200,7 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
     <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#fff', paddingBottom: selectedPersons.length > 0 ? '100px' : '0' }}>
       <div style={{ padding: '20px 16px', maxWidth: '560px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <p style={{ fontSize: '2rem', marginBottom: '8px' }}>🧾</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', color: '#0E7490' }}><Receipt size={30} /></div>
           <h1 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '4px' }}>Rechnung aufteilen</h1>
           <p style={{ color: '#666', fontSize: '0.875rem' }}>{persons.length} Personen · {orderItems.length} Positionen</p>
         </div>
@@ -212,10 +213,10 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
 
         {/* Tab switcher */}
         <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: '#1a1a1a', borderRadius: '10px', padding: '4px' }}>
-          <button onClick={() => setView('assign')} style={{ flex: 1, padding: '8px', borderRadius: '7px', border: 'none', background: view === 'assign' ? '#ff6b35' : 'transparent', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+          <button onClick={() => setView('assign')} style={{ flex: 1, padding: '8px', borderRadius: '7px', border: 'none', background: view === 'assign' ? '#0E7490' : 'transparent', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
             Zuweisen
           </button>
-          <button onClick={() => setView('result')} style={{ flex: 1, padding: '8px', borderRadius: '7px', border: 'none', background: view === 'result' ? '#ff6b35' : 'transparent', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+          <button onClick={() => setView('result')} style={{ flex: 1, padding: '8px', borderRadius: '7px', border: 'none', background: view === 'result' ? '#0E7490' : 'transparent', color: '#fff', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
             Ergebnis
           </button>
         </div>
@@ -223,8 +224,8 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
         {view === 'assign' && (
           <>
             {unassignedCount > 0 && (
-              <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.85rem', color: '#f59e0b' }}>
-                ⚠ {unassignedCount} Position{unassignedCount !== 1 ? 'en' : ''} noch nicht zugewiesen
+              <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.85rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertTriangle size={14} style={{ flexShrink: 0 }} /> {unassignedCount} Position{unassignedCount !== 1 ? 'en' : ''} noch nicht zugewiesen
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -234,7 +235,7 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
                   <div key={idx} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '14px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</span>
-                      <span style={{ color: '#ff6b35', fontWeight: 700 }}>{item.price.toFixed(2)} €</span>
+                      <span style={{ color: '#0E7490', fontWeight: 700 }}>{item.price.toFixed(2)} €</span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {persons.map(person => {
@@ -355,7 +356,7 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
 
             {!onlinePaymentsEnabled && !allPaid && (
               <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '12px', padding: '14px 18px', textAlign: 'center' }}>
-                <p style={{ color: '#aaa', fontSize: '0.85rem' }}>Bitte beim Personal bezahlen 🙏</p>
+                <p style={{ color: '#aaa', fontSize: '0.85rem' }}>Bitte beim Personal bezahlen</p>
               </div>
             )}
 
@@ -389,7 +390,7 @@ export default function SplitPage({ params }: { params: Promise<{ token: string 
             disabled={paying}
             style={{
               padding: '12px 20px', borderRadius: '10px', border: 'none',
-              background: '#ff6b35', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+              background: '#0E7490', color: '#fff', fontWeight: 700, fontSize: '0.9rem',
               cursor: paying ? 'wait' : 'pointer', opacity: paying ? 0.6 : 1, whiteSpace: 'nowrap',
             }}
           >

@@ -157,7 +157,7 @@ export default async function CohortsPage() {
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
         {[
-          { label: 'Gesamt Signups', value: totalSignups, sub: 'letzte 18 Monate', color: '#c4b5fd' },
+          { label: 'Gesamt Signups', value: totalSignups, sub: 'letzte 18 Monate', color: '#7dd3e8' },
           { label: 'Konversion', value: `${overallConversion}%`, sub: `${totalEverPaid} zu Paid`, color: '#34d399' },
           { label: 'Aktiv', value: totalActive, sub: `${Math.round(totalActive/Math.max(totalSignups,1)*100)}% der Signups`, color: '#60a5fa' },
           { label: 'Abgelaufen', value: totalExpired, sub: `${Math.round(totalExpired/Math.max(totalSignups,1)*100)}% Churn`, color: '#f87171' },
@@ -181,7 +181,7 @@ export default async function CohortsPage() {
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', height: '100%', justifyContent: 'flex-end' }}>
               <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>{w.count || ''}</div>
               <div style={{ width: '100%', borderRadius: '3px 3px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <div style={{ width: '100%', height: `${Math.round((w.count / maxWeek) * 72)}px`, background: `linear-gradient(180deg, rgba(124,58,237,0.7), rgba(79,70,229,0.4))`, borderRadius: '3px 3px 0 0', transition: 'height 0.3s' }} />
+                <div style={{ width: '100%', height: `${Math.round((w.count / maxWeek) * 72)}px`, background: `linear-gradient(180deg, rgba(14,116,144,0.7), rgba(79,70,229,0.4))`, borderRadius: '3px 3px 0 0', transition: 'height 0.3s' }} />
               </div>
               <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}>{w.label}</div>
             </div>
@@ -257,7 +257,7 @@ export default async function CohortsPage() {
                       {row.trialConversion}%
                     </span>
                   </td>
-                  <td style={{ padding: '10px', textAlign: 'center', color: '#a78bfa', fontWeight: 700 }}>
+                  <td style={{ padding: '10px', textAlign: 'center', color: '#35c0db', fontWeight: 700 }}>
                     {row.mrrAtStart > 0 ? `€${row.mrrAtStart}` : '—'}
                   </td>
                   {row.retention.slice(0, 7).map((pct, i) => {
@@ -298,7 +298,7 @@ export default async function CohortsPage() {
           {plansByMonth.map((m, i) => {
             const t = Math.max(m.total, 1)
             const plans = [
-              { key: 'enterprise', color: 'rgba(167,139,250,0.7)' },
+              { key: 'enterprise', color: 'rgba(53,192,219,0.7)' },
               { key: 'pro', color: 'rgba(251,191,36,0.7)' },
               { key: 'starter', color: 'rgba(52,211,153,0.7)' },
               { key: 'trial', color: 'rgba(96,165,250,0.5)' },
@@ -319,7 +319,7 @@ export default async function CohortsPage() {
         </div>
         <div style={{ display: 'flex', gap: '14px', marginTop: '14px', flexWrap: 'wrap' }}>
           {[
-            { label: 'Enterprise', color: '#a78bfa' },
+            { label: 'Enterprise', color: '#35c0db' },
             { label: 'Pro', color: '#fbbf24' },
             { label: 'Starter', color: '#34d399' },
             { label: 'Trial', color: '#60a5fa' },

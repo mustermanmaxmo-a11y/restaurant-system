@@ -253,7 +253,7 @@ export default function PlatformSettingsPage() {
             onChange={v => { setFalKey(v); setMarketingKeysSuccess(false) }}
           />
           <KeyField
-            icon={<Video size={16} color="#8b5cf6" />}
+            icon={<Video size={16} color="#0e7490" />}
             iconBg="rgba(139,92,246,0.12)"
             label="Kling AI API Key"
             description="Videogenerierung (Pro-Plan)"

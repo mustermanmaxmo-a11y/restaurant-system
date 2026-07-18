@@ -1,18 +1,5 @@
 import MarketingNav from '@/components/marketing/MarketingNav'
 
-const navItems = [
-  { href: '/admin/marketing/advisor',     icon: '🤖', label: 'KI-Berater',   badge: null },
-  { href: '/admin/marketing/campaigns',   icon: '📧', label: 'Kampagnen',    badge: null },
-  { href: '/admin/marketing/birthday',     icon: '🎂', label: 'Geburtstag',   badge: null },
-  { href: '/admin/marketing/drip',         icon: '💧', label: 'Win-Back Drip', badge: null },
-  { href: '/admin/marketing/referral',    icon: '🎁', label: 'Referral',     badge: null },
-  { href: '/admin/marketing/automations', icon: '⚡', label: 'Automationen', badge: null },
-  { href: '/admin/marketing/templates',   icon: '📨', label: 'Templates',    badge: null },
-  { href: '/admin/marketing/social',      icon: '📱', label: 'Social Media', badge: null },
-  { href: '/admin/marketing/analytics',   icon: '📊', label: 'Analytics',    badge: null },
-  { href: '/admin/marketing/subscribers', icon: '👥', label: 'Abonnenten',   badge: null },
-]
-
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', minHeight: '100%', height: '100%' }}>
@@ -35,7 +22,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>📣</span>
             <span style={{
               color: '#ffffff',
               fontWeight: 800,
@@ -49,16 +35,15 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             color: 'var(--sidebar-text, #6b7280)',
             fontSize: '0.7rem',
             marginTop: '4px',
-            marginLeft: '32px',
             fontWeight: 500,
           }}>
-            Hub
+            Kampagnen, Automationen & Analyse
           </p>
         </div>
 
         {/* Nav */}
         <div style={{ flex: 1, paddingTop: '8px' }}>
-          <MarketingNav items={navItems} />
+          <MarketingNav />
         </div>
 
         {/* Bottom divider */}

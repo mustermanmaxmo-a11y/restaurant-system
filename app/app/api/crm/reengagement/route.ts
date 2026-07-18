@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         const html = `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111;white-space:pre-wrap;">${fullText.replace(/</g, '&lt;')}</div>`
         await sendEmail({
           restaurantId: resto.id,
-          fromEmail: 'noreply@restaurantos.app',
+          fromEmail: 'noreply@getorderiq.de',
           fromName: resto.name,
           toEmail: email,
           toSubscriberId: null,

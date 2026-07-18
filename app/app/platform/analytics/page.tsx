@@ -215,7 +215,7 @@ export default async function PlatformAnalytics() {
                       <div style={{
                         height: '100%',
                         width: `${(r.rev / maxRev) * 100}%`,
-                        background: i === 0 ? '#34d399' : i < 3 ? 'rgba(52,211,153,0.6)' : 'rgba(124,58,237,0.5)',
+                        background: i === 0 ? '#34d399' : i < 3 ? 'rgba(52,211,153,0.6)' : 'rgba(14,116,144,0.5)',
                         borderRadius: '3px',
                       }} />
                     </div>
@@ -248,7 +248,7 @@ export default async function PlatformAnalytics() {
                   )}
                   <div style={{
                     width: '100%', height: `${barH}%`, minHeight: cnt > 0 ? '4px' : 0,
-                    background: isToday ? '#7c3aed' : 'rgba(124,58,237,0.5)',
+                    background: isToday ? '#0e7490' : 'rgba(14,116,144,0.5)',
                     borderRadius: '2px 2px 0 0',
                   }} />
                   <span style={{
@@ -276,7 +276,7 @@ export default async function PlatformAnalytics() {
                   <div style={{
                     width: '100%',
                     height: `${Math.max(pct > 0 ? 4 : 0, pct)}%`,
-                    background: isBusiest ? '#f59e0b' : `rgba(124,58,237,${0.15 + pct / 100 * 0.7})`,
+                    background: isBusiest ? '#f59e0b' : `rgba(14,116,144,${0.15 + pct / 100 * 0.7})`,
                     borderRadius: '2px 2px 0 0',
                   }} />
                   {h % 6 === 0 && <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '3px' }}>{h}h</span>}
@@ -298,7 +298,7 @@ export default async function PlatformAnalytics() {
                   {cnt > 0 && <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '0.6rem' }}>{cnt}</span>}
                   <div style={{
                     width: '100%', height: `${Math.max(4, pct)}%`,
-                    background: isBest ? '#fbbf24' : 'rgba(124,58,237,0.45)',
+                    background: isBest ? '#fbbf24' : 'rgba(14,116,144,0.45)',
                     borderRadius: '4px 4px 0 0',
                   }} />
                   <span style={{ fontSize: '0.65rem', color: isBest ? '#fbbf24' : 'rgba(255,255,255,0.25)', fontWeight: isBest ? 700 : 400 }}>{day}</span>
@@ -336,7 +336,7 @@ export default async function PlatformAnalytics() {
 
       {/* Upgrade candidates */}
       {upgradeCandidates.length > 0 && (
-        <div style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+        <div style={{ background: 'rgba(14,116,144,0.06)', border: '1px solid rgba(14,116,144,0.2)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
           <h2 style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>
             Upgrade-Kandidaten — Trials mit starker Aktivität
           </h2>
@@ -344,12 +344,12 @@ export default async function PlatformAnalytics() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {upgradeCandidates.map(u => (
               <Link key={u.id} href={`/platform/restaurants/${u.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.18)', borderRadius: '8px', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(14,116,144,0.08)', border: '1px solid rgba(14,116,144,0.18)', borderRadius: '8px', cursor: 'pointer' }}>
                   <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 600, fontSize: '0.85rem' }}>{u.name}</span>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <span style={{ color: '#c4b5fd', fontSize: '0.78rem', fontWeight: 700 }}>{u.orders} Bestellungen</span>
+                    <span style={{ color: '#7dd3e8', fontSize: '0.78rem', fontWeight: 700 }}>{u.orders} Bestellungen</span>
                     <span style={{ color: '#34d399', fontSize: '0.78rem', fontWeight: 700 }}>{fmt(u.rev)} Umsatz</span>
-                    <span style={{ color: '#c4b5fd', fontSize: '0.72rem' }}>→ Plan setzen</span>
+                    <span style={{ color: '#7dd3e8', fontSize: '0.72rem' }}>→ Plan setzen</span>
                   </div>
                 </div>
               </Link>
@@ -377,11 +377,11 @@ export default async function PlatformAnalytics() {
                 {rev > 0 && <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '0.55rem' }}>{rev >= 1000 ? `€${(rev/1000).toFixed(1)}k` : `€${Math.round(rev)}`}</span>}
                 <div style={{
                   width: '100%', height: `${pct}%`, minHeight: rev > 0 ? '4px' : 0,
-                  background: isCurrentMonth ? '#7c3aed' : i === months12.length - 2 ? 'rgba(124,58,237,0.65)' : 'rgba(124,58,237,0.4)',
+                  background: isCurrentMonth ? '#0e7490' : i === months12.length - 2 ? 'rgba(14,116,144,0.65)' : 'rgba(14,116,144,0.4)',
                   borderRadius: '3px 3px 0 0',
-                  boxShadow: isCurrentMonth ? '0 0 10px rgba(124,58,237,0.4)' : undefined,
+                  boxShadow: isCurrentMonth ? '0 0 10px rgba(14,116,144,0.4)' : undefined,
                 }} />
-                <span style={{ fontSize: '0.55rem', color: isCurrentMonth ? '#c4b5fd' : 'rgba(255,255,255,0.18)', position: 'absolute', marginTop: '100px', whiteSpace: 'nowrap' }}>{label}</span>
+                <span style={{ fontSize: '0.55rem', color: isCurrentMonth ? '#7dd3e8' : 'rgba(255,255,255,0.18)', position: 'absolute', marginTop: '100px', whiteSpace: 'nowrap' }}>{label}</span>
               </div>
             )
           })}

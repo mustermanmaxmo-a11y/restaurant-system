@@ -737,7 +737,7 @@ export default function OrderV1() {
                 onClick={() => setShowSplitSetup(true)}
                 style={{ width: '100%', marginBottom: '12px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '14px', color: C.muted, fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                🧾 Rechnung aufteilen
+                <Receipt size={16} /> Rechnung aufteilen
               </button>
             ) : (
               <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
@@ -772,7 +772,7 @@ export default function OrderV1() {
             )
           ) : (
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-              <p style={{ color: C.text, fontWeight: 700, marginBottom: '8px', fontSize: '0.9rem' }}>🧾 Split-Link</p>
+              <p style={{ color: C.text, fontWeight: 700, marginBottom: '8px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Receipt size={15} /> Split-Link</p>
               <p style={{ color: C.muted, fontSize: '0.8rem', marginBottom: '10px' }}>Teile diesen Link mit den Gästen:</p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input readOnly value={`${window.location.origin}/split/${splitToken}`} style={{ flex: 1, padding: '9px 12px', borderRadius: '8px', border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontSize: '0.8rem', outline: 'none' }} />

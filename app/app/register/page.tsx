@@ -96,7 +96,7 @@ export default function RegisterPage() {
               <Utensils size={24} color="#fff" />
             </div>
             <h1 style={{ color: 'var(--text)', fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px', fontFamily: 'var(--font-heading), system-ui, sans-serif', letterSpacing: '-0.03em' }}>
-              RestaurantOS starten
+              OrderIQ starten
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               Kostenloses Konto erstellen — dann Plan wählen

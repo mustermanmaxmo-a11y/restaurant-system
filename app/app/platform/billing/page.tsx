@@ -125,7 +125,7 @@ export default async function PlatformBilling() {
       {/* Revenue Operations Section */}
       <div style={{ marginBottom: '28px', background: '#242438', border: '1px solid #2a2a3e', borderRadius: '14px', overflow: 'hidden' }}>
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #2a2a3e', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BarChart3 size={15} color="#a78bfa" />
+          <BarChart3 size={15} color="#35c0db" />
           <h2 style={{ color: '#f0f0f8', fontWeight: 700, fontSize: '0.95rem' }}>Revenue Operations</h2>
           <span style={{ color: '#44445a', fontSize: '0.75rem' }}>· Laufend berechnet</span>
         </div>
@@ -141,7 +141,7 @@ export default async function PlatformBilling() {
               const colors: Record<string, { bar: string; fg: string }> = {
                 starter: { bar: '#065f46', fg: '#6ee7b7' },
                 pro: { bar: '#78350f', fg: '#fcd34d' },
-                enterprise: { bar: '#4c1d95', fg: '#c4b5fd' },
+                enterprise: { bar: '#4c1d95', fg: '#7dd3e8' },
               }
               const { bar, fg } = colors[plan] ?? { bar: '#333', fg: '#888' }
               return (

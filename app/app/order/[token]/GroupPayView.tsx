@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { GroupItem, GroupPayment } from '@/types/database'
-import { Check, Banknote, CreditCard } from 'lucide-react'
+import { Check, Banknote, CreditCard, Receipt } from 'lucide-react'
 
 interface Props {
   groupId: string
@@ -334,7 +334,7 @@ export default function GroupPayView({ groupId, memberName, groupItems, accent }
                   textDecoration: 'none',
                 }}
               >
-                🧾 Rechnung ansehen
+                <Receipt size={15} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '6px' }} />Rechnung ansehen
               </a>
             )}
           </div>

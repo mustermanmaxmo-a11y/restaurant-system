@@ -5,7 +5,7 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 const PLAN_COLOR: Record<string, string> = {
-  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#a78bfa', expired: '#f87171',
+  trial: '#60a5fa', starter: '#34d399', pro: '#fbbf24', enterprise: '#35c0db', expired: '#f87171',
 }
 const PLAN_MRR: Record<string, number> = { starter: 29, pro: 79, enterprise: 199, trial: 0, expired: 0 }
 
@@ -15,7 +15,7 @@ function spark(vals: number[]): string {
   const h = 28
   const w = vals.length * 6
   const pts = vals.map((v, i) => `${i * 6 + 3},${h - Math.round((v / max) * (h - 4)) - 2}`).join(' ')
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="rgba(124,58,237,0.6)" stroke-width="1.5" stroke-linejoin="round" /></svg>`
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="rgba(14,116,144,0.6)" stroke-width="1.5" stroke-linejoin="round" /></svg>`
 }
 
 export default async function LeaderboardPage() {
@@ -105,7 +105,7 @@ export default async function LeaderboardPage() {
         {[
           { label: 'Plattform GMV (90d)', value: fmt(totalGmv90), color: '#34d399' },
           { label: 'Bestellungen (90d)', value: totalOrders90.toLocaleString('de'), color: '#60a5fa' },
-          { label: 'Ranked Restaurants', value: String(byGmv.length), color: '#c4b5fd' },
+          { label: 'Ranked Restaurants', value: String(byGmv.length), color: '#7dd3e8' },
           { label: 'Top-5 GMV-Anteil', value: `${top5Pct}%`, color: '#fbbf24' },
         ].map(k => (
           <div key={k.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', padding: '18px 20px' }}>
@@ -152,7 +152,7 @@ export default async function LeaderboardPage() {
           main: `€${r.avgOrder.toFixed(2)}`,
           sub2: `${r.orderCount30} Orders`,
           bar: byAvg[0]?.avgOrder > 0 ? (r.avgOrder / byAvg[0].avgOrder) * 100 : 0,
-          barColor: '#a78bfa', sparkVals: r.weeklyGmv,
+          barColor: '#35c0db', sparkVals: r.weeklyGmv,
         }))} />
       </div>
     </div>

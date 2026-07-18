@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Staff Dashboard – RestaurantOS',
+  title: 'Staff Dashboard – OrderIQ',
   description: 'Personal-Dashboard für Bestellungen und Service',
   manifest: '/manifest-staff.json',
 }

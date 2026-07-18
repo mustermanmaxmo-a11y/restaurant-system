@@ -1055,7 +1055,7 @@ export default function MenuPage() {
                         onClick={() => setShowRecipe(v => !v)}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', padding: 0, marginBottom: showRecipe ? '12px' : 0 }}
                       >
-                        🍳 Rezept {showRecipe ? '▲' : '▼'}
+                        Rezept {showRecipe ? '▲' : '▼'}
                       </button>
                       {showRecipe && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1118,7 +1118,7 @@ export default function MenuPage() {
                             }}
                             style={{ background: 'var(--accent)', border: 'none', borderRadius: '8px', padding: '8px 16px', color: '#fff', fontWeight: 700, fontSize: '0.825rem', cursor: recipeSaving ? 'wait' : 'pointer', alignSelf: 'flex-start' }}
                           >
-                            {recipeSaving ? 'Speichert…' : '💾 Rezept speichern'}
+                            {recipeSaving ? 'Speichert…' : 'Rezept speichern'}
                           </button>
                         </div>
                       )}
